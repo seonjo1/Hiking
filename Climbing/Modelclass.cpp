@@ -16,12 +16,12 @@ ModelClass::~ModelClass()
 {
 }
 
+// 모델 초기화
 bool ModelClass::Initialize(ID3D11Device* device)
 {
 	bool result;
 
-
-	// Initialize the vertex and index buffers.
+	// 버퍼 초기화
 	result = InitializeBuffers(device);
 	if (!result)
 	{
@@ -60,27 +60,24 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	D3D11_SUBRESOURCE_DATA vertexData, indexData;
 	HRESULT result;
 
-	// Set the number of vertices in the vertex array.
+	// 버텍스 개수
 	m_vertexCount = 3;
 
-	// Set the number of indices in the index array.
+	// 인덱스 개수
 	m_indexCount = 3;
 
-	// Create the vertex array.
 	vertices = new VertexType[m_vertexCount];
 	if (!vertices)
 	{
 		return false;
 	}
 
-	// Create the index array.
 	indices = new unsigned long[m_indexCount];
 	if (!indices)
 	{
 		return false;
 	}
 
-	// Load the vertex array with data.
 	vertices[0].position = XMFLOAT3(-1.0f, -1.0f, 0.0f);  // Bottom left.
 	vertices[0].color = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
 
@@ -90,32 +87,37 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	vertices[2].position = XMFLOAT3(1.0f, -1.0f, 0.0f);  // Bottom right.
 	vertices[2].color = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
 
-	// Load the index array with data.
 	indices[0] = 0;  // Bottom left.
 	indices[1] = 1;  // Top middle.
 	indices[2] = 2;  // Bottom right.
 
-		// Set up the description of the static vertex buffer.
+	// 버텍스 버퍼 설정
+	/*
+	GPU에서 주로 쓰고 CPU에서는 거의 접근하지 않을 경우 DEFAULT
+	자주 수정할 거면 D3D11_USAGE_DYNAMIC 사용해야 함
+	*/
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	vertexBufferDesc.ByteWidth = sizeof(VertexType) * m_vertexCount;
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	// CPUAccessFlags = 0 -> CPU 접근 x
 	vertexBufferDesc.CPUAccessFlags = 0;
 	vertexBufferDesc.MiscFlags = 0;
 	vertexBufferDesc.StructureByteStride = 0;
 
-	// Give the subresource structure a pointer to the vertex data.
+	// GPU로 넘길 실제 데이터
 	vertexData.pSysMem = vertices;
+	// 2D/3D 텍스처에서 쓰는 값이지만 여기선 안 쓰니 0
 	vertexData.SysMemPitch = 0;
 	vertexData.SysMemSlicePitch = 0;
 
-	// Now create the vertex buffer.
+	// 버텍스 버퍼 생성
 	result = device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_vertexBuffer);
 	if (FAILED(result))
 	{
 		return false;
 	}
 
-	// Set up the description of the static index buffer.
+	// 인덱스 버퍼 설정
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	indexBufferDesc.ByteWidth = sizeof(unsigned long) * m_indexCount;
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
@@ -123,18 +125,19 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	indexBufferDesc.MiscFlags = 0;
 	indexBufferDesc.StructureByteStride = 0;
 
-	// Give the subresource structure a pointer to the index data.
+	// GPU에 넘길 index 데이터
 	indexData.pSysMem = indices;
 	indexData.SysMemPitch = 0;
 	indexData.SysMemSlicePitch = 0;
 
-	// Create the index buffer.
+	// 버퍼 생성
 	result = device->CreateBuffer(&indexBufferDesc, &indexData, &m_indexBuffer);
 	if (FAILED(result))
 	{
 		return false;
 	}
-	// Release the arrays now that the vertex and index buffers have been created and loaded.
+
+	// 자원 해제
 	delete[] vertices;
 	vertices = 0;
 

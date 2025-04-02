@@ -30,5 +30,8 @@ private:
 	// Vertex Buffer, Index Buffer
 	ID3D11Buffer* m_vertexBuffer;
 	ID3D11Buffer* m_indexBuffer;
-	int m_vertexCount, m_indexCount;
+	
+	// Vertex, Index °³¼ö
+	int m_vertexCount;
+	int m_indexCount;
 };

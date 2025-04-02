@@ -26,21 +26,20 @@ bool ColorShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	int error;
 
 
-	// Set the filename of the vertex shader.
+	// 버텍스 셰이더 파일 경로 등록
 	error = wcscpy_s(vsFilename, 128, L"../Climbing/color.vs");
 	if (error != 0)
 	{
 		return false;
 	}
 
-	// Set the filename of the pixel shader.
+	// 픽셀 셰이더 파일 경로 등록
 	error = wcscpy_s(psFilename, 128, L"../Climbing/color.ps");
 	if (error != 0)
 	{
 		return false;
 	}
 
-	// Initialize the vertex and pixel shaders.
 	result = InitializeShader(device, hwnd, vsFilename, psFilename);
 	if (!result)
 	{
@@ -93,17 +92,16 @@ bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	vertexShaderBuffer = 0;
 	pixelShaderBuffer = 0;
 
-	// Compile the vertex shader code.
+	// 버텍스 셰이더 컴파일
 	result = D3DCompileFromFile(vsFilename, NULL, NULL, "ColorVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
 		&vertexShaderBuffer, &errorMessage);
 	if (FAILED(result))
 	{
-		// If the shader failed to compile it should have writen something to the error message.
+		// 에러메시지 있으면 에러 파일에 저장
 		if (errorMessage)
 		{
 			OutputShaderErrorMessage(errorMessage, hwnd, vsFilename);
 		}
-		// If there was  nothing in the error message then it simply could not find the shader file itself.
 		else
 		{
 			MessageBox(hwnd, vsFilename, L"Missing Shader File", MB_OK);
@@ -112,17 +110,16 @@ bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 		return false;
 	}
 
-	// Compile the pixel shader code.
+	// 픽셀 셰이더 컴파일
 	result = D3DCompileFromFile(psFilename, NULL, NULL, "ColorPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
 		&pixelShaderBuffer, &errorMessage);
 	if (FAILED(result))
 	{
-		// If the shader failed to compile it should have writen something to the error message.
 		if (errorMessage)
 		{
+			// 에러 메시지 있으면 에러 파일에 저장
 			OutputShaderErrorMessage(errorMessage, hwnd, psFilename);
 		}
-		// If there was nothing in the error message then it simply could not find the file itself.
 		else
 		{
 			MessageBox(hwnd, psFilename, L"Missing Shader File", MB_OK);
@@ -131,22 +128,22 @@ bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 		return false;
 	}
 
-	// Create the vertex shader from the buffer.
+	// 버텍스 셰이더 생성
 	result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader);
 	if (FAILED(result))
 	{
 		return false;
 	}
 
-	// Create the pixel shader from the buffer.
+	// 픽셀 셰이더 생성
 	result = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &m_pixelShader);
 	if (FAILED(result))
 	{
 		return false;
 	}
 
-	// Create the vertex input layout description.
-	// This setup needs to match the VertexType stucture in the ModelClass and in the shader.
+	// 버텍스 셰이더의 인풋 레이아웃 설정
+	// Position
 	polygonLayout[0].SemanticName = "POSITION";
 	polygonLayout[0].SemanticIndex = 0;
 	polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
@@ -154,19 +151,20 @@ bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	polygonLayout[0].AlignedByteOffset = 0;
 	polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[0].InstanceDataStepRate = 0;
-
+	// color
 	polygonLayout[1].SemanticName = "COLOR";
 	polygonLayout[1].SemanticIndex = 0;
 	polygonLayout[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	polygonLayout[1].InputSlot = 0;
+	// D3D11_APPEND_ALIGNED_ELEMENT는 이전 데이터의 크기를 기준으로 자동 정렬
 	polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[1].InstanceDataStepRate = 0;
 
-	// Get a count of the elements in the layout.
+	// 구조체 변수 개수
 	numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
-	// Create the vertex input layout.
+	// Vertex Input Layout 설정
 	result = device->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(),
 		vertexShaderBuffer->GetBufferSize(), &m_layout);
 	if (FAILED(result))
@@ -174,14 +172,14 @@ bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 		return false;
 	}
 
-	// Release the vertex shader buffer and pixel shader buffer since they are no longer needed.
+	// 자원 해제
 	vertexShaderBuffer->Release();
 	vertexShaderBuffer = 0;
 
 	pixelShaderBuffer->Release();
 	pixelShaderBuffer = 0;
 
-	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
+	// 상수 버퍼 생성
 	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
 	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -189,7 +187,7 @@ bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	matrixBufferDesc.MiscFlags = 0;
 	matrixBufferDesc.StructureByteStride = 0;
 
-	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+	// 상수 버퍼 생성
 	result = device->CreateBuffer(&matrixBufferDesc, NULL, &m_matrixBuffer);
 	if (FAILED(result))
 	{
@@ -232,32 +230,31 @@ void ColorShaderClass::ShutdownShader()
 	return;
 }
 
+// 셰이더 에러시 메시지 생성
 void ColorShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename)
 {
 	char* compileErrors;
 	unsigned long long bufferSize, i;
 	ofstream fout;
 
+	// errorMessage에 컴파일 에러가 담겨 있음
 
-	// Get a pointer to the error message text buffer.
+	// GetBufferPointer() -> 메시지 char*로 변환
 	compileErrors = (char*)(errorMessage->GetBufferPointer());
 
-	// Get the length of the message.
+	// 메시지 길이
 	bufferSize = errorMessage->GetBufferSize();
 
-	// Open a file to write the error message to.
+	// shader-error.txt로 해서 오류 저장
 	fout.open("shader-error.txt");
 
-	// Write out the error message.
 	for (i = 0; i < bufferSize; i++)
 	{
 		fout << compileErrors[i];
 	}
 
-	// Close the file.
 	fout.close();
 
-	// Release the error message.
 	errorMessage->Release();
 	errorMessage = 0;
 
