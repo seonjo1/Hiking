@@ -236,8 +236,8 @@ void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
 	else
 	{
 		// 창 모드 설정
-		screenWidth = 800;
-		screenHeight = 600;
+		screenWidth = 1920;
+		screenHeight = 1080;
 
 		// 화면의 중앙에 창 배치
 		posX = (GetSystemMetrics(SM_CXSCREEN) - screenWidth) / 2;
