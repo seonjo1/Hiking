@@ -244,8 +244,8 @@ void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
 	else
 	{
 		// 창 모드 설정
-		screenWidth = 1920;
-		screenHeight = 1080;
+		screenWidth = 1280;
+		screenHeight = 720;
 
 		// 화면의 중앙에 창 배치
 		posX = (GetSystemMetrics(SM_CXSCREEN) - screenWidth) / 2;
@@ -254,8 +254,7 @@ void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
 
 	// 윈도우 창 생성
 	m_hwnd = CreateWindowEx(WS_EX_APPWINDOW, m_applicationName, m_applicationName,
-		WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP,
-		posX, posY, screenWidth, screenHeight, NULL, NULL, m_hinstance, NULL);
+		WS_OVERLAPPEDWINDOW, posX, posY, screenWidth, screenHeight, NULL, NULL, m_hinstance, NULL);
 
 	// ShowWindow(): 윈도우를 화면에 표시
 	ShowWindow(m_hwnd, SW_SHOW);
