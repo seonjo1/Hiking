@@ -24,6 +24,7 @@
     <ProjectGuid>{87954698-4f24-4606-b407-db113e2a94c6}</ProjectGuid>
     <RootNamespace>Clilmbing</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Climbing</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
