@@ -196,8 +196,7 @@ void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
 	wc.cbWndExtra = 0;
 	wc.hInstance = m_hinstance;
 	// 윈도우 아이콘 설정
-	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
-	wc.hIconSm = wc.hIcon;
+	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	// 윈도우 커서 설정
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	// 윈도우 배경색 설정
@@ -236,8 +235,8 @@ void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
 	else
 	{
 		// 창 모드 설정
-		screenWidth = 1920;
-		screenHeight = 1080;
+		screenWidth = 800;
+		screenHeight = 600;
 
 		// 화면의 중앙에 창 배치
 		posX = (GetSystemMetrics(SM_CXSCREEN) - screenWidth) / 2;
@@ -245,8 +244,8 @@ void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
 	}
 
 	// 윈도우 창 생성
-	m_hwnd = CreateWindowEx(WS_EX_APPWINDOW, m_applicationName, m_applicationName,
-		WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP,
+	m_hwnd = CreateWindowEx(0, m_applicationName, m_applicationName,
+		WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_OVERLAPPEDWINDOW,
 		posX, posY, screenWidth, screenHeight, NULL, NULL, m_hinstance, NULL);
 
 	// ShowWindow(): 윈도우를 화면에 표시
@@ -258,17 +257,14 @@ void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
 	// 윈도우에 포커스를 설정하여 키보드 입력 등을 받게 함
 	SetFocus(m_hwnd);
 
-	// 마우스 커서를 화면에서 숨김
-	ShowCursor(false);
+	// 마우스 커서를 화면에서 표시
+	ShowCursor(true);
 
 	return;
 }
 
 void SystemClass::ShutdownWindows()
 {
-	// 마우스 커서 다시 표시
-	ShowCursor(true);
-
 	// 디스플레이 설정 복원
 	if (FULL_SCREEN)
 	{

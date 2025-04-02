@@ -1,6 +1,9 @@
 #pragma once
 #include <windows.h>
 #include "d3dclass.h"
+#include "cameraclass.h"
+#include "modelclass.h"
+#include "colorshaderclass.h"
 
 const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = true;
@@ -20,8 +23,10 @@ public:
 
 private:
 	bool Render();
-	D3DClass* m_Direct3D;
 
-private:
+	D3DClass* m_Direct3D;
+	CameraClass* m_Camera;
+	ModelClass* m_Model;
+	ColorShaderClass* m_ColorShader;
 
 };
