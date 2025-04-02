@@ -144,17 +144,27 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Applicationclass.cpp" />
+    <ClCompile Include="Cameraclass.cpp" />
+    <ClCompile Include="Colorshaderclass.cpp" />
     <ClCompile Include="Inputclass.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Modelclass.cpp" />
     <ClCompile Include="SystemClass.cpp" />
     <ClCompile Include="D3dclass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Applicationclass.h" />
+    <ClInclude Include="Cameraclass.h" />
+    <ClInclude Include="Colorshaderclass.h" />
     <ClInclude Include="Inputclass.h" />
+    <ClInclude Include="Modelclass.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Systemclass.h" />
     <ClInclude Include="D3dclass.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Color.ps" />
+    <None Include="Color.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
