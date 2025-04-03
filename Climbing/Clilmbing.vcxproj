@@ -152,6 +152,8 @@
     <ClCompile Include="Modelclass.cpp" />
     <ClCompile Include="SystemClass.cpp" />
     <ClCompile Include="D3dclass.cpp" />
+    <ClCompile Include="Textureclass.cpp" />
+    <ClCompile Include="Textureshaderclass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Applicationclass.h" />
@@ -162,10 +164,17 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Systemclass.h" />
     <ClInclude Include="D3dclass.h" />
+    <ClInclude Include="Textureclass.h" />
+    <ClInclude Include="Textureshaderclass.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Color.ps" />
     <None Include="Color.vs" />
+    <None Include="Texture.ps" />
+    <None Include="Texture.vs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="stone01.tga" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
