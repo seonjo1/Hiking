@@ -26,56 +26,58 @@ bool TextureClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceC
 	unsigned int rowPitch;
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 
-	// Load the targa image data into memory.
+	// 이미지의 가로 세로 크기와 이미지 저장
 	result = LoadTarga32Bit(filename);
 	if (!result)
 	{
 		return false;
 	}
 
-	// Setup the description of the texture.
+	// 텍스처 디스크립터 설정
 	textureDesc.Height = m_height;
 	textureDesc.Width = m_width;
-	textureDesc.MipLevels = 0;
-	textureDesc.ArraySize = 1;
-	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	textureDesc.SampleDesc.Count = 1;
+	textureDesc.MipLevels = 0; 
+	textureDesc.ArraySize = 1;							// 텍스처 배열의 수
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;	// 32비트 RGBA
+	textureDesc.SampleDesc.Count = 1;					// 멀티 샘플링 x
 	textureDesc.SampleDesc.Quality = 0;
-	textureDesc.Usage = D3D11_USAGE_DEFAULT;
-	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-	textureDesc.CPUAccessFlags = 0;
-	textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;			// Default: GPU에서 읽고 쓰기 (일반적인 상황에 쓰임)
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;  // 텍스처의 바인딩 용도 지정 
+																					// (SHADER_RESOURCE: 셰이더에서 읽을 수 있음)
+																					// (RENDER_TARGET: 렌더 타겟으로도 사용할 수 있음)
+	textureDesc.CPUAccessFlags = 0;						// CPU 접근 불가
+	textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;	// MipMap 생성 가능 플래그
 
-	// Create the empty texture.
+	// 2D 텍스처 생성 (데이터는 mipmap 생성을 위해 나중에 올림)
 	hResult = device->CreateTexture2D(&textureDesc, NULL, &m_texture);
 	if (FAILED(hResult))
 	{
 		return false;
 	}
 
-	// Set the row pitch of the targa image data.
+	// 가로 줄 오프셋
 	rowPitch = (m_width * 4) * sizeof(unsigned char);
 
-	// Copy the targa image data into the texture.
+	// m_texture의 mipmap 0Lv만 m_targaData로 채우기 (가로 길이 rowPitch)
 	deviceContext->UpdateSubresource(m_texture, 0, NULL, m_targaData, rowPitch, 0);
 
-	// Setup the shader resource view description.
+	// srv 설정
 	srvDesc.Format = textureDesc.Format;
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = -1;
+	srvDesc.Texture2D.MostDetailedMip = 0;	// mip Level 0부터 사용
+	srvDesc.Texture2D.MipLevels = -1;		// MipLevels = -1 : 전체 MIP 레벨을 SRV에서 자동으로 인식해서 쓰겠다.
 
-	// Create the shader resource view for the texture.
+	// Shader Resource View (SRV) 생성
 	hResult = device->CreateShaderResourceView(m_texture, &srvDesc, &m_textureView);
 	if (FAILED(hResult))
 	{
 		return false;
 	}
 
-	// Generate mipmaps for this texture.
+	// MIPMAP 자동 생성
 	deviceContext->GenerateMips(m_textureView);
 
-	// Release the targa image data now that the image data has been loaded into the texture.
+	// 리소스 정리
 	delete[] m_targaData;
 	m_targaData = 0;
 
@@ -113,6 +115,7 @@ ID3D11ShaderResourceView* TextureClass::GetTexture()
 	return m_textureView;
 }
 
+// 이미지의 가로, 세로 크기와 데이터 저장
 bool TextureClass::LoadTarga32Bit(char* filename)
 {
 	int error, bpp, imageSize, index, i, j, k;
@@ -122,21 +125,21 @@ bool TextureClass::LoadTarga32Bit(char* filename)
 	unsigned char* targaImage;
 
 
-	// Open the targa file for reading in binary.
+	// 파일 열기
 	error = fopen_s(&filePtr, filename, "rb");
 	if (error != 0)
 	{
 		return false;
 	}
 
-	// Read in the file header.
+	// 파일 헤더 읽기
 	count = (unsigned int)fread(&targaFileHeader, sizeof(TargaHeader), 1, filePtr);
 	if (count != 1)
 	{
 		return false;
 	}
 
-	// Get the important information from the header.
+	// 파일 정보 저장
 	m_height = (int)targaFileHeader.height;
 	m_width = (int)targaFileHeader.width;
 	bpp = (int)targaFileHeader.bpp;
@@ -147,20 +150,20 @@ bool TextureClass::LoadTarga32Bit(char* filename)
 		return false;
 	}
 
-	// Calculate the size of the 32 bit image data.
+	// 이미지 크기
 	imageSize = m_width * m_height * 4;
 
-	// Allocate memory for the targa image data.
+	// 메모리 저장 공간 할당
 	targaImage = new unsigned char[imageSize];
 
-	// Read in the targa image data.
+	// 이미지 데이터 read
 	count = (unsigned int)fread(targaImage, 1, imageSize, filePtr);
 	if (count != imageSize)
 	{
 		return false;
 	}
 
-	// Close the file.
+	// 파일 닫기
 	error = fclose(filePtr);
 	if (error != 0)
 	{
@@ -176,7 +179,7 @@ bool TextureClass::LoadTarga32Bit(char* filename)
 	// Initialize the index into the targa image data.
 	k = (m_width * m_height * 4) - (m_width * 4);
 
-	// Now copy the targa image data into the targa destination array in the correct order since the targa format is stored upside down and also is not in RGBA order.
+	// 헤더를 제외한 데이터 m_targaData에 복사
 	for (j = 0; j < m_height; j++)
 	{
 		for (i = 0; i < m_width; i++)
