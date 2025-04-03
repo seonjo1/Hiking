@@ -29,7 +29,7 @@ bool ModelClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 		return false;
 	}
 
-	// Load the texture for this model.
+	// 텍스쳐 로딩
 	result = LoadTexture(device, deviceContext, textureFilename);
 	if (!result)
 	{
@@ -208,8 +208,7 @@ bool ModelClass::LoadTexture(ID3D11Device* device, ID3D11DeviceContext* deviceCo
 {
 	bool result;
 
-
-	// Create and initialize the texture object.
+	// 텍스처 객체 생성 및 초기화
 	m_Texture = new TextureClass;
 
 	result = m_Texture->Initialize(device, deviceContext, filename);

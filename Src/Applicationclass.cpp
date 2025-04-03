@@ -34,18 +34,15 @@ bool ApplicationClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-	// Create the camera object.
+	// 카메라 생성 및 위치 설정
 	m_Camera = new CameraClass;
-
-	// Set the initial position of the camera.
 	m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
 
-	// Create and initialize the model object.
+	// 모델 생성 및 초기화
 	m_Model = new ModelClass;
 
-	// Set the name of the texture file that we will be loading.
-	strcpy_s(textureFilename, "../Climbing/stone01.tga");
-
+	strcpy_s(textureFilename, "./Resource/stone01.tga");
+	
 	result = m_Model->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), textureFilename);
 	if (!result)
 	{
@@ -53,9 +50,8 @@ bool ApplicationClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-	// Create and initialize the texture shader object.
+	// 셰이더 객체 생성 및 초기화
 	m_TextureShader = new TextureShaderClass;
-
 	result = m_TextureShader->Initialize(m_Direct3D->GetDevice(), hwnd);
 	if (!result)
 	{
