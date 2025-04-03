@@ -57,46 +57,46 @@ void CameraClass::Render()
 	XMMATRIX rotationMatrix;
 
 
-	// Setup the vector that points upwards.
+	// upVector 설정
 	up.x = 0.0f;
 	up.y = 1.0f;
 	up.z = 0.0f;
 
-	// Load it into a XMVECTOR structure.
+	// upVector load
 	upVector = XMLoadFloat3(&up);
 
-	// Setup the position of the camera in the world.
+	// position 설정
 	position.x = m_positionX;
 	position.y = m_positionY;
 	position.z = m_positionZ;
 
-	// Load it into a XMVECTOR structure.
+	// position load
 	positionVector = XMLoadFloat3(&position);
 
-	// Setup where the camera is looking by default.
+	// camera front 설정
 	lookAt.x = 0.0f;
 	lookAt.y = 0.0f;
 	lookAt.z = 1.0f;
 
-	// Load it into a XMVECTOR structure.
+	// camera front load
 	lookAtVector = XMLoadFloat3(&lookAt);
 
-	// Set the yaw (Y axis), pitch (X axis), and roll (Z axis) rotations in radians.
+	// degree인 m_rotation을 Radian으로 변경 (0.0174532925 == pi / 180)
 	pitch = m_rotationX * 0.0174532925f;
 	yaw = m_rotationY * 0.0174532925f;
 	roll = m_rotationZ * 0.0174532925f;
 
-	// Create the rotation matrix from the yaw, pitch, and roll values.
+	// Roll, Pitch, Yaw를 통해 회전 행렬 생성
 	rotationMatrix = XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
 
-	// Transform the lookAt and up vector by the rotation matrix so the view is correctly rotated at the origin.
+	// camera front, up 벡터를 world 좌표계로 변경
 	lookAtVector = XMVector3TransformCoord(lookAtVector, rotationMatrix);
 	upVector = XMVector3TransformCoord(upVector, rotationMatrix);
 
-	// Translate the rotated camera position to the location of the viewer.
+	// lookAtVector: 카메라가 실제 바라보는 절대 위치
 	lookAtVector = XMVectorAdd(positionVector, lookAtVector);
 
-	// Finally create the view matrix from the three updated vectors.
+	// View Matrix 생성
 	m_viewMatrix = XMMatrixLookAtLH(positionVector, lookAtVector, upVector);
 
 	return;

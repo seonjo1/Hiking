@@ -121,21 +121,21 @@ bool ApplicationClass::Render()
 	bool result;
 
 
-	// Clear the buffers to begin the scene.
+	// 백 버퍼 클리어
 	m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// Generate the view matrix based on the camera's position.
+	// view Matrix 업데이트
 	m_Camera->Render();
 
-	// Get the world, view, and projection matrices from the camera and d3d objects.
+	// MVP 변환 준비
 	m_Direct3D->GetWorldMatrix(worldMatrix);
 	m_Camera->GetViewMatrix(viewMatrix);
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 
-	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
+	// 모델 버텍스, 인덱스 프리미티브 바인딩
 	m_Model->Render(m_Direct3D->GetDeviceContext());
 
-	// Render the model using the color shader.
+	// 컬러 셰이더를 통해 렌더링
 	result = m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix);
 	if (!result)
 	{

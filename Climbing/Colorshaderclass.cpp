@@ -8,11 +8,9 @@ ColorShaderClass::ColorShaderClass()
 	m_matrixBuffer = 0;
 }
 
-
 ColorShaderClass::ColorShaderClass(const ColorShaderClass& other)
 {
 }
-
 
 ColorShaderClass::~ColorShaderClass()
 {
@@ -62,15 +60,14 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 {
 	bool result;
 
-
-	// Set the shader parameters that it will use for rendering.
+	// 셰이더에 상수 버퍼 바인딩
 	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix);
 	if (!result)
 	{
 		return false;
 	}
 
-	// Now render the prepared buffers with the shader.
+	// 렌더링
 	RenderShader(deviceContext, indexCount);
 
 	return true;
@@ -272,33 +269,38 @@ bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, X
 	MatrixBufferType* dataPtr;
 	unsigned int bufferNumber;
 
-	// Transpose the matrices to prepare them for the shader.
+	// DirectXMath는 행우선 행렬이지만 HLSL에서 열우선 행렬이기 떄문에 전치
 	worldMatrix = XMMatrixTranspose(worldMatrix);
 	viewMatrix = XMMatrixTranspose(viewMatrix);
 	projectionMatrix = XMMatrixTranspose(projectionMatrix);
 
-	// Lock the constant buffer so it can be written to.
+	// GPU에 있는 상수 버퍼를 mappedResource와 매핑 (Staging Buffer 생성 => pData)
 	result = deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
 	}
 
-	// Get a pointer to the data in the constant buffer.
+	// pData: GPU 버퍼에 매핑된 CPU의 메모리 공간(staging buffer)
 	dataPtr = (MatrixBufferType*)mappedResource.pData;
 
-	// Copy the matrices into the constant buffer.
+	// 값 복사
 	dataPtr->world = worldMatrix;
 	dataPtr->view = viewMatrix;
 	dataPtr->projection = projectionMatrix;
 
-	// Unlock the constant buffer.
+	// CPU pData에 저장해놓은 값을 GPU 메모리에 복사 (staging buffer -> GPU VRAM으로 복사)
 	deviceContext->Unmap(m_matrixBuffer, 0);
 
-	// Set the position of the constant buffer in the vertex shader.
+	// 버퍼 슬롯 인덱스
 	bufferNumber = 0;
 
-	// Finanly set the constant buffer in the vertex shader with the updated values.
+	/*
+		vertex shader에 상수 버퍼 바인딩
+			bufferNumber : 바인딩할 슬롯
+			NumBuffers	 : 바인딩할 버퍼 개수
+	*/ 
+	
 	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
 
 	return true;
@@ -306,14 +308,14 @@ bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, X
 
 void ColorShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
 {
-	// Set the vertex input layout.
+	// vertex 레이아웃 입력
 	deviceContext->IASetInputLayout(m_layout);
 
-	// Set the vertex and pixel shaders that will be used to render this triangle.
+	// Vertex Shader와 Pixel Shader를 파이프라인에 연결
 	deviceContext->VSSetShader(m_vertexShader, NULL, 0);
 	deviceContext->PSSetShader(m_pixelShader, NULL, 0);
 
-	// Render the triangle.
+	// Draw 호출 
 	deviceContext->DrawIndexed(indexCount, 0, 0);
 
 	return;
