@@ -41,7 +41,7 @@ bool ApplicationClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	// 모델 생성 및 초기화
 	m_Model = new ModelClass;
 
-	strcpy_s(textureFilename, "../../Resource/stone01.tga");
+	strcpy_s(textureFilename, "../../Resource/texture.png");
 	
 	result = m_Model->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), textureFilename);
 	if (!result)

@@ -4,20 +4,12 @@
 #include <iostream>
 #include <DirectXTex.h>
 
+#include "Common.h"
+
 using namespace DirectX;
 
 class TextureClass
 {
-private:
-	struct TargaHeader
-	{
-		unsigned char data1[12];
-		unsigned short width;
-		unsigned short height;
-		unsigned char bpp;
-		unsigned char data2;
-	};
-
 public:
 	TextureClass();
 	TextureClass(const TextureClass&);
@@ -32,10 +24,6 @@ public:
 	int GetHeight();
 
 private:
-	bool LoadTarga32Bit(char*);
-
-private:
-	unsigned char* m_targaData;
 	ID3D11Texture2D* m_texture;
 	ID3D11ShaderResourceView* m_textureView;
 	int m_width, m_height;
