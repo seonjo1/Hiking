@@ -16,7 +16,6 @@ ExternalProject_Add(
     PATCH_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_DIR}
-        -DGLAD_INSTALL=ON
     TEST_COMMAND ""
 )
 set(DEP_LIST ${DEP_LIST} dep_DirectXTex)

@@ -29,14 +29,14 @@ bool TextureShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	int error;
 
 	// Set the filename of the vertex shader.
-	error = wcscpy_s(vsFilename, 128, L"./Shaders/texture.vs");
+	error = wcscpy_s(vsFilename, 128, L"../../Shaders/texture.vs");
 	if (error != 0)
 	{
 		return false;
 	}
 
 	// Set the filename of the pixel shader.
-	error = wcscpy_s(psFilename, 128, L"./Shaders/texture.ps");
+	error = wcscpy_s(psFilename, 128, L"../../Shaders/texture.ps");
 	if (error != 0)
 	{
 		return false;

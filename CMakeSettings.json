@@ -7,9 +7,12 @@
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${projectDir}\\build\\${name}",
       "installRoot": "${projectDir}\\install\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "",
-      "ctestCommandArgs": ""
+      "variables": [
+        {
+          "name": "CMAKE_CXX_STANDARD",
+          "value": "17"
+        }
+      ]
     },
     {
       "name": "x64-Release",

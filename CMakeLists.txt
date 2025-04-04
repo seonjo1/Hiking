@@ -13,13 +13,6 @@ file(GLOB_RECURSE SOURCES
 # 실행 파일 생성
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-# 실행 파일 CMAKE_SOURCE_DIR로 이동
-add_custom_command(TARGET Hiking POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    "$<TARGET_FILE:Hiking>"
-    "${CMAKE_SOURCE_DIR}/Hiking.exe"
-)
-
 include(Dependency.cmake)
 
 # 우리 프로젝트에 include / lib 관련 옵션 추가
