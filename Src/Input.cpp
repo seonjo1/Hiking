@@ -1,22 +1,22 @@
-#include "inputclass.h"
+#include "input.h"
 
 
-InputClass::InputClass()
+Input::Input()
 {
 }
 
 
-InputClass::InputClass(const InputClass& other)
+Input::Input(const Input& other)
 {
 }
 
 
-InputClass::~InputClass()
+Input::~Input()
 {
 }
 
 
-void InputClass::Initialize()
+void Input::Initialize()
 {
 	int i;
 
@@ -31,7 +31,7 @@ void InputClass::Initialize()
 }
 
 
-void InputClass::KeyDown(unsigned int input)
+void Input::KeyDown(unsigned int input)
 {
 	// If a key is pressed then save that state in the key array.
 	m_keys[input] = true;
@@ -39,7 +39,7 @@ void InputClass::KeyDown(unsigned int input)
 }
 
 
-void InputClass::KeyUp(unsigned int input)
+void Input::KeyUp(unsigned int input)
 {
 	// If a key is released then clear that state in the key array.
 	m_keys[input] = false;
@@ -47,7 +47,7 @@ void InputClass::KeyUp(unsigned int input)
 }
 
 
-bool InputClass::IsKeyDown(unsigned int key)
+bool Input::IsKeyDown(unsigned int key)
 {
 	// Return what state the key is in (pressed/not pressed).
 	return m_keys[key];

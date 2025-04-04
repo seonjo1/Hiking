@@ -1,6 +1,6 @@
-#include "applicationclass.h"
+#include "application.h"
 
-ApplicationClass::ApplicationClass()
+Application::Application()
 {
 	m_Direct3D = 0;
 	m_Camera = 0;
@@ -9,23 +9,23 @@ ApplicationClass::ApplicationClass()
 }
 
 
-ApplicationClass::ApplicationClass(const ApplicationClass& other)
+Application::Application(const Application& other)
 {
 }
 
 
-ApplicationClass::~ApplicationClass()
+Application::~Application()
 {
 }
 
 
-bool ApplicationClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
+bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 {
 	char textureFilename[128];
 	bool result;
 
 	// Create and initialize the Direct3D object.
-	m_Direct3D = new D3DClass();
+	m_Direct3D = new D3D();
 
 	result = m_Direct3D->Initialize(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
 	if (!result)
@@ -35,11 +35,11 @@ bool ApplicationClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// 카메라 생성 및 위치 설정
-	m_Camera = new CameraClass;
+	m_Camera = new Camera;
 	m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
 
 	// 모델 생성 및 초기화
-	m_Model = new ModelClass;
+	m_Model = new Model;
 
 	strcpy_s(textureFilename, "../../Resource/texture.png");
 	
@@ -51,7 +51,7 @@ bool ApplicationClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// 셰이더 객체 생성 및 초기화
-	m_TextureShader = new TextureShaderClass;
+	m_TextureShader = new TextureShader;
 	result = m_TextureShader->Initialize(m_Direct3D->GetDevice(), hwnd);
 	if (!result)
 	{
@@ -63,7 +63,7 @@ bool ApplicationClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 }
 
 
-void ApplicationClass::Shutdown()
+void Application::Shutdown()
 {
 	// Release the texture shader object.
 	if (m_TextureShader)
@@ -99,7 +99,7 @@ void ApplicationClass::Shutdown()
 }
 
 
-bool ApplicationClass::Frame()
+bool Application::Frame()
 {
 	bool result;
 
@@ -114,7 +114,7 @@ bool ApplicationClass::Frame()
 }
 
 
-bool ApplicationClass::Render()
+bool Application::Render()
 {
 
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;

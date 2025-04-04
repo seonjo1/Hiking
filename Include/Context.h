@@ -7,19 +7,19 @@ Windows API header
 #define WIN32_LEAN_AND_MEAN
 
 #include <windows.h>
-#include "inputclass.h"
-#include "applicationclass.h"
+#include "input.h"
+#include "application.h"
 
 /*
 애플리케이션의 메인 시스템을 담당하는 클래스
 윈도우 초기화, 메시지 처리, 프레임 관리, 애플리케이션 실행 등의 기능 제공
 */
-class SystemClass
+class Context
 {
 public:
-	SystemClass();
-	SystemClass(const SystemClass& other);
-	~SystemClass();
+	Context();
+	Context(const Context& other);
+	~Context();
 
 	// 시스템 초기화 함수 (윈도우 초기화, 입력 처리, 애플리케이션 클래스 초기화)
 	bool Initialize();
@@ -54,10 +54,10 @@ private:
 	HWND m_hwnd;
 
 	// 입력 처리 클래스
-	InputClass* m_Input;
+	Input* m_Input;
 
 	// 애플리케이션 클래스
-	ApplicationClass* m_Application;
+	Application* m_Application;
 };
 
 /*
@@ -67,7 +67,7 @@ private:
 static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
 /*
-SystemClass의 포인터
+ContextClass의 포인터
 전역적으로 애플리케이션의 인스턴스 참조 가능
 */
-static SystemClass* ApplicationHandle = 0;
+static Context* ApplicationHandle = 0;

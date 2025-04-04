@@ -4,14 +4,14 @@
 #include <directxmath.h>
 using namespace DirectX;
 
-#include "textureclass.h"
+#include "texture.h"
 
-class ModelClass
+class Model
 {
 public:
-	ModelClass();
-	ModelClass(const ModelClass&);
-	~ModelClass();
+	Model();
+	Model(const Model&);
+	~Model();
 	bool Initialize(ID3D11Device*, ID3D11DeviceContext*, char*);
 	void Shutdown();
 	void Render(ID3D11DeviceContext*);
@@ -42,5 +42,5 @@ private:
 	int m_vertexCount;
 	int m_indexCount;
 
-	TextureClass* m_Texture;
+	Texture* m_Texture;
 };

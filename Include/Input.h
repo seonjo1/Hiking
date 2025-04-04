@@ -1,11 +1,11 @@
 #pragma once
 
-class InputClass
+class Input
 {
 public:
-	InputClass();
-	InputClass(const InputClass&);
-	~InputClass();
+	Input();
+	Input(const Input&);
+	~Input();
 
 	void Initialize();
 

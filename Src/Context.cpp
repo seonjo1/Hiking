@@ -1,24 +1,20 @@
-#include "systemclass.h"
+#include "Context.h"
 
-
-SystemClass::SystemClass()
+Context::Context()
 {
 	m_Input = 0;
 	m_Application = 0;
 }
 
-
-SystemClass::SystemClass(const SystemClass& other)
+Context::Context(const Context& other)
 {
 }
 
-
-SystemClass::~SystemClass()
+Context::~Context()
 {
 }
 
-
-bool SystemClass::Initialize()
+bool Context::Initialize()
 {
 	int screenWidth, screenHeight;
 	bool result;
@@ -32,12 +28,12 @@ bool SystemClass::Initialize()
 	InitializeWindows(screenWidth, screenHeight);
 
 	// Create and initialize the input object.  This object will be used to handle reading the keyboard input from the user.
-	m_Input = new InputClass;
+	m_Input = new Input;
 
 	m_Input->Initialize();
 
 	// Create and initialize the application class object.  This object will handle rendering all the graphics for this application.
-	m_Application = new ApplicationClass;
+	m_Application = new Application;
 
 	result = m_Application->Initialize(screenWidth, screenHeight, m_hwnd);
 	if(!result)
@@ -49,7 +45,7 @@ bool SystemClass::Initialize()
 }
 
 
-void SystemClass::Shutdown()
+void Context::Shutdown()
 {
 	// Release the application class object.
 	if(m_Application)
@@ -73,7 +69,7 @@ void SystemClass::Shutdown()
 }
 
 
-void SystemClass::Run()
+void Context::Run()
 {
 	MSG msg;
 	bool done, result;
@@ -118,7 +114,7 @@ void SystemClass::Run()
 	return;
 }
 
-bool SystemClass::Frame()
+bool Context::Frame()
 {
 	bool result;
 
@@ -139,7 +135,7 @@ bool SystemClass::Frame()
 }
 
 
-LRESULT CALLBACK SystemClass::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
+LRESULT CALLBACK Context::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 {
 	/*
 	hwnd: 윈도우 창의 핸들
@@ -174,13 +170,13 @@ LRESULT CALLBACK SystemClass::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam
 }
 
 
-void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
+void Context::InitializeWindows(int& screenWidth, int& screenHeight)
 {
 	WNDCLASSEX wc;
 	int posX, posY;
 
 
-	// 애플리케이션 핸들 설정 (SystemClass pointer)
+	// 애플리케이션 핸들 설정 (ContextClass pointer)
 	ApplicationHandle = this;
 
 	// 현재 애플리케이션의 인스턴스 핸들 저장
@@ -272,7 +268,7 @@ void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
 }
 
 
-void SystemClass::ShutdownWindows()
+void Context::ShutdownWindows()
 {
 	// 디스플레이 설정 복원
 	if (FULL_SCREEN)

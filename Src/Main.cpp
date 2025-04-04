@@ -1,25 +1,25 @@
-﻿#include "systemclass.h"
+﻿#include "Context.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
 {
-	SystemClass* System;
+	Context* context;
 	bool result;
 
 
 	// Create the system object.
-	System = new SystemClass();
+	context = new Context();
 
 	// Initialize and run the system object.
-	result = System->Initialize();
+	result = context->Initialize();
 	if (result)
 	{
-		System->Run();
+		context->Run();
 	}
 
 	// Shutdown and release the system object.
-	System->Shutdown();
-	delete System;
-	System = 0;
+	context->Shutdown();
+	delete context;
+	context = 0;
 
 	return 0;
 }

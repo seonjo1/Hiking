@@ -1,22 +1,22 @@
-#include "textureclass.h"
+#include "texture.h"
 
-TextureClass::TextureClass()
+Texture::Texture()
 {
 	m_texture = 0;
 	m_textureView = 0;
 }
 
 
-TextureClass::TextureClass(const TextureClass& other)
+Texture::Texture(const Texture& other)
 {
 }
 
 
-TextureClass::~TextureClass()
+Texture::~Texture()
 {
 }
 
-bool TextureClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* filename)
+bool Texture::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* filename)
 {
 	std::wstring filepath = ConvertToWString(filename);
 
@@ -81,7 +81,7 @@ bool TextureClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceC
 	return true;
 }
 
-void TextureClass::Shutdown()
+void Texture::Shutdown()
 {
 	// Release the texture view resource.
 	if (m_textureView)
@@ -100,18 +100,18 @@ void TextureClass::Shutdown()
 	return;
 }
 
-ID3D11ShaderResourceView* TextureClass::GetTexture()
+ID3D11ShaderResourceView* Texture::GetTexture()
 {
 	return m_textureView;
 }
 
-int TextureClass::GetWidth()
+int Texture::GetWidth()
 {
 	return m_width;
 }
 
 
-int TextureClass::GetHeight()
+int Texture::GetHeight()
 {
 	return m_height;
 }

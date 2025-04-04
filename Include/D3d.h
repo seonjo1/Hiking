@@ -1,10 +1,5 @@
 #pragma once
 
-// 라이브러리 링킹
-#pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "d3dcompiler.lib")
-
 // Direct3D 11 API를 쓸 수 있게 해주는 헤더
 #include <d3d11.h>
 // DirectX 수학 라이브러리
@@ -12,12 +7,12 @@
 
 using namespace DirectX;
 
-class D3DClass
+class D3D
 {
 public:
-	D3DClass();
-	D3DClass(const D3DClass& other);
-	~D3DClass();
+	D3D();
+	D3D(const D3D& other);
+	~D3D();
 
 	bool Initialize(int , int, bool, HWND, bool, float, float);
 	void Shutdown();

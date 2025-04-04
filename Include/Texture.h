@@ -8,12 +8,12 @@
 
 using namespace DirectX;
 
-class TextureClass
+class Texture
 {
 public:
-	TextureClass();
-	TextureClass(const TextureClass&);
-	~TextureClass();
+	Texture();
+	Texture(const Texture&);
+	~Texture();
 
 	bool Initialize(ID3D11Device*, ID3D11DeviceContext*, char*);
 	void Shutdown();

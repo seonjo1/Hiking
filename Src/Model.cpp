@@ -1,6 +1,6 @@
-#include "modelclass.h"
+#include "model.h"
 
-ModelClass::ModelClass()
+Model::Model()
 {
 	m_vertexBuffer = 0;
 	m_indexBuffer = 0;
@@ -8,17 +8,17 @@ ModelClass::ModelClass()
 }
 
 
-ModelClass::ModelClass(const ModelClass& other)
+Model::Model(const Model& other)
 {
 }
 
 
-ModelClass::~ModelClass()
+Model::~Model()
 {
 }
 
 // 모델 초기화
-bool ModelClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* textureFilename)
+bool Model::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* textureFilename)
 {
 	bool result;
 
@@ -39,7 +39,7 @@ bool ModelClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 	return true;
 }
 
-void ModelClass::Shutdown()
+void Model::Shutdown()
 {
 	// Release the model texture.
 	ReleaseTexture();
@@ -50,7 +50,7 @@ void ModelClass::Shutdown()
 	return;
 }
 
-void ModelClass::Render(ID3D11DeviceContext* deviceContext)
+void Model::Render(ID3D11DeviceContext* deviceContext)
 {
 	// Put the vertex and index buffers on the graphics pipeline to prepare them for drawing.
 	RenderBuffers(deviceContext);
@@ -58,17 +58,17 @@ void ModelClass::Render(ID3D11DeviceContext* deviceContext)
 	return;
 }
 
-int ModelClass::GetIndexCount()
+int Model::GetIndexCount()
 {
 	return m_indexCount;
 }
 
-ID3D11ShaderResourceView* ModelClass::GetTexture()
+ID3D11ShaderResourceView* Model::GetTexture()
 {
 	return m_Texture->GetTexture();
 }
 
-bool ModelClass::InitializeBuffers(ID3D11Device* device)
+bool Model::InitializeBuffers(ID3D11Device* device)
 {
 	VertexType* vertices;
 	unsigned long* indices;
@@ -163,7 +163,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	return true;
 }
 
-void ModelClass::ShutdownBuffers()
+void Model::ShutdownBuffers()
 {
 	// Release the index buffer.
 	if (m_indexBuffer)
@@ -182,7 +182,7 @@ void ModelClass::ShutdownBuffers()
 	return;
 }
 
-void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
+void Model::RenderBuffers(ID3D11DeviceContext* deviceContext)
 {
 	unsigned int stride;
 	unsigned int offset;
@@ -204,12 +204,12 @@ void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 	return;
 }
 
-bool ModelClass::LoadTexture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* filename)
+bool Model::LoadTexture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* filename)
 {
 	bool result;
 
 	// 텍스처 객체 생성 및 초기화
-	m_Texture = new TextureClass;
+	m_Texture = new Texture;
 
 	result = m_Texture->Initialize(device, deviceContext, filename);
 	if (!result)
@@ -220,7 +220,7 @@ bool ModelClass::LoadTexture(ID3D11Device* device, ID3D11DeviceContext* deviceCo
 	return true;
 }
 
-void ModelClass::ReleaseTexture()
+void Model::ReleaseTexture()
 {
 	// Release the texture object.
 	if (m_Texture)

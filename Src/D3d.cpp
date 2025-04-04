@@ -1,6 +1,6 @@
-#include "d3dclass.h"
+#include "d3d.h"
 
-D3DClass::D3DClass()
+D3D::D3D()
 {
 	m_swapChain = 0;
 	m_device = 0;
@@ -12,15 +12,15 @@ D3DClass::D3DClass()
 	m_rasterState = 0;
 }
 
-D3DClass::D3DClass(const D3DClass &other)
+D3D::D3D(const D3D &other)
 {
 }
 
-D3DClass::~D3DClass()
+D3D::~D3D()
 {
 }
 
-bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, bool fullscreen, float screenDepth,
+bool D3D::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, bool fullscreen, float screenDepth,
 						  float screenNear)
 {
 	HRESULT result;
@@ -385,7 +385,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	return true;
 }
 
-void D3DClass::Shutdown()
+void D3D::Shutdown()
 {
 	// 스왑 체인 전체 화면 해제
 	if (m_swapChain)
@@ -452,7 +452,7 @@ void D3DClass::Shutdown()
 	return;
 }
 
-void D3DClass::BeginScene(float red, float green, float blue, float alpha)
+void D3D::BeginScene(float red, float green, float blue, float alpha)
 {
 	float color[4];
 
@@ -471,7 +471,7 @@ void D3DClass::BeginScene(float red, float green, float blue, float alpha)
 	return;
 }
 
-void D3DClass::EndScene()
+void D3D::EndScene()
 {
 	if (m_vsync_enabled)
 	{
@@ -490,42 +490,42 @@ void D3DClass::EndScene()
 	return;
 }
 
-ID3D11Device *D3DClass::GetDevice()
+ID3D11Device *D3D::GetDevice()
 {
 	return m_device;
 }
 
-ID3D11DeviceContext *D3DClass::GetDeviceContext()
+ID3D11DeviceContext *D3D::GetDeviceContext()
 {
 	return m_deviceContext;
 }
 
-void D3DClass::GetProjectionMatrix(XMMATRIX &projectionMatrix)
+void D3D::GetProjectionMatrix(XMMATRIX &projectionMatrix)
 {
 	projectionMatrix = m_projectionMatrix;
 	return;
 }
 
-void D3DClass::GetWorldMatrix(XMMATRIX &worldMatrix)
+void D3D::GetWorldMatrix(XMMATRIX &worldMatrix)
 {
 	worldMatrix = m_worldMatrix;
 	return;
 }
 
-void D3DClass::GetOrthoMatrix(XMMATRIX &orthoMatrix)
+void D3D::GetOrthoMatrix(XMMATRIX &orthoMatrix)
 {
 	orthoMatrix = m_orthoMatrix;
 	return;
 }
 
-void D3DClass::GetVideoCardInfo(char *cardName, int &memory)
+void D3D::GetVideoCardInfo(char *cardName, int &memory)
 {
 	strcpy_s(cardName, 128, m_videoCardDescription);
 	memory = m_videoCardMemory;
 	return;
 }
 
-void D3DClass::SetBackBufferRenderTarget()
+void D3D::SetBackBufferRenderTarget()
 {
 	// Bind the render target view and depth stencil buffer to the output render pipeline.
 	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
@@ -533,7 +533,7 @@ void D3DClass::SetBackBufferRenderTarget()
 	return;
 }
 
-void D3DClass::ResetViewport()
+void D3D::ResetViewport()
 {
 	// Set the viewport.
 	m_deviceContext->RSSetViewports(1, &m_viewport);
