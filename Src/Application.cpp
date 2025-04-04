@@ -21,12 +21,10 @@ Application::~Application()
 
 bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 {
-	char textureFilename[128];
-	bool result;
-
 	// Create and initialize the Direct3D object.
 	m_Direct3D = new D3D();
 
+	bool result;
 	result = m_Direct3D->Initialize(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
 	if (!result)
 	{
@@ -36,15 +34,13 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// 카메라 생성 및 위치 설정
 	m_Camera = new Camera;
-	m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
+	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
 
 	// 모델 생성 및 초기화
-	m_Model = new Model;
-
-	strcpy_s(textureFilename, "./Assets/texture.png");
+	std::string filename("./Asset/backpack/backpack.obj");
 	
-	result = m_Model->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), textureFilename);
-	if (!result)
+	m_Model = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
+	if (!m_Model)
 	{
 		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
 		return false;
@@ -116,10 +112,7 @@ bool Application::Frame()
 
 bool Application::Render()
 {
-
-	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	bool result;
-
+	Matrix matrix;
 
 	// 백 버퍼 클리어
 	m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
@@ -128,19 +121,12 @@ bool Application::Render()
 	m_Camera->Render();
 
 	// MVP 변환 준비
-	m_Direct3D->GetWorldMatrix(worldMatrix);
-	m_Camera->GetViewMatrix(viewMatrix);
-	m_Direct3D->GetProjectionMatrix(projectionMatrix);
+	m_Camera->GetViewMatrix(matrix.view);
+	m_Direct3D->GetProjectionMatrix(matrix.projection);
 
 	// 모델 버텍스, 인덱스 프리미티브 바인딩
-	m_Model->Render(m_Direct3D->GetDeviceContext());
-
-	// Render the model using the texture shader.
-	result = m_TextureShader->Render(m_Direct3D->GetDeviceContext(), m_Model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix, m_Model->GetTexture());
-	if (!result)
-	{
+	if (m_Model->Draw(m_Direct3D->GetDeviceContext(), m_TextureShader, matrix) == false)
 		return false;
-	}
 
 	// Present the rendered scene to the screen.
 	m_Direct3D->EndScene();

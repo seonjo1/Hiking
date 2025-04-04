@@ -6,6 +6,20 @@ Texture::Texture()
 	m_textureView = 0;
 }
 
+Texture::Texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, aiMaterial* materialInfo, std::string& dirname)
+{
+	if (materialInfo->GetTextureCount(aiTextureType_DIFFUSE) <= 0) {
+		m_texture = 0;
+		m_textureView = 0;
+	}
+	else {
+		aiString filepath;
+		materialInfo->GetTexture(aiTextureType_DIFFUSE, 0, &filepath);
+		std::filesystem::path fullPath = std::filesystem::path(dirname) / filepath.C_Str();
+		Initialize(device, deviceContext, fullPath.string());
+	}
+}
+
 
 Texture::Texture(const Texture& other)
 {
@@ -16,9 +30,9 @@ Texture::~Texture()
 {
 }
 
-bool Texture::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* filename)
+bool Texture::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::string filename)
 {
-	std::wstring filepath = ConvertToWString(filename);
+	std::wstring filepath = ConvertToWString(filename.c_str());
 
 	TexMetadata metadata = {};
 	ScratchImage image;

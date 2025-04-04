@@ -1,46 +1,44 @@
 #pragma once
 
-#include <d3d11.h>
-#include <directxmath.h>
-using namespace DirectX;
+#include "mesh.h"
 
-#include "texture.h"
+class TextureShader;
+
+struct Matrix
+{
+	XMMATRIX world;
+	XMMATRIX view;
+	XMMATRIX projection;
+};
 
 class Model
 {
 public:
 	Model();
+	Model(ID3D11Device*, ID3D11DeviceContext*, std::string);
 	Model(const Model&);
 	~Model();
-	bool Initialize(ID3D11Device*, ID3D11DeviceContext*, char*);
+
+	void LoadByAssimp(ID3D11Device*, ID3D11DeviceContext*, std::string filename);	
+	void processNode(ID3D11Device*, ID3D11DeviceContext*, aiNode*, const aiScene*);
+	void processMesh(ID3D11Device*, ID3D11DeviceContext*, aiMesh*, const aiScene*);
+
+	bool Draw(ID3D11DeviceContext*, TextureShader*, Matrix&);
 	void Shutdown();
-	void Render(ID3D11DeviceContext*);
-
-	int GetIndexCount();
-
-	ID3D11ShaderResourceView* GetTexture();
+	XMMATRIX getWorldMatrix();
+	void setPosition(XMFLOAT3);
+	void setRotation(XMFLOAT3);
 
 private:
-	struct VertexType
-	{
-		XMFLOAT3 position;
-		XMFLOAT2 texture;
-	};
-
-	bool InitializeBuffers(ID3D11Device*);
-	void ShutdownBuffers();
-	void RenderBuffers(ID3D11DeviceContext*);
-
-	bool LoadTexture(ID3D11Device*, ID3D11DeviceContext*, char*);
-	void ReleaseTexture();
+	void ReleaseTextures();
+	void ReleaseMeshes();
 	
-	// Vertex Buffer, Index Buffer
-	ID3D11Buffer* m_vertexBuffer;
-	ID3D11Buffer* m_indexBuffer;
-	
-	// Vertex, Index °³¼ö
-	int m_vertexCount;
-	int m_indexCount;
+	XMFLOAT3 m_position;
+	XMFLOAT3 m_rotation;
+	XMFLOAT3 m_scale;
 
-	Texture* m_Texture;
+	std::vector<Mesh*> m_meshes;
+	std::vector<Texture*> m_textures;
+
+	UINT m_size;
 };

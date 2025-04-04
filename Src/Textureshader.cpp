@@ -60,14 +60,11 @@ void TextureShader::Shutdown()
 	return;
 }
 
-bool TextureShader::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture)
+bool TextureShader::Render(ID3D11DeviceContext* deviceContext, int indexCount, Matrix& matrix, ID3D11ShaderResourceView* texture)
 {
 	bool result;
-
-
 	// Set the shader parameters that it will use for rendering.
-	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture);
+	result = SetShaderParameters(deviceContext, matrix, texture);
 	if (!result)
 	{
 		return false;
@@ -298,19 +295,17 @@ void TextureShader::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd
 	return;
 }
 
-bool TextureShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture)
+bool TextureShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, Matrix& matrix, ID3D11ShaderResourceView* texture)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBufferType* dataPtr;
 	unsigned int bufferNumber;
 
-
 	// Transpose the matrices to prepare them for the shader.
-	worldMatrix = XMMatrixTranspose(worldMatrix);
-	viewMatrix = XMMatrixTranspose(viewMatrix);
-	projectionMatrix = XMMatrixTranspose(projectionMatrix);
+	matrix.world = XMMatrixTranspose(matrix.world);
+	matrix.view = XMMatrixTranspose(matrix.view);
+	matrix.projection = XMMatrixTranspose(matrix.projection);
 
 	// Lock the constant buffer so it can be written to.
 	result = deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -323,9 +318,9 @@ bool TextureShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMA
 	dataPtr = (MatrixBufferType*)mappedResource.pData;
 
 	// Copy the matrices into the constant buffer.
-	dataPtr->world = worldMatrix;
-	dataPtr->view = viewMatrix;
-	dataPtr->projection = projectionMatrix;
+	dataPtr->world = matrix.world;
+	dataPtr->view = matrix.view;
+	dataPtr->projection = matrix.projection;
 
 	// Unlock the constant buffer.
 	deviceContext->Unmap(m_matrixBuffer, 0);

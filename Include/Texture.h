@@ -1,8 +1,15 @@
 #pragma once
 
 #include <d3d11.h>
+#include <directxmath.h>
+#include <directXTex.h>
+#include <vector>
 #include <iostream>
-#include <DirectXTex.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+#include <filesystem>
 
 #include "Common.h"
 
@@ -13,9 +20,11 @@ class Texture
 public:
 	Texture();
 	Texture(const Texture&);
+	Texture(ID3D11Device*, ID3D11DeviceContext*, aiMaterial*, std::string&);
+
 	~Texture();
 
-	bool Initialize(ID3D11Device*, ID3D11DeviceContext*, char*);
+	bool Initialize(ID3D11Device*, ID3D11DeviceContext*, std::string);
 	void Shutdown();
 
 	ID3D11ShaderResourceView* GetTexture();

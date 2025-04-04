@@ -1,234 +1,170 @@
 #include "model.h"
+#include "TextureShader.h"
 
 Model::Model()
 {
-	m_vertexBuffer = 0;
-	m_indexBuffer = 0;
-	m_Texture = 0;
+	m_position = { 0, 0, 0 };
+	m_rotation = { 0, 0, 0 };
+	m_scale = { 0, 0, 0 };
+	m_size = 0;
 }
 
+Model::Model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::string filename)
+{
+	m_position = { 0, 0, 0 };
+	m_rotation = { 0, 0, 0 };
+	m_scale = { 0, 0, 0 };
+	LoadByAssimp(device, deviceContext, filename);
+}
 
 Model::Model(const Model& other)
 {
 }
 
-
 Model::~Model()
 {
 }
 
-// 모델 초기화
-bool Model::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* textureFilename)
+void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::string filename)
 {
-	bool result;
+	Assimp::Importer importer;
+	// scene 구조체 받아오기
+	const aiScene* scene = importer.ReadFile(filename, aiProcess_Triangulate | aiProcess_FlipUVs);
+	std::string dirname = filename.substr(0, filename.find_last_of("/"));
 
-	// 버퍼 초기화
-	result = InitializeBuffers(device);
-	if (!result)
+	// scene load 오류 처리
+	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
-		return false;
+		throw std::runtime_error("failed to load obj file!");
 	}
 
-	// 텍스쳐 로딩
-	result = LoadTexture(device, deviceContext, textureFilename);
-	if (!result)
+	// scene 안에있는 material 개수만큼 반복
+	for (uint32_t i = 0; i < scene->mNumMaterials; i++)
 	{
-		return false;
+		// scene의 i번째 material 정보 get
+		aiMaterial* materialInfo = scene->mMaterials[i];
+		m_textures.push_back(new Texture(device, deviceContext, materialInfo, dirname));
 	}
 
-	return true;
+	// node 데이터 처리
+	processNode(device, deviceContext, scene->mRootNode, scene);
+
+	m_size = m_meshes.size();
+}
+
+
+void Model::processNode(ID3D11Device* device, ID3D11DeviceContext* deviceContext, aiNode* node, const aiScene* scene)
+{
+	// node에 포함된 mesh들 순회
+	for (uint32_t i = 0; i < node->mNumMeshes; i++)
+	{
+		// 현재 처리할 mesh 찾기
+		uint32_t meshIndex = node->mMeshes[i];
+		aiMesh* mesh = scene->mMeshes[meshIndex];
+		// 현재 mesh 데이터 처리
+		processMesh(device, deviceContext, mesh, scene);
+	}
+
+	// 자식 노드 처리
+	for (uint32_t i = 0; i < node->mNumChildren; i++)
+		processNode(device, deviceContext, node->mChildren[i], scene);
+}
+
+void Model::processMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, aiMesh* mesh, const aiScene* scene)
+{
+	std::vector<VertexType> vertices;
+	vertices.resize(mesh->mNumVertices);
+	for (uint32_t i = 0; i < mesh->mNumVertices; i++)
+	{
+		VertexType& v = vertices[i];
+		v.position = XMFLOAT3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+		//v.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+		v.texture = XMFLOAT2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+	}
+
+	std::vector<uint32_t> indices;
+	indices.resize(mesh->mNumFaces * 3);
+	// face의 개수 = triangle 개수
+	for (uint32_t i = 0; i < mesh->mNumFaces; i++)
+	{
+		indices[3 * i] = mesh->mFaces[i].mIndices[0];
+		indices[3 * i + 1] = mesh->mFaces[i].mIndices[1];
+		indices[3 * i + 2] = mesh->mFaces[i].mIndices[2];
+	}
+
+	Mesh* newMesh = new Mesh(device, vertices, indices);
+	// mesh의 mMaterialINdex가 0이상이면 이 mesh는 material을 갖고 있으므로
+	// 해당 material값을 setting 해준다.
+	if (mesh->mMaterialIndex >= 0)
+		newMesh->setTexture(m_textures[mesh->mMaterialIndex]);
+	m_meshes.push_back(newMesh);
 }
 
 void Model::Shutdown()
 {
 	// Release the model texture.
-	ReleaseTexture();
-
-	// Shutdown the vertex and index buffers.
-	ShutdownBuffers();
+	ReleaseTextures();
 
 	return;
 }
 
-void Model::Render(ID3D11DeviceContext* deviceContext)
+bool Model::Draw(ID3D11DeviceContext* deviceContext, TextureShader* textureShader, Matrix& matrix)
 {
-	// Put the vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	RenderBuffers(deviceContext);
-
-	return;
-}
-
-int Model::GetIndexCount()
-{
-	return m_indexCount;
-}
-
-ID3D11ShaderResourceView* Model::GetTexture()
-{
-	return m_Texture->GetTexture();
-}
-
-bool Model::InitializeBuffers(ID3D11Device* device)
-{
-	VertexType* vertices;
-	unsigned long* indices;
-	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
-	D3D11_SUBRESOURCE_DATA vertexData, indexData;
-	HRESULT result;
-
-	// 버텍스 개수
-	m_vertexCount = 3;
-
-	// 인덱스 개수
-	m_indexCount = 3;
-
-	vertices = new VertexType[m_vertexCount];
-	if (!vertices)
+	matrix.world = getWorldMatrix();
+	for (int i = 0; i < m_size; i++)
 	{
-		return false;
-	}
-
-	indices = new unsigned long[m_indexCount];
-	if (!indices)
-	{
-		return false;
-	}
-
-	vertices[0].position = XMFLOAT3(-1.0f, -1.0f, 0.0f);  // Bottom left.
-	vertices[0].texture = XMFLOAT2(0.0f, 1.0f);
-
-	vertices[1].position = XMFLOAT3(0.0f, 1.0f, 0.0f);  // Top middle.
-	vertices[1].texture = XMFLOAT2(0.5f, 0.0f);
-
-	vertices[2].position = XMFLOAT3(1.0f, -1.0f, 0.0f);  // Bottom right.
-	vertices[2].texture = XMFLOAT2(1.0f, 1.0f);
-
-	indices[0] = 0;  // Bottom left.
-	indices[1] = 1;  // Top middle.
-	indices[2] = 2;  // Bottom right.
-
-	// 버텍스 버퍼 설정
-	/*
-	GPU에서 주로 쓰고 CPU에서는 거의 접근하지 않을 경우 DEFAULT
-	자주 수정할 거면 D3D11_USAGE_DYNAMIC 사용해야 함
-	*/
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(VertexType) * m_vertexCount;
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	// CPUAccessFlags = 0 -> CPU 접근 x
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-	vertexBufferDesc.StructureByteStride = 0;
-
-	// GPU로 넘길 실제 데이터
-	vertexData.pSysMem = vertices;
-	// 2D/3D 텍스처에서 쓰는 값이지만 여기선 안 쓰니 0
-	vertexData.SysMemPitch = 0;
-	vertexData.SysMemSlicePitch = 0;
-
-	// 버텍스 버퍼 생성
-	result = device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_vertexBuffer);
-	if (FAILED(result))
-	{
-		return false;
-	}
-
-	// 인덱스 버퍼 설정
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(unsigned long) * m_indexCount;
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-	indexBufferDesc.StructureByteStride = 0;
-
-	// GPU에 넘길 index 데이터
-	indexData.pSysMem = indices;
-	indexData.SysMemPitch = 0;
-	indexData.SysMemSlicePitch = 0;
-
-	// 버퍼 생성
-	result = device->CreateBuffer(&indexBufferDesc, &indexData, &m_indexBuffer);
-	if (FAILED(result))
-	{
-		return false;
-	}
-
-	// 자원 해제
-	delete[] vertices;
-	vertices = 0;
-
-	delete[] indices;
-	indices = 0;
-
-	return true;
-}
-
-void Model::ShutdownBuffers()
-{
-	// Release the index buffer.
-	if (m_indexBuffer)
-	{
-		m_indexBuffer->Release();
-		m_indexBuffer = 0;
-	}
-
-	// Release the vertex buffer.
-	if (m_vertexBuffer)
-	{
-		m_vertexBuffer->Release();
-		m_vertexBuffer = 0;
-	}
-
-	return;
-}
-
-void Model::RenderBuffers(ID3D11DeviceContext* deviceContext)
-{
-	unsigned int stride;
-	unsigned int offset;
-
-
-	// VertexType의 offset 구하기
-	stride = sizeof(VertexType);
-	offset = 0;
-
-	// 버텍스 버퍼 바인딩
-	deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &stride, &offset);
-
-	// 인덱스 버퍼 바인딩
-	deviceContext->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	// 프리미티브 바인딩
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	return;
-}
-
-bool Model::LoadTexture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* filename)
-{
-	bool result;
-
-	// 텍스처 객체 생성 및 초기화
-	m_Texture = new Texture;
-
-	result = m_Texture->Initialize(device, deviceContext, filename);
-	if (!result)
-	{
-		return false;
+		m_meshes[i]->Render(deviceContext);
+		if (textureShader->Render(deviceContext, m_meshes[i]->GetIndexCount(), matrix, m_meshes[i]->getTexture()) == false)
+			return false;
 	}
 
 	return true;
 }
 
-void Model::ReleaseTexture()
+void Model::ReleaseTextures()
 {
-	// Release the texture object.
-	if (m_Texture)
+	for (int i = 0; i < m_textures.size(); i++)
 	{
-		m_Texture->Shutdown();
-		delete m_Texture;
-		m_Texture = 0;
+		if (m_textures[i])
+		{
+			m_textures[i]->Shutdown();
+			delete m_textures[i];
+		}
 	}
 
 	return;
+}
+
+void Model::ReleaseMeshes()
+{
+	for (int i = 0; i < m_size; i++)
+	{
+		if (m_meshes[i])
+		{
+			m_meshes[i]->Shutdown();
+			delete m_meshes[i];
+		}
+	}
+
+	return;
+}
+
+XMMATRIX Model::getWorldMatrix()
+{
+	XMMATRIX translation = XMMatrixTranslation(m_position.x, m_position.y, m_position.z);
+	XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(m_rotation.x, m_rotation.y, m_rotation.z);
+	XMMATRIX rotation = XMMatrixRotationQuaternion(quaternion);
+	XMMATRIX scale = XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
+
+	return scale * rotation * translation;  // 순서대로 적용: 스케일 -> 회전 -> 위치
+}
+
+void Model::setPosition(XMFLOAT3 position)
+{
+	m_position = position;
+}
+
+void Model::setRotation(XMFLOAT3 rotation)
+{
+	m_rotation = rotation;
 }
