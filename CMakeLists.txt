@@ -26,6 +26,14 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE _UNICODE)
 # 인클루드 경로
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(INSTALL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/build/x64-Debug/install/include")
+else()
+    set(INSTALL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/build/x64-Release/install/include")
+endif()
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${INSTALL_INCLUDE_DIR})
+
 # DX11 라이브러리 경로 추가
 target_link_libraries(${PROJECT_NAME} PUBLIC
     d3d11
@@ -40,4 +48,4 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 # Dependency들이 먼저 build 될 수 있게 관계 설정 / 뒤에서 부터 컴파일
-add_dependencies(${PROJECT_NAME} dep_DirectXTex)
+add_dependencies(${PROJECT_NAME} ${DEP_LIST})

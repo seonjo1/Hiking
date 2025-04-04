@@ -4,6 +4,8 @@
 #include <iostream>
 #include <DirectXTex.h>
 
+using namespace DirectX;
+
 class TextureClass
 {
 private:

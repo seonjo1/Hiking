@@ -27,6 +27,7 @@ bool TextureClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceC
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 
 	// 이미지의 가로 세로 크기와 이미지 저장
+
 	result = LoadTarga32Bit(filename);
 	if (!result)
 	{
