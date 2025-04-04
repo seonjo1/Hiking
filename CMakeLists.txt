@@ -27,9 +27,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE _UNICODE)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(INSTALL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/build/x64-Debug/install/include")
+    set(INSTALL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/out/build/x64-Debug/install/include")
 else()
-    set(INSTALL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/build/x64-Release/install/include")
+    set(INSTALL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/out/build/x64-Release/install/include")
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${INSTALL_INCLUDE_DIR})
@@ -49,3 +49,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 # Dependency들이 먼저 build 될 수 있게 관계 설정 / 뒤에서 부터 컴파일
 add_dependencies(${PROJECT_NAME} ${DEP_LIST})
+
+# asset 복사
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/Assets
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>/Assets
+
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/Shaders
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>/Shaders
+)
