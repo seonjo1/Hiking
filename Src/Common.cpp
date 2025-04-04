@@ -14,3 +14,8 @@ std::wstring ConvertToWString(const char* str)
 	result.pop_back();
 	return result;
 }
+
+void p(std::string s)
+{
+	OutputDebugStringA(s.c_str());
+}

@@ -21,10 +21,10 @@ Application::~Application()
 
 bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 {
-	// Create and initialize the Direct3D object.
-	m_Direct3D = new D3D();
-
 	bool result;
+
+	// D3D 생성
+	m_Direct3D = new D3D();
 	result = m_Direct3D->Initialize(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
 	if (!result)
 	{
@@ -34,11 +34,11 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// 카메라 생성 및 위치 설정
 	m_Camera = new Camera;
-	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
+	m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
 
 	// 모델 생성 및 초기화
-	std::string filename("./Asset/backpack/backpack.obj");
-	
+	std::string filename("./Assets/backpack/backpack.obj");
+
 	m_Model = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
 	if (!m_Model)
 	{
