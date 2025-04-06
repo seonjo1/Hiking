@@ -49,6 +49,14 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 	// node 데이터 처리
 	processNode(device, deviceContext, scene->mRootNode, scene);
 
+	// animation 로딩
+	if (HasAnimationInfo(scene) == true) {
+		m_hasAnimation = true;
+		LoadAnimationData(scene, m_skeleton);
+		m_pose.Initialize(m_skeleton.bones.size());
+		m_animStateManager.SetState("Idle", m_animationClips);
+	}
+
 	m_size = m_meshes.size();
 }
 
@@ -122,6 +130,23 @@ bool Model::Draw(ID3D11DeviceContext* deviceContext, TextureShader* textureShade
 	return true;
 }
 
+void Model::setState(std::string state)
+{
+	if (m_hasAnimation == true)
+	{
+		m_animStateManager.SetState(state, m_animationClips);
+	}
+}
+
+void Model::UpdateAnimation(float dt)
+{
+	if (m_hasAnimation == true){
+		m_animStateManager.Update(dt);
+		m_animStateManager.GetFinalPose(m_pose, m_skeleton);
+	}
+}
+
+
 void Model::ReleaseTextures()
 {
 	for (int i = 0; i < m_textures.size(); i++)
@@ -168,4 +193,123 @@ void Model::setPosition(XMFLOAT3 position)
 void Model::setRotation(XMFLOAT3 rotation)
 {
 	m_rotation = rotation;
+}
+
+void Model::ParseSkeleton(aiNode* node, int parentIndex, Skeleton& skeleton, const std::unordered_set<std::string>& usedBones) {
+	std::string name = node->mName.C_Str();
+
+	if (usedBones.find(name) == usedBones.end()) {
+		for (unsigned int i = 0; i < node->mNumChildren; ++i)
+			ParseSkeleton(node->mChildren[i], parentIndex, skeleton, usedBones);
+		return;
+	}
+
+	int thisIndex = (int)skeleton.bones.size();
+
+	Bone bone;
+	bone.name = name;
+	bone.parentIndex = parentIndex;
+	bone.offsetMatrix = XMMatrixIdentity(); // offsetMatrix는 나중에 추가
+	skeleton.nameToIndex[name] = thisIndex;
+	skeleton.bones.push_back(bone);
+
+	for (unsigned int i = 0; i < node->mNumChildren; ++i)
+		ParseSkeleton(node->mChildren[i], thisIndex, skeleton, usedBones);
+}
+
+DirectX::XMMATRIX Model::ConvertToXM(const aiMatrix4x4& m) {
+	return XMMATRIX(
+		m.a1, m.b1, m.c1, m.d1,
+		m.a2, m.b2, m.c2, m.d2,
+		m.a3, m.b3, m.c3, m.d3,
+		m.a4, m.b4, m.c4, m.d4
+	);
+}
+
+void Model::LoadBoneOffsets(const aiScene* scene, Skeleton& skeleton) {
+	for (unsigned int meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
+		aiMesh* mesh = scene->mMeshes[meshIndex];
+		for (unsigned int i = 0; i < mesh->mNumBones; ++i) {
+			aiBone* aiBone = mesh->mBones[i];
+			std::string name = aiBone->mName.C_Str();
+
+			auto it = skeleton.nameToIndex.find(name);
+			if (it != skeleton.nameToIndex.end()) {
+				int boneIndex = it->second;
+				skeleton.bones[boneIndex].offsetMatrix = ConvertToXM(aiBone->mOffsetMatrix);
+			}
+		}
+	}
+}
+
+std::unordered_set<std::string> Model::CollectUsedBoneNames(const aiScene* scene) {
+	std::unordered_set<std::string> boneNames;
+	for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
+		aiMesh* mesh = scene->mMeshes[i];
+		for (unsigned int j = 0; j < mesh->mNumBones; ++j) {
+			boneNames.insert(mesh->mBones[j]->mName.C_Str());
+		}
+	}
+	return boneNames;
+}
+
+void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
+	/*
+		Bone 정보 저장 (root Bone은 parent idx == -1)
+	*/ 
+
+	std::unordered_set<std::string> boneSet = CollectUsedBoneNames(scene);
+	ParseSkeleton(scene->mRootNode, -1, skeleton, boneSet);
+
+	// 애니메이션 정보 저장
+	for (unsigned int i = 0; i < scene->mNumAnimations; ++i) {
+		aiAnimation* aiAnim = scene->mAnimations[i];
+
+		// 애니메이션 클립 생성
+		AnimationClip clip;
+		clip.name = aiAnim->mName.C_Str();	// 클립 이름
+		clip.duration = aiAnim->mDuration;	// 총 Tick 수
+		clip.ticksPerSecond = aiAnim->mTicksPerSecond != 0 ? aiAnim->mTicksPerSecond : 25.0; // 1초당 tick 수
+
+		// 애니메이션 Bone Track 생성 (Bone 별로 애니메이션 keyframe 정보 저장)
+		for (unsigned int j = 0; j < aiAnim->mNumChannels; ++j) {
+			// Bone 선택 (channel == bone 1개의 애니메이션 트랙)
+			aiNodeAnim* channel = aiAnim->mChannels[j];
+			std::string boneName = channel->mNodeName.C_Str();
+
+			BoneTrack track;
+			track.boneName = boneName;
+
+			for (unsigned int k = 0; k < channel->mNumPositionKeys; ++k) {
+				auto& kf = channel->mPositionKeys[k];
+				track.positionKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
+			}
+
+			for (unsigned int k = 0; k < channel->mNumRotationKeys; ++k) {
+				auto& kf = channel->mRotationKeys[k];
+				track.rotationKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z, kf.mValue.w } });
+			}
+
+			for (unsigned int k = 0; k < channel->mNumScalingKeys; ++k) {
+				auto& kf = channel->mScalingKeys[k];
+				track.scaleKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
+			}
+
+			clip.boneTracks[boneName] = track;
+		}
+
+		m_animationClips[clip.name] = clip;
+	}
+
+}
+
+bool Model::HasAnimationInfo(const aiScene* scene){
+	if (!scene || scene->mNumAnimations == 0) return false;
+
+	for (unsigned int i = 0; i < scene->mNumAnimations; ++i) {
+		if (scene->mAnimations[i]->mNumChannels > 0)
+			return true;
+	}
+
+	return false;
 }

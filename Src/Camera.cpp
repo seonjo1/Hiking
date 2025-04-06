@@ -5,11 +5,9 @@ Camera::Camera()
 
 }
 
-
 Camera::Camera(const Camera& other)
 {
 }
-
 
 Camera::~Camera()
 {
@@ -20,7 +18,6 @@ void Camera::SetPosition(float x, float y, float z)
 	m_cameraPos = { x, y, z };
 	return;
 }
-
 
 void Camera::SetRotation(float x, float y)
 {

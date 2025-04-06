@@ -4,8 +4,8 @@ Application::Application()
 {
 	m_Direct3D = 0;
 	m_Camera = 0;
-	m_Model = 0;
 	m_TextureShader = 0;
+	m_modelCount = 0;
 }
 
 
@@ -39,12 +39,15 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	// 모델 생성 및 초기화
 	std::string filename("./Assets/backpack/backpack.obj");
 
-	m_Model = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
-	if (!m_Model)
+	Model* model = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
+	if (!model)
 	{
 		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
 		return false;
 	}
+	m_Models.push_back(model);
+
+	m_modelCount = m_Models.size();
 
 	// 셰이더 객체 생성 및 초기화
 	m_TextureShader = new TextureShader;
@@ -58,7 +61,6 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	return true;
 }
 
-
 void Application::Shutdown()
 {
 	// Release the texture shader object.
@@ -70,11 +72,10 @@ void Application::Shutdown()
 	}
 
 	// Release the model object.
-	if (m_Model)
+	for (int i = 0; i < m_Models.size(); i++)
 	{
-		m_Model->Shutdown();
-		delete m_Model;
-		m_Model = 0;
+		m_Models[i]->Shutdown();
+		delete m_Models[i];
 	}
 
 	// Release the camera object.
@@ -94,21 +95,21 @@ void Application::Shutdown()
 	return;
 }
 
-
 bool Application::Frame()
 {
-	bool result;
+	float dt = m_Timer.GetDeltaTime();
 
+	// animation
+	UpdateAnimation(dt);
 
 	// Render the graphics scene.
-	result = Render();
+	bool result = Render();
 	if (!result)
 	{
 		return false;
 	}
 	return true;
 }
-
 
 bool Application::Render()
 {
@@ -125,13 +126,24 @@ bool Application::Render()
 	m_Direct3D->GetProjectionMatrix(matrix.projection);
 
 	// 모델 버텍스, 인덱스 프리미티브 바인딩
-	if (m_Model->Draw(m_Direct3D->GetDeviceContext(), m_TextureShader, matrix) == false)
-		return false;
+	for (int i = 0; i < m_Models.size(); i++)
+	{
+		if (m_Models[i]->Draw(m_Direct3D->GetDeviceContext(), m_TextureShader, matrix) == false)
+			return false;
+	}
 
 	// Present the rendered scene to the screen.
 	m_Direct3D->EndScene();
 
 	return true;
+}
+
+void Application::UpdateAnimation(float dt)
+{
+	for (int i = 0; i < m_modelCount; i++)
+	{
+		m_Models[i]->UpdateAnimation(dt);
+	}
 }
 
 void Application::CameraMove(

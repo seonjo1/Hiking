@@ -3,6 +3,7 @@
 #include "d3d.h"
 #include "camera.h"
 #include "model.h"
+#include "Timer.h"
 #include "textureshader.h"
 
 const bool FULL_SCREEN = false;
@@ -20,6 +21,8 @@ public:
 	bool Initialize(int, int, HWND);
 	void Shutdown();
 	bool Frame();
+	void UpdateAnimation(float dt);
+
 	void CameraMove(
 		bool pressW, bool pressS, bool pressD,
 		bool pressA, bool pressE, bool pressQ
@@ -32,6 +35,10 @@ private:
 
 	D3D* m_Direct3D;
 	Camera* m_Camera;
-	Model* m_Model;
+	Timer m_Timer;
+	std::vector<Model*> m_Models;
+	
 	TextureShader* m_TextureShader;
+
+	int m_modelCount;
 };
