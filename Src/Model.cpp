@@ -3,17 +3,17 @@
 
 Model::Model()
 {
-	m_position = { 0, 0, 0 };
-	m_rotation = { 0, 0, 0 };
-	m_scale = { 0, 0, 0 };
+	m_position = { 0.0f, 0.0f, 0.0f };
+	m_rotation = { 0.0f, 0.0f, 0.0f };
+	m_scale = { 1.0f, 1.0f, 1.0f };
 	m_size = 0;
 }
 
 Model::Model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::string filename)
 {
-	m_position = { 0, 0, 0 };
-	m_rotation = { 0, 0, 0 };
-	m_scale = { 0, 0, 0 };
+	m_position = { 0.0f, 0.0f, 0.0f };
+	m_rotation = { 0.0f, 0.0f, 0.0f };
+	m_scale = { 1.0f, 1.0f, 1.0f };
 	LoadByAssimp(device, deviceContext, filename);
 }
 
@@ -29,7 +29,7 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 {
 	Assimp::Importer importer;
 	// scene 구조체 받아오기
-	const aiScene* scene = importer.ReadFile(filename, aiProcess_Triangulate | aiProcess_FlipUVs);
+	const aiScene* scene = importer.ReadFile(filename, aiProcess_ConvertToLeftHanded | aiProcess_Triangulate | aiProcess_FlipUVs);
 	std::string dirname = filename.substr(0, filename.find_last_of("/"));
 
 	// scene load 오류 처리
@@ -79,7 +79,7 @@ void Model::processMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 		VertexType& v = vertices[i];
 		v.position = XMFLOAT3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
 		//v.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
-		v.texture = XMFLOAT2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+		v.texture = XMFLOAT2(mesh->mTextureCoords[0][i].x, 1.0f - mesh->mTextureCoords[0][i].y);
 	}
 
 	std::vector<uint32_t> indices;
@@ -111,6 +111,7 @@ void Model::Shutdown()
 bool Model::Draw(ID3D11DeviceContext* deviceContext, TextureShader* textureShader, Matrix& matrix)
 {
 	matrix.world = getWorldMatrix();
+
 	for (int i = 0; i < m_size; i++)
 	{
 		m_meshes[i]->Render(deviceContext);

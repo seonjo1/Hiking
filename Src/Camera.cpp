@@ -23,81 +23,55 @@ Camera::~Camera()
 
 void Camera::SetPosition(float x, float y, float z)
 {
-	m_positionX = x;
-	m_positionY = y;
-	m_positionZ = z;
+	m_cameraPos = { x, y, z };
 	return;
 }
 
 
-void Camera::SetRotation(float x, float y, float z)
+void Camera::SetRotation(float x, float y)
 {
-	m_rotationX = x;
-	m_rotationY = y;
-	m_rotationZ = z;
+	m_cameraPitch = x;
+	m_cameraYaw = y;
 	return;
 }
 
 XMFLOAT3 Camera::GetPosition()
 {
-	return XMFLOAT3(m_positionX, m_positionY, m_positionZ);
+	return m_cameraPos;
 }
 
 
 XMFLOAT3 Camera::GetRotation()
 {
-	return XMFLOAT3(m_rotationX, m_rotationY, m_rotationZ);
+	return XMFLOAT3(m_cameraPitch, m_cameraYaw, 0.0f);
 }
 
 void Camera::Render()
 {
-	XMFLOAT3 up, position, lookAt;
-	XMVECTOR upVector, positionVector, lookAtVector;
-	float yaw, pitch, roll;
+	XMVECTOR upVector, positionVector, frontVector;
 	XMMATRIX rotationMatrix;
 
-
-	// upVector 설정
-	up.x = 0.0f;
-	up.y = 1.0f;
-	up.z = 0.0f;
-
 	// upVector load
-	upVector = XMLoadFloat3(&up);
-
-	// position 설정
-	position.x = m_positionX;
-	position.y = m_positionY;
-	position.z = m_positionZ;
+	upVector = XMLoadFloat3(&m_cameraUp);
 
 	// position load
-	positionVector = XMLoadFloat3(&position);
-
-	// camera front 설정
-	lookAt.x = 0.0f;
-	lookAt.y = 0.0f;
-	lookAt.z = 1.0f;
+	positionVector = XMLoadFloat3(&m_cameraPos);
 
 	// camera front load
-	lookAtVector = XMLoadFloat3(&lookAt);
-
-	// degree인 m_rotation을 Radian으로 변경 (0.0174532925 == pi / 180)
-	pitch = m_rotationX * 0.0174532925f;
-	yaw = m_rotationY * 0.0174532925f;
-	roll = m_rotationZ * 0.0174532925f;
+	frontVector = XMLoadFloat3(&m_cameraFront);
 
 	// Roll, Pitch, Yaw를 통해 회전 행렬 생성
-	rotationMatrix = XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
+	rotationMatrix = XMMatrixRotationRollPitchYaw(m_cameraPitch, m_cameraYaw, 0.0f);
 
 	// camera front, up 벡터를 world 좌표계로 변경
-	lookAtVector = XMVector3TransformCoord(lookAtVector, rotationMatrix);
+	frontVector = XMVector3TransformCoord(frontVector, rotationMatrix);
 	upVector = XMVector3TransformCoord(upVector, rotationMatrix);
 
 	// lookAtVector: 카메라가 실제 바라보는 절대 위치
-	lookAtVector = XMVectorAdd(positionVector, lookAtVector);
+	frontVector = XMVectorAdd(positionVector, frontVector);
 
 	// View Matrix 생성
-	m_viewMatrix = XMMatrixLookAtLH(positionVector, lookAtVector, upVector);
+	m_viewMatrix = XMMatrixLookAtLH(positionVector, frontVector, upVector);
 
 	return;
 }
@@ -107,3 +81,48 @@ void Camera::GetViewMatrix(XMMATRIX& viewMatrix)
 	viewMatrix = m_viewMatrix;
 	return;
 }
+
+void Camera::Move(
+	bool pressW, bool pressS, bool pressD,
+	bool pressA, bool pressE, bool pressQ
+){
+
+	XMVECTOR pos = XMLoadFloat3(&m_cameraPos);
+	XMVECTOR front = XMLoadFloat3(&m_cameraFront);
+	XMVECTOR up = XMLoadFloat3(&m_cameraUp);
+
+	XMVECTOR right = XMVector3Normalize(XMVector3Cross(up, front));
+	XMVECTOR camUp = XMVector3Normalize(XMVector3Cross(front, right));
+
+	// 이동 거리
+    XMVECTOR moveStep;
+
+    if (pressW) {
+        moveStep = XMVectorScale(front, m_cameraSpeed);
+        pos = XMVectorAdd(pos, moveStep);
+    }
+    if (pressS) {
+        moveStep = XMVectorScale(front, m_cameraSpeed);
+        pos = XMVectorSubtract(pos, moveStep);
+    }
+    if (pressD) {
+        moveStep = XMVectorScale(right, m_cameraSpeed);
+        pos = XMVectorAdd(pos, moveStep);
+    }
+    if (pressA) {
+        moveStep = XMVectorScale(right, m_cameraSpeed);
+        pos = XMVectorSubtract(pos, moveStep);
+    }
+    if (pressE) {
+        moveStep = XMVectorScale(camUp, m_cameraSpeed);
+        pos = XMVectorAdd(pos, moveStep);
+    }
+    if (pressQ) {
+        moveStep = XMVectorScale(camUp, m_cameraSpeed);
+        pos = XMVectorSubtract(pos, moveStep);
+    }
+
+    // XMVECTOR → XMFLOAT3 저장
+    XMStoreFloat3(&m_cameraPos, pos);
+}
+

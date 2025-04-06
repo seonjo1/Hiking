@@ -124,6 +124,12 @@ bool Context::Frame()
 		return false;
 	}
 
+	m_Application->CameraControl(
+		m_Input->IsKeyDown('W'), m_Input->IsKeyDown('S'),
+		m_Input->IsKeyDown('D'), m_Input->IsKeyDown('A'),
+		m_Input->IsKeyDown('E'), m_Input->IsKeyDown('Q')
+	);
+
 	// 애플리케이션 클래스의 프레임 처리
 	result = m_Application->Frame();
 	if (!result)

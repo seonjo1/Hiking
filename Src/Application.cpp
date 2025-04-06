@@ -34,7 +34,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// 카메라 생성 및 위치 설정
 	m_Camera = new Camera;
-	m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
+	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
 
 	// 모델 생성 및 초기화
 	std::string filename("./Assets/backpack/backpack.obj");
@@ -132,4 +132,11 @@ bool Application::Render()
 	m_Direct3D->EndScene();
 
 	return true;
+}
+
+void Application::CameraControl(
+	bool pressW, bool pressS, bool pressD,
+	bool pressA, bool pressE, bool pressQ
+){
+	m_Camera->Move(pressW, pressS, pressD, pressA, pressE, pressQ);
 }

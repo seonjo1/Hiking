@@ -19,3 +19,20 @@ void p(std::string s)
 {
 	OutputDebugStringA(s.c_str());
 }
+
+void printMatrix(const XMMATRIX& mat)
+{
+	std::string s;
+	for (int i = 0; i < 4; ++i)
+	{
+		XMVECTOR row = mat.r[i];
+		float f[4];
+		XMStoreFloat4(reinterpret_cast<XMFLOAT4*>(f), row);
+		s += std::to_string(f[0]) + " " +
+			std::to_string(f[1]) + " " +
+			std::to_string(f[2]) + " " +
+			std::to_string(f[3]) + "\n";
+	}
+
+	p(s);
+}

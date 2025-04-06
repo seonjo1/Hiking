@@ -1,20 +1,16 @@
 #include "input.h"
 
-
 Input::Input()
 {
 }
-
 
 Input::Input(const Input& other)
 {
 }
 
-
 Input::~Input()
 {
 }
-
 
 void Input::Initialize()
 {
