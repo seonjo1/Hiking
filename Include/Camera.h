@@ -22,18 +22,20 @@ public:
 		bool pressW, bool pressS, bool pressD,
 		bool pressA, bool pressE, bool pressQ
 	);
+	void Rotate(int x, int y);
+	void SaveCurrentPos(int x, int y);
 
 private:
-	float m_positionX, m_positionY, m_positionZ;
-	float m_rotationX, m_rotationY, m_rotationZ;
-	XMMATRIX m_viewMatrix;
-
 	float m_cameraPitch{ 0.0f };
 	float m_cameraYaw{ 0.0f };
-	XMFLOAT2 m_prevMousePos{ 0.0f, 0.0f };
+	int m_prevMousePosX{ 0 };
+	int m_prevMousePosY{ 0 }; 
 	XMFLOAT3 m_cameraPos{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 m_cameraFront{ 0.0f, 0.0f, 1.0f };
 	XMFLOAT3 m_cameraUp{ 0.0f, 1.0f, 0.0f };
+	XMMATRIX m_viewMatrix;
+
 	const float m_cameraSpeed{ 0.04f };
+	const float m_cameraSensitivity{ 0.5f };
 	const float m_cameraRotSpeed{ 0.2f };
 };

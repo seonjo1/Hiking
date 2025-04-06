@@ -124,11 +124,15 @@ bool Context::Frame()
 		return false;
 	}
 
-	m_Application->CameraControl(
-		m_Input->IsKeyDown('W'), m_Input->IsKeyDown('S'),
-		m_Input->IsKeyDown('D'), m_Input->IsKeyDown('A'),
-		m_Input->IsKeyDown('E'), m_Input->IsKeyDown('Q')
-	);
+	if (m_cameraControl == true)
+	{
+		m_Application->CameraMove(
+			m_Input->IsKeyDown('W'), m_Input->IsKeyDown('S'),
+			m_Input->IsKeyDown('D'), m_Input->IsKeyDown('A'),
+			m_Input->IsKeyDown('E'), m_Input->IsKeyDown('Q')
+		);
+	}
+	
 
 	// 애플리케이션 클래스의 프레임 처리
 	result = m_Application->Frame();
@@ -151,6 +155,28 @@ LRESULT CALLBACK Context::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LP
 	*/
 	switch (umsg)
 	{
+		case WM_MOUSEMOVE:
+		{
+			if (m_cameraControl == true)
+			{
+				m_Application->CameraRotate(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));
+			}
+			break;
+		}
+		case WM_RBUTTONDOWN:
+		{
+			m_Application->SaveCameraCurrentPos(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));
+			m_cameraControl = true;
+			SetCapture(hwnd);
+			break;
+		}
+
+		case WM_RBUTTONUP:
+		{
+			m_cameraControl = false;
+			ReleaseCapture();
+			break;
+		}
 		// key 눌린 경우 이벤트
 		case WM_KEYDOWN:
 		{

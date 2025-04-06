@@ -20,10 +20,12 @@ public:
 	bool Initialize(int, int, HWND);
 	void Shutdown();
 	bool Frame();
-	void CameraControl(
+	void CameraMove(
 		bool pressW, bool pressS, bool pressD,
 		bool pressA, bool pressE, bool pressQ
 	);
+	void CameraRotate(int x, int y);
+	void SaveCameraCurrentPos(int x, int y);
 
 private:
 	bool Render();

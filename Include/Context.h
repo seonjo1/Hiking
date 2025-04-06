@@ -7,6 +7,7 @@ Windows API header
 #define WIN32_LEAN_AND_MEAN
 
 #include <windows.h>
+#include <windowsx.h>
 #include "input.h"
 #include "application.h"
 
@@ -58,6 +59,8 @@ private:
 
 	// 애플리케이션 클래스
 	Application* m_Application;
+
+	bool m_cameraControl{ false };
 };
 
 /*

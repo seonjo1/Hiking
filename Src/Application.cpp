@@ -134,9 +134,19 @@ bool Application::Render()
 	return true;
 }
 
-void Application::CameraControl(
+void Application::CameraMove(
 	bool pressW, bool pressS, bool pressD,
 	bool pressA, bool pressE, bool pressQ
 ){
 	m_Camera->Move(pressW, pressS, pressD, pressA, pressE, pressQ);
+}
+
+void Application::CameraRotate(int x, int y)
+{
+	m_Camera->Rotate(x, y);
+}
+
+void Application::SaveCameraCurrentPos(int x, int y)
+{
+	m_Camera->SaveCurrentPos(x, y);
 }
