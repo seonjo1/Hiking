@@ -4,12 +4,14 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include "Common.h"
 
 using namespace DirectX;
 
 struct Bone {
     std::string name;
     int parentIndex = -1;
+    std::vector<int> children;
     XMMATRIX offsetMatrix;
 };
     

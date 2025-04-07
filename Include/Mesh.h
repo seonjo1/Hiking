@@ -6,6 +6,8 @@ struct VertexType
 {
 	XMFLOAT3 position;
 	XMFLOAT2 texture;
+	XMUINT4 boneIndices = { 0, 0, 0, 0 };  // 4개의 본 인덱스
+	XMFLOAT4 boneWeights = { 0.0f, 0.0f, 0.0f, 0.0f };; // 4개의 본 가중치
 };
 
 class Mesh

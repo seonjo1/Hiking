@@ -60,17 +60,16 @@ void TextureShader::Shutdown()
 	return;
 }
 
-bool TextureShader::Render(ID3D11DeviceContext* deviceContext, int indexCount, Matrix& matrix, ID3D11ShaderResourceView* texture)
+bool TextureShader::Render(ID3D11DeviceContext* deviceContext, int indexCount, Matrix& matrix, Pose& pose, ID3D11ShaderResourceView* texture)
 {
 	bool result;
-	// Set the shader parameters that it will use for rendering.
-	result = SetShaderParameters(deviceContext, matrix, texture);
+
+	result = SetShaderParameters(deviceContext, matrix, pose, texture);
 	if (!result)
 	{
 		return false;
 	}
 
-	// Now render the prepared buffers with the shader.
 	RenderShader(deviceContext, indexCount);
 
 	return true;
@@ -140,7 +139,7 @@ bool TextureShader::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsF
 
 	// Create the vertex input layout description.
 	// This setup needs to match the VertexType stucture in the ModelClass and in the shader.
-	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
+	D3D11_INPUT_ELEMENT_DESC polygonLayout[4];
 
 	polygonLayout[0].SemanticName = "POSITION";
 	polygonLayout[0].SemanticIndex = 0;
@@ -157,6 +156,22 @@ bool TextureShader::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsF
 	polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[1].InstanceDataStepRate = 0;
+
+	polygonLayout[2].SemanticName = "BONEINDICES";
+	polygonLayout[2].SemanticIndex = 0;
+	polygonLayout[2].Format = DXGI_FORMAT_R32G32B32A32_UINT;
+	polygonLayout[2].InputSlot = 0;
+	polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	polygonLayout[2].InstanceDataStepRate = 0;
+
+	polygonLayout[3].SemanticName = "BONEWEIGHTS";
+	polygonLayout[3].SemanticIndex = 0;
+	polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	polygonLayout[3].InputSlot = 0;
+	polygonLayout[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	polygonLayout[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	polygonLayout[3].InstanceDataStepRate = 0;
 
 	// Get a count of the elements in the layout.
 	unsigned int numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
@@ -193,6 +208,20 @@ bool TextureShader::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsF
 		return false;
 	}
 
+	D3D11_BUFFER_DESC boneBufferDesc;
+
+	boneBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	boneBufferDesc.ByteWidth = sizeof(BoneBufferType);
+	boneBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	boneBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	boneBufferDesc.MiscFlags = 0;
+	boneBufferDesc.StructureByteStride = 0;
+
+	result = device->CreateBuffer(&boneBufferDesc, NULL, &m_boneBuffer);
+	if (FAILED(result))
+	{
+		return false;
+	}
 	// 샘플러 설정
 	D3D11_SAMPLER_DESC samplerDesc;
 
@@ -234,6 +263,12 @@ void TextureShader::ShutdownShader()
 	{
 		m_matrixBuffer->Release();
 		m_matrixBuffer = 0;
+	}
+
+	if (m_boneBuffer)
+	{
+		m_boneBuffer->Release();
+		m_boneBuffer = 0;
 	}
 
 	// Release the layout.
@@ -295,36 +330,46 @@ void TextureShader::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd
 	return;
 }
 
-bool TextureShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, Matrix& matrix, ID3D11ShaderResourceView* texture)
+bool TextureShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, Matrix& matrix, Pose& pose, ID3D11ShaderResourceView* texture)
 {
-	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	MatrixBufferType* dataPtr;
-	unsigned int bufferNumber;
+	unsigned int bufferNumber = 0;
 
-	// Lock the constant buffer so it can be written to.
-	result = deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// matrix buffer (상수버퍼)
+	HRESULT result = deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
 	}
 
-	// Get a pointer to the data in the constant buffer.
-	dataPtr = (MatrixBufferType*)mappedResource.pData;
+	MatrixBufferType* matrixDataPtr = (MatrixBufferType*)mappedResource.pData;
 
-	// Copy the matrices into the constant buffer.
-	dataPtr->world = XMMatrixTranspose(matrix.world);
-	dataPtr->view = XMMatrixTranspose(matrix.view);
-	dataPtr->projection = XMMatrixTranspose(matrix.projection);
+	matrixDataPtr->world = XMMatrixTranspose(matrix.world);
+	matrixDataPtr->view = XMMatrixTranspose(matrix.view);
+	matrixDataPtr->projection = XMMatrixTranspose(matrix.projection);
 
-	// Unlock the constant buffer.
 	deviceContext->Unmap(m_matrixBuffer, 0);
 
-	// Set the position of the constant buffer in the vertex shader.
-	bufferNumber = 0;
+	deviceContext->VSSetConstantBuffers(bufferNumber++, 1, &m_matrixBuffer);
 
-	// Finanly set the constant buffer in the vertex shader with the updated values.
-	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
+	// bone buffer (상수버퍼)
+	result = deviceContext->Map(m_boneBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	BoneBufferType* boneDataPtr = (BoneBufferType*)mappedResource.pData;
+
+	int size = pose.count;
+	for (int i = 0; i < size; i++)
+	{
+		boneDataPtr->boneTransforms[i] = XMMatrixTranspose(pose.finalMatrix[i]);
+	}
+
+	deviceContext->Unmap(m_boneBuffer, 0);
+
+	deviceContext->VSSetConstantBuffers(bufferNumber++, 1, &m_boneBuffer);
 
 	// Set shader texture resource in the pixel shader.
 	deviceContext->PSSetShaderResources(0, 1, &texture);

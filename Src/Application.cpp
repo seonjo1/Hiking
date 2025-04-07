@@ -37,7 +37,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
 
 	// 모델 생성 및 초기화
-	std::string filename("./Assets/backpack/backpack.obj");
+	std::string filename("./Assets/Character/Character.gltf");
 
 	Model* model = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
 	if (!model)
@@ -45,10 +45,12 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
 		return false;
 	}
+
 	m_Models.push_back(model);
 
-	m_modelCount = m_Models.size();
 
+	m_modelCount = m_Models.size();
+	
 	// 셰이더 객체 생성 및 초기화
 	m_TextureShader = new TextureShader;
 	result = m_TextureShader->Initialize(m_Direct3D->GetDevice(), hwnd);
@@ -140,6 +142,7 @@ bool Application::Render()
 
 void Application::UpdateAnimation(float dt)
 {
+	//p(to_string(dt) + "\n");
 	for (int i = 0; i < m_modelCount; i++)
 	{
 		m_Models[i]->UpdateAnimation(dt);

@@ -24,7 +24,7 @@ public:
 
 class AnimationStateManager {
 public:
-    std::string currentState = "Idle";
+    std::string currentState;
 
     AnimationPlayer current;
     AnimationPlayer previous;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AnimationData.h"
+#include <stack>
 
 struct Pose {
     std::vector<XMMATRIX> local;

@@ -36,3 +36,22 @@ void printMatrix(const XMMATRIX& mat)
 
 	p(s);
 }
+
+void printFloat3(const XMFLOAT3& v)
+{
+	std::string s;
+	s += std::to_string(v.x) + " " +
+		std::to_string(v.y) + " " +
+		std::to_string(v.z) + "\n";
+	p(s);
+}
+
+void printFloat4(const XMFLOAT4& v)
+{
+	std::string s;
+	s += std::to_string(v.x) + " " +
+		std::to_string(v.y) + " " +
+		std::to_string(v.z) + " " +
+		std::to_string(v.w) + "\n";
+	p(s);
+}

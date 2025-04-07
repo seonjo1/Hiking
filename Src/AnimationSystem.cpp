@@ -16,6 +16,7 @@ XMFLOAT3 AnimationPlayer::InterpolatePosition(const std::vector<PositionKeyframe
     if (keys.empty()) return XMFLOAT3(0, 0, 0);
     if (keys.size() == 1) return keys[0].position;
 
+
     for (size_t i = 0; i < keys.size() - 1; ++i) {
         if (time < keys[i + 1].time) {
             float t = (float)((time - keys[i].time) / (keys[i + 1].time - keys[i].time));
@@ -27,6 +28,7 @@ XMFLOAT3 AnimationPlayer::InterpolatePosition(const std::vector<PositionKeyframe
             return out;
         }
     }
+
     return keys.back().position;
 }
 
@@ -131,15 +133,16 @@ void AnimationStateManager::blendAnimTx(AnimTx& txA, AnimTx& txB, float blendAlp
 }
 
 void AnimationStateManager::GetFinalPose(Pose& outPose, Skeleton& skeleton) {
+	
     AnimTx txA, txB;
 
     if (previous.clip == nullptr)
     {
         current.SamplePose(txB, skeleton);
         for (size_t i = 0; i < skeleton.bones.size(); ++i) {
-            XMMATRIX T = XMMatrixTranslation(txA.position[i].x, txA.position[i].y, txA.position[i].z);
-            XMMATRIX R = XMMatrixRotationQuaternion(XMLoadFloat4(&(txA.rotation[i])));
-            XMMATRIX S = XMMatrixScaling(txA.scale[i].x, txA.scale[i].y, txA.scale[i].z);
+            XMMATRIX T = XMMatrixTranslation(txB.position[i].x, txB.position[i].y, txB.position[i].z);
+            XMMATRIX R = XMMatrixRotationQuaternion(XMLoadFloat4(&(txB.rotation[i])));
+            XMMATRIX S = XMMatrixScaling(txB.scale[i].x, txB.scale[i].y, txB.scale[i].z);
             outPose.local[i] = S * R * T;
         }
         outPose.ApplyHierarchy(skeleton);

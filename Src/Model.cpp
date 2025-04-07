@@ -29,7 +29,12 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 {
 	Assimp::Importer importer;
 	// scene 구조체 받아오기
-	const aiScene* scene = importer.ReadFile(filename, aiProcess_ConvertToLeftHanded | aiProcess_Triangulate | aiProcess_FlipUVs);
+	const aiScene* scene = importer.ReadFile(filename, aiProcess_Triangulate |
+		aiProcess_MakeLeftHanded |
+		aiProcess_FlipUVs |
+		aiProcess_FlipWindingOrder |
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_LimitBoneWeights);
 	std::string dirname = filename.substr(0, filename.find_last_of("/"));
 
 	// scene load 오류 처리
@@ -46,9 +51,6 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_textures.push_back(new Texture(device, deviceContext, materialInfo, dirname));
 	}
 
-	// node 데이터 처리
-	processNode(device, deviceContext, scene->mRootNode, scene);
-
 	// animation 로딩
 	if (HasAnimationInfo(scene) == true) {
 		m_hasAnimation = true;
@@ -57,9 +59,11 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_animStateManager.SetState("Idle", m_animationClips);
 	}
 
+	// node 데이터 처리
+	processNode(device, deviceContext, scene->mRootNode, scene);
+
 	m_size = m_meshes.size();
 }
-
 
 void Model::processNode(ID3D11Device* device, ID3D11DeviceContext* deviceContext, aiNode* node, const aiScene* scene)
 {
@@ -80,6 +84,22 @@ void Model::processNode(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 
 void Model::processMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, aiMesh* mesh, const aiScene* scene)
 {
+	std::vector<VertexBoneData> vertexBones(mesh->mNumVertices);
+	// 본 → 정점 매핑
+	for (unsigned int i = 0; i < mesh->mNumBones; ++i) {
+		aiBone* aiBone = mesh->mBones[i];
+		std::string boneName = aiBone->mName.C_Str();
+
+		int boneIndex = m_skeleton.GetBoneIndex(boneName);
+		if (boneIndex == -1) continue;
+
+		for (unsigned int j = 0; j < aiBone->mNumWeights; ++j) {
+			uint32_t vertexId = aiBone->mWeights[j].mVertexId;
+			float weight = aiBone->mWeights[j].mWeight;
+			vertexBones[vertexId].Add(boneIndex, weight);
+		}
+	}
+
 	std::vector<VertexType> vertices;
 	vertices.resize(mesh->mNumVertices);
 	for (uint32_t i = 0; i < mesh->mNumVertices; i++)
@@ -87,7 +107,28 @@ void Model::processMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 		VertexType& v = vertices[i];
 		v.position = XMFLOAT3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
 		//v.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
-		v.texture = XMFLOAT2(mesh->mTextureCoords[0][i].x, 1.0f - mesh->mTextureCoords[0][i].y);
+		v.texture = XMFLOAT2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+
+		vertexBones[i].NormalizeAndTrim();
+
+		switch (vertexBones[i].influences.size())
+		{
+		case 4:
+			v.boneIndices.w = vertexBones[i].influences[3].first;
+			v.boneWeights.w = vertexBones[i].influences[3].second;
+			[[fallthrough]];
+		case 3:
+			v.boneIndices.z = vertexBones[i].influences[2].first;
+			v.boneWeights.z = vertexBones[i].influences[2].second;
+			[[fallthrough]];
+		case 2:
+			v.boneIndices.y = vertexBones[i].influences[1].first;
+			v.boneWeights.y = vertexBones[i].influences[1].second;
+			[[fallthrough]];
+		case 1:
+			v.boneIndices.x = vertexBones[i].influences[0].first;
+			v.boneWeights.x = vertexBones[i].influences[0].second;
+		}
 	}
 
 	std::vector<uint32_t> indices;
@@ -123,7 +164,7 @@ bool Model::Draw(ID3D11DeviceContext* deviceContext, TextureShader* textureShade
 	for (int i = 0; i < m_size; i++)
 	{
 		m_meshes[i]->Render(deviceContext);
-		if (textureShader->Render(deviceContext, m_meshes[i]->GetIndexCount(), matrix, m_meshes[i]->getTexture()) == false)
+		if (textureShader->Render(deviceContext, m_meshes[i]->GetIndexCount(), matrix, m_pose, m_meshes[i]->getTexture()) == false)
 			return false;
 	}
 
@@ -212,6 +253,16 @@ void Model::ParseSkeleton(aiNode* node, int parentIndex, Skeleton& skeleton, con
 	bone.offsetMatrix = XMMatrixIdentity(); // offsetMatrix는 나중에 추가
 	skeleton.nameToIndex[name] = thisIndex;
 	skeleton.bones.push_back(bone);
+	
+	if (parentIndex != -1)
+		skeleton.bones[parentIndex].children.push_back(thisIndex);
+
+	//std::string s = "Add bone: " + bone.name + "\n";
+	//p(s);
+	//s = "parent Idx: " + to_string(parentIndex) + "\n";
+	//p(s);
+	//s = "now Idx: " + to_string(thisIndex) + "\n";
+	//p(s);
 
 	for (unsigned int i = 0; i < node->mNumChildren; ++i)
 		ParseSkeleton(node->mChildren[i], thisIndex, skeleton, usedBones);
@@ -271,6 +322,9 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 		clip.duration = aiAnim->mDuration;	// 총 Tick 수
 		clip.ticksPerSecond = aiAnim->mTicksPerSecond != 0 ? aiAnim->mTicksPerSecond : 25.0; // 1초당 tick 수
 
+		//std::string s = "animation clip name: " + clip.name + "\n";
+		//p(s);
+
 		// 애니메이션 Bone Track 생성 (Bone 별로 애니메이션 keyframe 정보 저장)
 		for (unsigned int j = 0; j < aiAnim->mNumChannels; ++j) {
 			// Bone 선택 (channel == bone 1개의 애니메이션 트랙)
@@ -279,7 +333,7 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 
 			BoneTrack track;
 			track.boneName = boneName;
-
+			
 			for (unsigned int k = 0; k < channel->mNumPositionKeys; ++k) {
 				auto& kf = channel->mPositionKeys[k];
 				track.positionKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });

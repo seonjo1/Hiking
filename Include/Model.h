@@ -15,6 +15,36 @@ struct Matrix
 	XMMATRIX projection;
 };
 
+struct VertexBoneData {
+	std::vector<std::pair<int, float>> influences;
+
+	void Add(int boneIndex, float weight) {
+		if (weight == 0) return;
+		influences.emplace_back(boneIndex, weight);
+	}
+
+	void NormalizeAndTrim() {
+		if (influences.size() == 0)
+			return;
+		// 무게순 정렬 후 상위 4개만 사용
+		std::sort(influences.begin(), influences.end(), [](std::pair<int, float>& a, std::pair<int, float>& b) {
+			return a.second > b.second;
+			});
+		if (influences.size() > 4) influences.resize(4);
+
+		// 정규화
+		float total = 0.0f;
+		for (std::pair<int, float>& pair : influences) {
+			total += pair.second;
+		}
+		if (total > 0.0f) {
+			for (std::pair<int, float>& pair : influences) {
+				pair.second /= total;
+			}
+		}
+	}
+};
+
 class Model
 {
 public:
