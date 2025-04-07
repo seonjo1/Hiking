@@ -56,7 +56,7 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_hasAnimation = true;
 		LoadAnimationData(scene, m_skeleton);
 		m_pose.Initialize(m_skeleton.bones.size());
-		m_animStateManager.SetState("Idle", m_animationClips);
+		m_animStateManager.SetState("Run", m_animationClips);
 	}
 
 	// node 데이터 처리
@@ -311,6 +311,7 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 
 	std::unordered_set<std::string> boneSet = CollectUsedBoneNames(scene);
 	ParseSkeleton(scene->mRootNode, -1, skeleton, boneSet);
+	LoadBoneOffsets(scene, skeleton);
 
 	// 애니메이션 정보 저장
 	for (unsigned int i = 0; i < scene->mNumAnimations; ++i) {

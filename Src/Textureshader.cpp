@@ -344,9 +344,9 @@ bool TextureShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, Matr
 
 	MatrixBufferType* matrixDataPtr = (MatrixBufferType*)mappedResource.pData;
 
-	matrixDataPtr->world = XMMatrixTranspose(matrix.world);
-	matrixDataPtr->view = XMMatrixTranspose(matrix.view);
-	matrixDataPtr->projection = XMMatrixTranspose(matrix.projection);
+	matrixDataPtr->world = matrix.world;
+	matrixDataPtr->view = matrix.view;
+	matrixDataPtr->projection = matrix.projection;
 
 	deviceContext->Unmap(m_matrixBuffer, 0);
 
@@ -364,7 +364,7 @@ bool TextureShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, Matr
 	int size = pose.count;
 	for (int i = 0; i < size; i++)
 	{
-		boneDataPtr->boneTransforms[i] = XMMatrixTranspose(pose.finalMatrix[i]);
+		boneDataPtr->boneTransforms[i] = pose.finalMatrix[i];
 	}
 
 	deviceContext->Unmap(m_boneBuffer, 0);
