@@ -20,13 +20,16 @@ class Texture
 public:
 	Texture();
 	Texture(const Texture&);
-	Texture(ID3D11Device*, ID3D11DeviceContext*, aiMaterial*, std::string&);
+	Texture(ID3D11Device*, ID3D11DeviceContext*, const aiScene*, aiMaterial*, std::string&);
 
 	~Texture();
 
-	bool Initialize(ID3D11Device*, ID3D11DeviceContext*, std::string);
+	void Initialize(ID3D11Device*, ID3D11DeviceContext*, std::string);
+	void InitializeColor(ID3D11Device*, ID3D11DeviceContext*, const aiColor4D&);
+	void InitializeFromEmbedded(ID3D11Device*, ID3D11DeviceContext*, aiTexture*);
 	void Shutdown();
 
+	void printTexture();
 	ID3D11ShaderResourceView* GetTexture();
 
 	int GetWidth();

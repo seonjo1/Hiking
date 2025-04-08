@@ -6,8 +6,10 @@ void AnimationPlayer::Play(AnimationClip* newClip) {
 }
 
 void AnimationPlayer::Update(float deltaTime) {
+    static const float speed = 20.0f;
+
     if (!clip) return;
-    currentTime += deltaTime * clip->ticksPerSecond;
+    currentTime += speed * deltaTime * clip->ticksPerSecond;
     if (currentTime > clip->duration)
         currentTime = fmod(currentTime, clip->duration);
 }

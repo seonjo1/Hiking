@@ -34,10 +34,11 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// 카메라 생성 및 위치 설정
 	m_Camera = new Camera;
-	m_Camera->SetPosition(0.0f, 5.0f, -15.0f);
+	m_Camera->SetPosition(0.0f, 4.0f, -15.0f);
 
 	// 모델 생성 및 초기화
-	std::string filename("./Assets/Character/Character.gltf");
+	std::string filename("./Assets/Remy.glb");
+	//std::string filename("./Assets/Character/Character.gltf");
 
 	Model* model = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
 	if (!model)
@@ -48,7 +49,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	m_Models.push_back(model);
 	model->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
-	model->setScale(XMFLOAT3(0.05f, 0.05f, 0.05f));
+	model->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
 
 	m_modelCount = m_Models.size();
 	
@@ -111,6 +112,7 @@ bool Application::Frame()
 	{
 		return false;
 	}
+
 	return true;
 }
 
@@ -143,7 +145,6 @@ bool Application::Render()
 
 void Application::UpdateAnimation(float dt)
 {
-	//p(to_string(dt) + "\n");
 	for (int i = 0; i < m_modelCount; i++)
 	{
 		m_Models[i]->UpdateAnimation(dt);

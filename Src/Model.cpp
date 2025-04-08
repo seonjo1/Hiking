@@ -42,13 +42,13 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 	{
 		throw std::runtime_error("failed to load obj file!");
 	}
-
 	// scene 안에있는 material 개수만큼 반복
 	for (uint32_t i = 0; i < scene->mNumMaterials; i++)
 	{
 		// scene의 i번째 material 정보 get
 		aiMaterial* materialInfo = scene->mMaterials[i];
-		m_textures.push_back(new Texture(device, deviceContext, materialInfo, dirname));
+		Texture* texPtr = new Texture(device, deviceContext, scene, materialInfo, dirname);
+		m_textures.push_back(texPtr);
 	}
 
 	// animation 로딩
@@ -56,7 +56,8 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_hasAnimation = true;
 		LoadAnimationData(scene, m_skeleton);
 		m_pose.Initialize(m_skeleton.bones.size());
-		m_animStateManager.SetState("Idle", m_animationClips);
+		m_animStateManager.SetState("Armature|mixamo.com|Layer0", m_animationClips);
+		//m_animStateManager.SetState("Run", m_animationClips);
 	}
 
 	// node 데이터 처리
@@ -107,6 +108,7 @@ void Model::processMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 		VertexType& v = vertices[i];
 		v.position = XMFLOAT3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
 		//v.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+
 		v.texture = XMFLOAT2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
 
 		vertexBones[i].NormalizeAndTrim();
@@ -145,7 +147,9 @@ void Model::processMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 	// mesh의 mMaterialINdex가 0이상이면 이 mesh는 material을 갖고 있으므로
 	// 해당 material값을 setting 해준다.
 	if (mesh->mMaterialIndex >= 0)
+	{
 		newMesh->setTexture(m_textures[mesh->mMaterialIndex]);
+	}
 	m_meshes.push_back(newMesh);
 }
 
@@ -160,6 +164,11 @@ void Model::Shutdown()
 bool Model::Draw(ID3D11DeviceContext* deviceContext, TextureShader* textureShader, Matrix& matrix)
 {
 	matrix.world = getWorldMatrix();
+
+	for (int i = 0; i < m_size; i++)
+	{
+		ID3D11ShaderResourceView*  texture = m_meshes[i]->getTexture();
+	}
 
 	for (int i = 0; i < m_size; i++)
 	{

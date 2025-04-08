@@ -31,7 +31,6 @@ bool Context::Initialize()
 	m_Input = new Input;
 
 	m_Input->Initialize();
-
 	// Create and initialize the application class object.  This object will handle rendering all the graphics for this application.
 	m_Application = new Application;
 

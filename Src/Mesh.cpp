@@ -143,6 +143,8 @@ void Mesh::ShutdownBuffers()
 
 void Mesh::RenderBuffers(ID3D11DeviceContext* deviceContext)
 {
+	if (m_Texture == nullptr)
+		p("no texture!!\n");
 	unsigned int stride;
 	unsigned int offset;
 
