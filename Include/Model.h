@@ -4,10 +4,11 @@
 #include "mesh.h"
 #include "AnimationSystem.h"
 #include "AnimationData.h"
-#include "Pose.h"
 #include <unordered_set>
 
 class TextureShader;
+class JointShader;
+class BoneShader;
 
 struct Matrix
 {
@@ -66,9 +67,13 @@ public:
 	void setState(std::string state);
 
 	void UpdateAnimation(float dt);
-	bool Draw(ID3D11DeviceContext*, TextureShader*, Matrix&);
+	bool DrawTextureShader(ID3D11DeviceContext*, TextureShader*, Matrix&);
+	bool DrawJointShader(ID3D11DeviceContext*, JointShader*, Matrix&);
+	bool DrawBoneShader(ID3D11DeviceContext*, BoneShader*, Matrix&);
+
 	void Shutdown();
 	XMMATRIX getWorldMatrix();
+	XMMATRIX getWorldMatrixNotIncludeScale();
 	void setPosition(XMFLOAT3);
 	void setRotation(XMFLOAT3);
 	void setScale(XMFLOAT3);
@@ -86,6 +91,8 @@ private:
 	XMFLOAT3 m_rotation;
 	XMFLOAT3 m_scale;
 
+	Mesh* m_jointMesh;
+	Mesh* m_boneMesh;
 	std::vector<Mesh*> m_meshes;
 	std::vector<Texture*> m_textures;
 

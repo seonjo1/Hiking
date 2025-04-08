@@ -40,16 +40,14 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	std::string filename("./Assets/Remy.glb");
 	//std::string filename("./Assets/Character/Character.gltf");
 
-	Model* model = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
-	if (!model)
+	m_AnimationModel = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
+	if (!m_AnimationModel)
 	{
 		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
 		return false;
 	}
-
-	m_Models.push_back(model);
-	model->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
-	model->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
+	m_AnimationModel->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
+	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
 
 	m_modelCount = m_Models.size();
 	
@@ -62,17 +60,53 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
+	m_JointShader = new JointShader;
+	result = m_JointShader->Initialize(m_Direct3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the joint shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_BoneShader = new BoneShader;
+	result = m_BoneShader->Initialize(m_Direct3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the bone shader object.", L"Error", MB_OK);
+		return false;
+	}
+
 	return true;
 }
 
 void Application::Shutdown()
 {
+	if (m_AnimationModel)
+	{
+		m_AnimationModel->Shutdown();
+		delete m_AnimationModel;
+	}
+
 	// Release the texture shader object.
 	if (m_TextureShader)
 	{
 		m_TextureShader->Shutdown();
 		delete m_TextureShader;
 		m_TextureShader = 0;
+	}
+
+	if (m_JointShader)
+	{
+		m_JointShader->Shutdown();
+		delete m_JointShader;
+		m_JointShader = 0;
+	}
+
+	if (m_BoneShader)
+	{
+		m_BoneShader->Shutdown();
+		delete m_BoneShader;
+		m_BoneShader = 0;
 	}
 
 	// Release the model object.
@@ -130,11 +164,20 @@ bool Application::Render()
 	m_Camera->GetViewMatrix(matrix.view);
 	m_Direct3D->GetProjectionMatrix(matrix.projection);
 
-	// 모델 버텍스, 인덱스 프리미티브 바인딩
-	for (int i = 0; i < m_Models.size(); i++)
+	if (m_debugMode == true)
 	{
-		if (m_Models[i]->Draw(m_Direct3D->GetDeviceContext(), m_TextureShader, matrix) == false)
-			return false;
+		m_AnimationModel->DrawJointShader(m_Direct3D->GetDeviceContext(), m_JointShader, matrix);
+		m_AnimationModel->DrawBoneShader(m_Direct3D->GetDeviceContext(), m_BoneShader, matrix);
+	}
+	else
+	{
+		m_AnimationModel->DrawTextureShader(m_Direct3D->GetDeviceContext(), m_TextureShader, matrix);
+
+		for (int i = 0; i < m_Models.size(); i++)
+		{
+			//if (m_Models[i]->DrawTextureShader(m_Direct3D->GetDeviceContext(), m_TextureShader, matrix) == false)
+			//	return false;
+		}
 	}
 
 	// Present the rendered scene to the screen.
@@ -145,10 +188,7 @@ bool Application::Render()
 
 void Application::UpdateAnimation(float dt)
 {
-	for (int i = 0; i < m_modelCount; i++)
-	{
-		m_Models[i]->UpdateAnimation(dt);
-	}
+	m_AnimationModel->UpdateAnimation(dt);
 }
 
 void Application::CameraMove(
@@ -216,11 +256,16 @@ void Application::ModelControl(Input* input)
 	XMFLOAT3 dir = getDirection(inputState, pressUp, pressLeft, pressDown, pressRight);
 
 	if (inputState){
-		m_Models[0]->move(dir);
+		m_AnimationModel->move(dir);
 		//m_Models[0]->setState("Walk");
 	}
 	else {
-		m_Models[0]->speedDown();
+		m_AnimationModel->speedDown();
 	}
 	
+}
+
+void Application::setDebugMode(bool flag)
+{
+	m_debugMode = flag;
 }

@@ -10,20 +10,20 @@
 using namespace DirectX;
 using namespace std;
 
+struct MatrixBufferType
+{
+	XMMATRIX world;
+	XMMATRIX view;
+	XMMATRIX projection;
+};
+
+struct BoneBufferType {
+	XMMATRIX boneTransforms[100];  // 본 최대 100개
+};
+
+
 class TextureShader
 {
-private:
-	struct MatrixBufferType
-	{
-		XMMATRIX world;
-		XMMATRIX view;
-		XMMATRIX projection;
-	};
-
-	struct BoneBufferType {
-		XMMATRIX boneTransforms[100];  // 본 최대 100개
-	};
-
 public:
 	TextureShader();
 	TextureShader(const TextureShader&);

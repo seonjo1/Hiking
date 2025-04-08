@@ -1,5 +1,6 @@
 #include "model.h"
-#include "TextureShader.h"
+#include "JointShader.h"
+#include "BoneShader.h"
 
 Model::Model()
 {
@@ -57,7 +58,8 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		LoadAnimationData(scene, m_skeleton);
 		m_pose.Initialize(m_skeleton.bones.size());
 		m_animStateManager.SetState("Armature|mixamo.com|Layer0", m_animationClips);
-		//m_animStateManager.SetState("Run", m_animationClips);
+		m_jointMesh = Mesh::createSphere(device);
+		m_boneMesh = Mesh::createBone(device);
 	}
 
 	// node 데이터 처리
@@ -156,19 +158,50 @@ void Model::processMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 void Model::Shutdown()
 {
 	// Release the model texture.
+	ReleaseMeshes();
 	ReleaseTextures();
 
 	return;
 }
 
-bool Model::Draw(ID3D11DeviceContext* deviceContext, TextureShader* textureShader, Matrix& matrix)
+bool Model::DrawBoneShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix)
 {
 	matrix.world = getWorldMatrix();
 
-	for (int i = 0; i < m_size; i++)
+	int count = m_skeleton.bones.size();
+
+	m_boneMesh->Render(deviceContext);
+
+	for (int i = 0; i < count; i++)
 	{
-		ID3D11ShaderResourceView*  texture = m_meshes[i]->getTexture();
+		if (boneShader->Render(deviceContext, m_boneMesh->GetIndexCount(), matrix, m_pose.world[i]) == false)
+			return false;
 	}
+
+	return true;
+}
+
+bool Model::DrawJointShader(ID3D11DeviceContext* deviceContext, JointShader* jointShader, Matrix& matrix)
+{
+	matrix.world = getWorldMatrix();
+
+	int count = m_skeleton.bones.size();
+
+	m_jointMesh->Render(deviceContext);
+
+	for (int i = 0; i < count; i++)
+	{
+		if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, m_pose.world[i]) == false)
+			return false;
+	}
+
+	return true;
+}
+
+
+bool Model::DrawTextureShader(ID3D11DeviceContext* deviceContext, TextureShader* textureShader, Matrix& matrix)
+{
+	matrix.world = getWorldMatrix();
 
 	for (int i = 0; i < m_size; i++)
 	{
@@ -213,6 +246,17 @@ void Model::ReleaseTextures()
 
 void Model::ReleaseMeshes()
 {
+	if (m_boneMesh)
+	{
+		m_boneMesh->Shutdown();
+		delete m_boneMesh;
+	}
+	if (m_jointMesh)
+	{
+		m_jointMesh->Shutdown();
+		delete m_jointMesh;
+	}
+
 	for (int i = 0; i < m_size; i++)
 	{
 		if (m_meshes[i])
@@ -234,6 +278,16 @@ XMMATRIX Model::getWorldMatrix()
 	XMMATRIX scale = XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
 
 	return scale * rotation * translation;  // 순서대로 적용: 스케일 -> 회전 -> 위치
+}
+
+XMMATRIX Model::getWorldMatrixNotIncludeScale()
+{
+	float toRadian = XM_PI / 180.0f;
+	XMMATRIX translation = XMMatrixTranslation(m_position.x, m_position.y, m_position.z);
+	XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(m_rotation.x * toRadian, m_rotation.y * toRadian, m_rotation.z * toRadian);
+	XMMATRIX rotation = XMMatrixRotationQuaternion(quaternion);
+
+	return rotation * translation;  // 순서대로 적용: 스케일 -> 회전 -> 위치
 }
 
 void Model::setPosition(XMFLOAT3 position)

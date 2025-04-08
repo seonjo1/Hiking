@@ -133,7 +133,7 @@ bool Context::Frame()
 	}
 
 	m_Application->ModelControl(m_Input);
-	
+	m_Application->setDebugMode(m_Input->IsKeyDown('P'));
 
 	// 애플리케이션 클래스의 프레임 처리
 	result = m_Application->Frame();

@@ -4,7 +4,8 @@
 #include "camera.h"
 #include "model.h"
 #include "Timer.h"
-#include "textureshader.h"
+#include "jointShader.h"
+#include "boneShader.h"
 #include "input.h"
 
 const bool FULL_SCREEN = false;
@@ -31,6 +32,7 @@ public:
 	void ModelControl(Input*);
 	XMFLOAT3 getDirection(int& inputState, bool pressUp, bool pressLeft, bool pressDown, bool pressRight);
 
+	void setDebugMode(bool);
 	void CameraRotate(int x, int y);
 	void SaveCameraCurrentPos(int x, int y);
 
@@ -40,9 +42,13 @@ private:
 	D3D* m_Direct3D;
 	Camera* m_Camera;
 	Timer m_Timer;
+	Model* m_AnimationModel;
 	std::vector<Model*> m_Models;
 	
 	TextureShader* m_TextureShader;
+	JointShader* m_JointShader;
+	BoneShader* m_BoneShader;
 
 	int m_modelCount;
+	bool m_debugMode{ false };
 };
