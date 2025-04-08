@@ -34,7 +34,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// 카메라 생성 및 위치 설정
 	m_Camera = new Camera;
-	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
+	m_Camera->SetPosition(0.0f, 5.0f, -15.0f);
 
 	// 모델 생성 및 초기화
 	std::string filename("./Assets/Character/Character.gltf");
@@ -47,7 +47,8 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	m_Models.push_back(model);
-
+	model->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
+	model->setScale(XMFLOAT3(0.05f, 0.05f, 0.05f));
 
 	m_modelCount = m_Models.size();
 	

@@ -70,6 +70,7 @@ public:
 	XMMATRIX getWorldMatrix();
 	void setPosition(XMFLOAT3);
 	void setRotation(XMFLOAT3);
+	void setScale(XMFLOAT3);
 
 private:
 	void ReleaseTextures();

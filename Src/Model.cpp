@@ -56,7 +56,7 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_hasAnimation = true;
 		LoadAnimationData(scene, m_skeleton);
 		m_pose.Initialize(m_skeleton.bones.size());
-		m_animStateManager.SetState("Run", m_animationClips);
+		m_animStateManager.SetState("Idle", m_animationClips);
 	}
 
 	// node 데이터 처리
@@ -218,8 +218,9 @@ void Model::ReleaseMeshes()
 
 XMMATRIX Model::getWorldMatrix()
 {
+	float toRadian = XM_PI / 180.0f;
 	XMMATRIX translation = XMMatrixTranslation(m_position.x, m_position.y, m_position.z);
-	XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(m_rotation.x, m_rotation.y, m_rotation.z);
+	XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(m_rotation.x * toRadian, m_rotation.y * toRadian, m_rotation.z * toRadian);
 	XMMATRIX rotation = XMMatrixRotationQuaternion(quaternion);
 	XMMATRIX scale = XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
 
@@ -234,6 +235,11 @@ void Model::setPosition(XMFLOAT3 position)
 void Model::setRotation(XMFLOAT3 rotation)
 {
 	m_rotation = rotation;
+}
+
+void Model::setScale(XMFLOAT3 scale)
+{
+	m_scale = scale;
 }
 
 void Model::ParseSkeleton(aiNode* node, int parentIndex, Skeleton& skeleton, const std::unordered_set<std::string>& usedBones) {
