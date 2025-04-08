@@ -72,6 +72,7 @@ public:
 	void setPosition(XMFLOAT3);
 	void setRotation(XMFLOAT3);
 	void setScale(XMFLOAT3);
+	void speedDown();
 	void move(XMFLOAT3&);
 	bool getRotateDir(XMFLOAT3& targetDir, XMFLOAT3& nowDir);
 	XMFLOAT3 getRotatedVector(float degree);

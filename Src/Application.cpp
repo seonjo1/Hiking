@@ -220,6 +220,7 @@ void Application::ModelControl(Input* input)
 		//m_Models[0]->setState("Walk");
 	}
 	else {
+		m_Models[0]->speedDown();
 	}
 	
 }
