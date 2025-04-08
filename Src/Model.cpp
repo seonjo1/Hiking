@@ -174,6 +174,7 @@ bool Model::DrawBoneShader(ID3D11DeviceContext* deviceContext, BoneShader* boneS
 
 	for (int i = 0; i < count; i++)
 	{
+		//  부모 , 자식 렌더링
 		if (boneShader->Render(deviceContext, m_boneMesh->GetIndexCount(), matrix, m_pose.world[i]) == false)
 			return false;
 	}

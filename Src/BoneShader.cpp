@@ -319,7 +319,7 @@ bool BoneShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, Matrix&
 	
 	MoveVectorBufferType* moveVectorDataPtr = (MoveVectorBufferType*)mappedResource3.pData;
 
-
+	XMVECTOR parentTochild = 
 
 	moveVectorDataPtr->moveVector[0] = XMMatrixMultiply(boneMatrix, matrix.world);
 	moveVectorDataPtr->moveVector[0] = XMMatrixMultiply(boneMatrix, matrix.world);
