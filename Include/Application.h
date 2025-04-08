@@ -5,6 +5,7 @@
 #include "model.h"
 #include "Timer.h"
 #include "textureshader.h"
+#include "input.h"
 
 const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = true;
@@ -27,6 +28,9 @@ public:
 		bool pressW, bool pressS, bool pressD,
 		bool pressA, bool pressE, bool pressQ
 	);
+	void ModelControl(Input*);
+	XMFLOAT3 getDirection(int& inputState, bool pressUp, bool pressLeft, bool pressDown, bool pressRight);
+
 	void CameraRotate(int x, int y);
 	void SaveCameraCurrentPos(int x, int y);
 

@@ -131,6 +131,8 @@ bool Context::Frame()
 			m_Input->IsKeyDown('E'), m_Input->IsKeyDown('Q')
 		);
 	}
+
+	m_Application->ModelControl(m_Input);
 	
 
 	// 애플리케이션 클래스의 프레임 처리

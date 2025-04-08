@@ -34,7 +34,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// 카메라 생성 및 위치 설정
 	m_Camera = new Camera;
-	m_Camera->SetPosition(0.0f, 4.0f, -15.0f);
+	m_Camera->SetPosition(0.0f, 1.0f, -15.0f);
 
 	// 모델 생성 및 초기화
 	std::string filename("./Assets/Remy.glb");
@@ -166,4 +166,60 @@ void Application::CameraRotate(int x, int y)
 void Application::SaveCameraCurrentPos(int x, int y)
 {
 	m_Camera->SaveCurrentPos(x, y);
+}
+
+XMFLOAT3 Application::getDirection(int& inputState, bool pressUp, bool pressLeft, bool pressDown, bool pressRight) {
+	XMFLOAT3 movement = { 0.0f, 0.0f, 0.0f };
+
+	if (!pressUp && !pressLeft && !pressDown && !pressRight) {
+		return movement;
+	}
+
+	if (pressUp) {
+		movement.z += 1.0f;
+	}
+	if (pressDown) {
+		movement.z -= 1.0f;
+	}
+	if (pressLeft) {
+		movement.x -= 1.0f;
+	}
+	if (pressRight) {
+		movement.x += 1.0f;
+	}
+
+	XMVECTOR v = XMLoadFloat3(&movement);
+	XMVECTOR lengthVec = XMVector3Length(v);
+	float length;
+	XMStoreFloat(&length, lengthVec);
+
+	if (length < 1.0f) {
+		return XMFLOAT3(0.0f, 0.0f, 0.0f);
+	}
+
+	XMVECTOR normalizedVec = XMVector3Normalize(v);
+	XMStoreFloat3(&movement, normalizedVec);
+
+	inputState = inputState | 1;
+
+	return movement;
+}
+
+void Application::ModelControl(Input* input)
+{
+	int inputState = 0;
+
+	bool pressUp = input->IsKeyDown(VK_UP);
+	bool pressLeft = input->IsKeyDown(VK_LEFT);
+	bool pressDown = input->IsKeyDown(VK_DOWN);
+	bool pressRight = input->IsKeyDown(VK_RIGHT);
+	XMFLOAT3 dir = getDirection(inputState, pressUp, pressLeft, pressDown, pressRight);
+
+	if (inputState){
+		m_Models[0]->move(dir);
+		//m_Models[0]->setState("Walk");
+	}
+	else {
+	}
+	
 }

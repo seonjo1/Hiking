@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include "mesh.h"
 #include "AnimationSystem.h"
 #include "AnimationData.h"
@@ -71,6 +72,10 @@ public:
 	void setPosition(XMFLOAT3);
 	void setRotation(XMFLOAT3);
 	void setScale(XMFLOAT3);
+	void move(XMFLOAT3&);
+	bool getRotateDir(XMFLOAT3& targetDir, XMFLOAT3& nowDir);
+	XMFLOAT3 getRotatedVector(float degree);
+	void setToTarget(XMFLOAT3& targetDir);
 
 private:
 	void ReleaseTextures();
@@ -92,5 +97,6 @@ private:
 
 	// 애니메이션 여부
 	bool m_hasAnimation = false;
+	float m_speed { 0.0f };
 	UINT m_size; // mesh 개수
 };

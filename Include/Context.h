@@ -8,7 +8,6 @@ Windows API header
 
 #include <windows.h>
 #include <windowsx.h>
-#include "input.h"
 #include "application.h"
 
 /*

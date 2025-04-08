@@ -10,7 +10,7 @@ void AnimationPlayer::Update(float deltaTime) {
 
     if (!clip) return;
     currentTime += speed * deltaTime * clip->ticksPerSecond;
-    if (currentTime > clip->duration)
+    if (currentTime >= clip->duration)
         currentTime = fmod(currentTime, clip->duration);
 }
 

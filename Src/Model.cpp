@@ -352,7 +352,15 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 			
 			for (unsigned int k = 0; k < channel->mNumPositionKeys; ++k) {
 				auto& kf = channel->mPositionKeys[k];
-				track.positionKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
+				if (skeleton.nameToIndex[boneName] == 0)
+				{
+					track.positionKeys.push_back({ kf.mTime, { 0.0f, 0.0f, 0.0f} });
+				}
+				else
+				{
+					track.positionKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
+				}
+
 			}
 
 			for (unsigned int k = 0; k < channel->mNumRotationKeys; ++k) {
@@ -382,4 +390,130 @@ bool Model::HasAnimationInfo(const aiScene* scene){
 	}
 
 	return false;
+}
+
+bool Model::getRotateDir(XMFLOAT3& targetDir, XMFLOAT3& nowDir)
+{
+	XMVECTOR nowVec = XMLoadFloat3(&nowDir);
+	XMVECTOR targetVec = XMLoadFloat3(&targetDir);
+
+	XMVECTOR cross = XMVector3Cross(nowVec, targetVec);
+
+	XMFLOAT3 result;
+	XMStoreFloat3(&result, cross);
+	if (result.y > 0.0f)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+XMFLOAT3 Model::getRotatedVector(float degree)
+{
+	XMFLOAT3 dir = { 0.0f, 0.0f, -1.0f };
+	XMVECTOR v = XMLoadFloat3(&dir);
+	XMMATRIX rotY = XMMatrixRotationY(m_rotation.y * XM_PI / 180.0f);
+	XMVECTOR rotated = XMVector3TransformNormal(v, rotY);
+	XMVECTOR normalized = XMVector3Normalize(rotated);
+	XMStoreFloat3(&dir, rotated);
+
+	return dir;
+}
+
+void Model::setToTarget(XMFLOAT3& targetDir)
+{
+	if (targetDir.z > 0.1f)
+	{
+		if (targetDir.x > 0.1f)
+		{
+			m_rotation.y = 225.0f;
+		}
+		else if (targetDir.x < -0.1f)
+		{
+			m_rotation.y = 135.0f;
+		}
+		else
+		{
+			m_rotation.y = 180.0f;
+		}
+	} else if (targetDir.z < -0.1f)
+	{
+		if (targetDir.x > 0.1f)
+		{
+			m_rotation.y = 315.0f;
+		}
+		else if (targetDir.x < -0.1f)
+		{
+			m_rotation.y = 45.0f;
+		}
+		else
+		{
+			m_rotation.y = 0.0f;
+		}
+	}
+	else if (targetDir.x > 0.0f)
+	{
+		m_rotation.y = 270.0f;
+	}
+	else
+	{
+		m_rotation.y = 90.0f;
+	}
+}
+
+void Model::move(XMFLOAT3& targetDir)
+{
+	const static float rotSpeed = 20.0f;
+	const static float accel = 0.01f;
+	const static float maxSpeed = 0.1f;
+
+	// 현재 방향 벡터
+	XMFLOAT3 nowDir = getRotatedVector(m_rotation.y);
+
+	// target 벡터와 현재 벡터 사잇각 구하기
+	XMVECTOR targetVec = XMLoadFloat3(&targetDir);
+	XMVECTOR nowVec = XMLoadFloat3(&nowDir);
+	XMVECTOR dot = XMVector3Dot(targetVec, nowVec);
+
+	float cosVal;
+	XMStoreFloat(&cosVal, dot);
+	cosVal = std::clamp(cosVal, -1.0f, 1.0f);
+
+	float theta = acosf(cosVal);
+
+	if (theta < rotSpeed * XM_PI / 180.0f)
+	{
+		setToTarget(targetDir);
+
+		nowDir = getRotatedVector(m_rotation.y);
+
+		m_speed = min(m_speed + accel, maxSpeed);
+		XMVECTOR dirVec = XMLoadFloat3(&nowDir);
+		XMVECTOR pos = XMLoadFloat3(&m_position);
+		dirVec = XMVectorScale(dirVec, m_speed);
+		pos = XMVectorAdd(dirVec, pos);
+
+		XMStoreFloat3(&m_position, pos);
+	}
+	else
+	{
+		bool isCW = getRotateDir(targetDir, nowDir);
+
+		// 회전 방향 구하기
+
+		if (isCW)
+		{
+			m_rotation.y += rotSpeed;
+		}
+		else
+		{
+			m_rotation.y -= rotSpeed;
+		}
+		if (m_rotation.y >= 360.0f)
+			m_rotation.y -= 360.0f;
+	}
+
 }
