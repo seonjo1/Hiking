@@ -6,6 +6,11 @@ Texture::Texture()
 	m_textureView = 0;
 }
 
+Texture::Texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, XMFLOAT4 diffuseColor)
+{
+	InitializeColor(device, deviceContext, aiColor4D(diffuseColor.x, diffuseColor.y, diffuseColor.z, diffuseColor.w));
+}
+
 Texture::Texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const aiScene* scene, aiMaterial* materialInfo, std::string& dirname)
 {
 	if (materialInfo->GetTextureCount(aiTextureType_DIFFUSE) <= 0) {

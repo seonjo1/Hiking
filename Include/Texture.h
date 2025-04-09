@@ -21,6 +21,7 @@ public:
 	Texture();
 	Texture(const Texture&);
 	Texture(ID3D11Device*, ID3D11DeviceContext*, const aiScene*, aiMaterial*, std::string&);
+	Texture::Texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, XMFLOAT4 diffuseColor);
 
 	~Texture();
 

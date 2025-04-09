@@ -6,6 +6,7 @@
 #include "Timer.h"
 #include "jointShader.h"
 #include "boneShader.h"
+#include "modelShader.h"
 #include "input.h"
 
 const bool FULL_SCREEN = false;
@@ -48,6 +49,7 @@ private:
 	TextureShader* m_TextureShader;
 	JointShader* m_JointShader;
 	BoneShader* m_BoneShader;
+	ModelShader* m_ModelShader;
 
 	int m_modelCount;
 	bool m_debugMode{ false };

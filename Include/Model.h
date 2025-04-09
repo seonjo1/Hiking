@@ -10,6 +10,7 @@
 class TextureShader;
 class JointShader;
 class BoneShader;
+class ModelShader;
 
 struct Matrix
 {
@@ -51,6 +52,9 @@ struct VertexBoneData {
 class Model
 {
 public:
+	static Model* createSphere(ID3D11Device* device, ID3D11DeviceContext* deviceContext, XMFLOAT4 color);
+	static Model* createBox(ID3D11Device* device, ID3D11DeviceContext* deviceContext, XMFLOAT4 color);
+
 	Model();
 	Model(ID3D11Device*, ID3D11DeviceContext*, std::string);
 	Model(const Model&);
@@ -71,6 +75,7 @@ public:
 	bool DrawTextureShader(ID3D11DeviceContext*, TextureShader*, Matrix&);
 	bool DrawJointShader(ID3D11DeviceContext*, JointShader*, Matrix&);
 	bool DrawBoneShader(ID3D11DeviceContext*, BoneShader*, Matrix&, XMFLOAT3);
+	bool DrawModelShader(ID3D11DeviceContext*, ModelShader*, Matrix&);
 
 	void Shutdown();
 	XMMATRIX getWorldMatrix();
@@ -83,6 +88,8 @@ public:
 	bool getRotateDir(XMFLOAT3& targetDir, XMFLOAT3& nowDir);
 	XMFLOAT3 getRotatedVector(float degree);
 	void setToTarget(XMFLOAT3& targetDir);
+	void addMesh(Mesh* mesh);
+	void addTexture(Texture* texture);
 
 private:
 	void ReleaseTextures();

@@ -1,6 +1,29 @@
 #include "model.h"
 #include "JointShader.h"
 #include "BoneShader.h"
+#include "ModelShader.h"
+
+Model* Model::createSphere(ID3D11Device* device, ID3D11DeviceContext* deviceContext, XMFLOAT4 color)
+{
+	Model* model = new Model();
+	Mesh* mesh = Mesh::createSphere(device);
+	model->addMesh(mesh);
+	Texture* texture = new Texture(device, deviceContext, color);
+	model->m_meshes[0]->setTexture(texture);
+	model->addTexture(texture);
+	return model;
+}
+
+Model* Model::createBox(ID3D11Device* device, ID3D11DeviceContext* deviceContext, XMFLOAT4 color)
+{
+	Model* model = new Model();
+	Mesh* mesh = Mesh::createBox(device);
+	model->addMesh(mesh);
+	Texture* texture = new Texture(device, deviceContext, color);
+	model->m_meshes[0]->setTexture(texture);
+	model->addTexture(texture);
+	return model;
+}
 
 Model::Model()
 {
@@ -58,7 +81,7 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		LoadAnimationData(scene, m_skeleton);
 		m_pose.Initialize(m_skeleton.bones.size());
 		m_animStateManager.SetState("idle", m_animationClips);
-		m_jointMesh = Mesh::createSphere(device);
+		m_jointMesh = Mesh::createJoint(device);
 		m_boneMesh = Mesh::createBone(device);
 	}
 
@@ -193,6 +216,20 @@ bool Model::DrawBoneShader(ID3D11DeviceContext* deviceContext, BoneShader* boneS
 	return true;
 }
 
+bool Model::DrawModelShader(ID3D11DeviceContext* deviceContext, ModelShader* modelShader, Matrix& matrix)
+{
+	matrix.world = getWorldMatrix();
+
+	for (int i = 0; i < m_size; i++)
+	{
+		m_meshes[i]->Render(deviceContext);
+		if (modelShader->Render(deviceContext, m_meshes[i]->GetIndexCount(), matrix, m_meshes[i]->getTexture()) == false)
+			return false;
+	}
+
+	return true;
+}
+
 bool Model::DrawJointShader(ID3D11DeviceContext* deviceContext, JointShader* jointShader, Matrix& matrix)
 {
 	matrix.world = getWorldMatrix();
@@ -277,7 +314,6 @@ void Model::ReleaseMeshes()
 			delete m_meshes[i];
 		}
 	}
-
 	return;
 }
 
@@ -582,4 +618,15 @@ void Model::move(XMFLOAT3& targetDir)
 	pos = XMVectorAdd(dirVec, pos);
 
 	XMStoreFloat3(&m_position, pos);
+}
+
+void Model::addMesh(Mesh* mesh)
+{
+	m_meshes.push_back(mesh);
+	m_size = m_meshes.size();
+}
+
+void Model::addTexture(Texture* texture)
+{
+	m_textures.push_back(texture);
 }

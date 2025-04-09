@@ -1,13 +1,13 @@
 cbuffer MatrixBuffer
 {
-    matrix worldMatrix;
-    matrix viewMatrix;
-    matrix projectionMatrix;
+    matrix world;
+    matrix view;
+    matrix projection;
 };
 
 struct VertexInputType
 {
-    float4 position : POSITION;
+    float3 position : POSITION;
     float2 tex : TEXCOORD0;
 };
 
@@ -17,15 +17,15 @@ struct PixelInputType
     float2 tex : TEXCOORD0;
 };
 
-PixelInputType TextureVertexShader(VertexInputType input)
+PixelInputType ModelVertexShader(VertexInputType input)
 {
     PixelInputType output;
 
-    input.position.w = 1.0f;
+    float4 position = float4(input.position, 1.0f);
 
-    output.position = mul(input.position, worldMatrix);
-    output.position = mul(output.position, viewMatrix);
-    output.position = mul(output.position, projectionMatrix);
+    output.position = mul(position, world);
+    output.position = mul(output.position, view);
+    output.position = mul(output.position, projection);
 
     // Store the texture coordinates for the pixel shader.
     output.tex = input.tex;

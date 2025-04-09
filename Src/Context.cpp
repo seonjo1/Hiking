@@ -14,6 +14,7 @@ Context::~Context()
 {
 }
 
+
 bool Context::Initialize()
 {
 	int screenWidth, screenHeight;

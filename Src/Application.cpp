@@ -36,7 +36,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_Camera = new Camera;
 	m_Camera->SetPosition(0.0f, 1.0f, -15.0f);
 
-	// 모델 생성 및 초기화
+	// 애니메이션 모델 생성
 	std::string filename("./Assets/Remy1.glb");
 
 	m_AnimationModel = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
@@ -48,6 +48,16 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_AnimationModel->setPosition(XMFLOAT3(0.0f, -3.0f, 0.0f));
 	m_AnimationModel->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
 	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
+
+	// 모델 생성
+	Model* sphere1 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.93f, 0.79f, 0.69f, 1.0f));
+	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.93f, 0.79f, 0.69f, 1.0f));
+
+	sphere1->setPosition(XMFLOAT3(0.0f, 0.0f, -1.0f));
+	box1->setPosition(XMFLOAT3(0.0f, 0.0f, -1.0f));
+
+	m_Models.push_back(sphere1);
+	m_Models.push_back(box1);
 
 	m_modelCount = m_Models.size();
 	
@@ -76,6 +86,14 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
+	m_ModelShader = new ModelShader;
+	result = m_ModelShader->Initialize(m_Direct3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the model shader object.", L"Error", MB_OK);
+		return false;
+	}
+
 	return true;
 }
 
@@ -93,6 +111,13 @@ void Application::Shutdown()
 		m_TextureShader->Shutdown();
 		delete m_TextureShader;
 		m_TextureShader = 0;
+	}
+
+	if (m_ModelShader)
+	{
+		m_ModelShader->Shutdown();
+		delete m_ModelShader;
+		m_ModelShader = 0;
 	}
 
 	if (m_JointShader)
@@ -172,11 +197,13 @@ bool Application::Render()
 	else
 	{
 		m_AnimationModel->DrawTextureShader(m_Direct3D->GetDeviceContext(), m_TextureShader, matrix);
+	}
 
-		for (int i = 0; i < m_Models.size(); i++)
+	for (int i = 0; i < m_Models.size(); i++)
+	{
+		if (m_Models[i]->DrawModelShader(m_Direct3D->GetDeviceContext(), m_ModelShader, matrix) == false)
 		{
-			//if (m_Models[i]->DrawTextureShader(m_Direct3D->GetDeviceContext(), m_TextureShader, matrix) == false)
-			//	return false;
+			return false;
 		}
 	}
 
