@@ -16,9 +16,9 @@ Mesh* Mesh::createBone(ID3D11Device* device)
 	indices[0] = 0;
 	indices[1] = 1;
 	indices[2] = 2;
-	indices[3] = 2;
+	indices[3] = 1;
 	indices[4] = 3;
-	indices[5] = 0;
+	indices[5] = 2;
 	
 	return new Mesh(device, vertices, indices);
 }

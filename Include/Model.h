@@ -1,5 +1,6 @@
 #pragma once
 
+#include <queue>
 #include <cmath>
 #include "mesh.h"
 #include "AnimationSystem.h"
@@ -69,7 +70,7 @@ public:
 	void UpdateAnimation(float dt);
 	bool DrawTextureShader(ID3D11DeviceContext*, TextureShader*, Matrix&);
 	bool DrawJointShader(ID3D11DeviceContext*, JointShader*, Matrix&);
-	bool DrawBoneShader(ID3D11DeviceContext*, BoneShader*, Matrix&);
+	bool DrawBoneShader(ID3D11DeviceContext*, BoneShader*, Matrix&, XMFLOAT3);
 
 	void Shutdown();
 	XMMATRIX getWorldMatrix();

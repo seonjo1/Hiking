@@ -58,11 +58,11 @@ void BoneShader::Shutdown()
 	return;
 }
 
-bool BoneShader::Render(ID3D11DeviceContext* deviceContext, int indexCount, Matrix& matrix, XMMATRIX& parentMatrix, XMMATRIX& childMatrix)
+bool BoneShader::Render(ID3D11DeviceContext* deviceContext, int indexCount, Matrix& matrix, XMMATRIX& parentMatrix, XMMATRIX& childMatrix, XMFLOAT3 cameraFront)
 {
 	bool result;
 
-	result = SetShaderParameters(deviceContext, matrix, parentMatrix, childMatrix);
+	result = SetShaderParameters(deviceContext, matrix, parentMatrix, childMatrix, cameraFront);
 	if (!result)
 	{
 		return false;
@@ -181,7 +181,7 @@ bool BoneShader::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFile
 	pixelShaderBuffer->Release();
 	pixelShaderBuffer = 0;
 
-	// 상수 버퍼 생성
+	// MatrixBuffer 상수 버퍼 생성
 	D3D11_BUFFER_DESC matrixBufferDesc;
 
 	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -198,6 +198,40 @@ bool BoneShader::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFile
 		return false;
 	}
 
+	// WorldTransforms 상수 버퍼 생성
+	D3D11_BUFFER_DESC worldMatrixBufferDesc;
+
+	worldMatrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	worldMatrixBufferDesc.ByteWidth = sizeof(WorldMatrixBufferType);
+	worldMatrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	worldMatrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	worldMatrixBufferDesc.MiscFlags = 0;
+	worldMatrixBufferDesc.StructureByteStride = 0;
+
+	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+	result = device->CreateBuffer(&worldMatrixBufferDesc, NULL, &m_worldMatrixBuffer);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Vectors 상수 버퍼 생성
+	D3D11_BUFFER_DESC vectorsBufferDesc;
+
+	vectorsBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	vectorsBufferDesc.ByteWidth = sizeof(VectorsBufferType);
+	vectorsBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	vectorsBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	vectorsBufferDesc.MiscFlags = 0;
+	vectorsBufferDesc.StructureByteStride = 0;
+
+	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+	result = device->CreateBuffer(&vectorsBufferDesc, NULL, &m_vectorsBuffer);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -208,6 +242,18 @@ void BoneShader::ShutdownShader()
 	{
 		m_matrixBuffer->Release();
 		m_matrixBuffer = 0;
+	}
+
+	if (m_worldMatrixBuffer)
+	{
+		m_worldMatrixBuffer->Release();
+		m_worldMatrixBuffer = 0;
+	}	
+	
+	if (m_vectorsBuffer)
+	{
+		m_vectorsBuffer->Release();
+		m_vectorsBuffer = 0;
 	}
 
 	// Release the layout.
@@ -269,19 +315,19 @@ void BoneShader::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, W
 	return;
 }
 
-bool BoneShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, Matrix& matrix, XMMATRIX& parentMatrix, XMMATRIX& childMatrix)
+bool BoneShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, Matrix& matrix, XMMATRIX& parentMatrix, XMMATRIX& childMatrix, XMFLOAT3 cameraFront)
 {
 	unsigned int bufferNumber = 0;
 
 	// matrix buffer (상수버퍼)
-	D3D11_MAPPED_SUBRESOURCE mappedResource1;
-	HRESULT result = deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource1);
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	HRESULT result = deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
 	}
 
-	BoneMatrixBufferType* matrixDataPtr = (BoneMatrixBufferType*)mappedResource1.pData;
+	BoneMatrixBufferType* matrixDataPtr = (BoneMatrixBufferType*)mappedResource.pData;
 
 	matrixDataPtr->view = matrix.view;
 	matrixDataPtr->projection = matrix.projection;
@@ -291,44 +337,50 @@ bool BoneShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, Matrix&
 	deviceContext->VSSetConstantBuffers(bufferNumber++, 1, &m_matrixBuffer);
 
 	// worldMatrix buffer (상수버퍼)
-	D3D11_MAPPED_SUBRESOURCE mappedResource2;
-	HRESULT result = deviceContext->Map(m_worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource2);
+	result = deviceContext->Map(m_worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
 	}
 
-	WorldMatrixBufferType* worldMatrixDataPtr = (WorldMatrixBufferType*)mappedResource2.pData;
+	WorldMatrixBufferType* worldMatrixDataPtr = (WorldMatrixBufferType*)mappedResource.pData;
 
-	worldMatrixDataPtr->world[0] = XMMatrixMultiply(parentMatrix, matrix.world);
-	worldMatrixDataPtr->world[1] = XMMatrixMultiply(parentMatrix, matrix.world);
-	worldMatrixDataPtr->world[2] = XMMatrixMultiply(childMatrix, matrix.world);
-	worldMatrixDataPtr->world[3] = XMMatrixMultiply(childMatrix, matrix.world);
+	XMMATRIX parentWorldMatrix = XMMatrixMultiply(parentMatrix, matrix.world);
+	XMMATRIX childWorldMatrix = XMMatrixMultiply(childMatrix, matrix.world);
+	worldMatrixDataPtr->world[0] = parentWorldMatrix;
+	worldMatrixDataPtr->world[1] = parentWorldMatrix;
+	worldMatrixDataPtr->world[2] = childWorldMatrix;
+	worldMatrixDataPtr->world[3] = childWorldMatrix;
 
 	deviceContext->Unmap(m_worldMatrixBuffer, 0);
 
 	deviceContext->VSSetConstantBuffers(bufferNumber++, 1, &m_worldMatrixBuffer);
 
 	// moveVector buffer (상수버퍼)
-	D3D11_MAPPED_SUBRESOURCE mappedResource3;
-	HRESULT result = deviceContext->Map(m_moveVectorBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource3);
+	result = deviceContext->Map(m_vectorsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
 	}
 	
-	MoveVectorBufferType* moveVectorDataPtr = (MoveVectorBufferType*)mappedResource3.pData;
+	VectorsBufferType* vectorsDataPtr = (VectorsBufferType*)mappedResource.pData;
 
-	XMVECTOR parentTochild = 
+	XMFLOAT4 tmp(0.0f, 0.0f, 0.0f, 1.0f);
 
-	moveVectorDataPtr->moveVector[0] = XMMatrixMultiply(boneMatrix, matrix.world);
-	moveVectorDataPtr->moveVector[0] = XMMatrixMultiply(boneMatrix, matrix.world);
-	moveVectorDataPtr->moveVector[0] = XMMatrixMultiply(boneMatrix, matrix.world);
-	moveVectorDataPtr->moveVector[0] = XMMatrixMultiply(boneMatrix, matrix.world);
+	XMVECTOR parentVector = XMLoadFloat4(&tmp);
+	XMVECTOR childVector = XMLoadFloat4(&tmp);
 
-	deviceContext->Unmap(m_moveVectorBuffer, 0);
+	parentVector = XMVector4Transform(parentVector, parentWorldMatrix);
+	childVector = XMVector4Transform(childVector, childWorldMatrix);
 
-	deviceContext->VSSetConstantBuffers(bufferNumber++, 1, &m_moveVectorBuffer);
+	XMVECTOR parentToChildVector = XMVectorSubtract(childVector, parentVector);
+
+	XMStoreFloat4(&(vectorsDataPtr->toChildVector), parentToChildVector);
+	vectorsDataPtr->cameraFrontVector = XMFLOAT4(cameraFront.x, cameraFront.y, cameraFront.z, 1.0f);
+
+	deviceContext->Unmap(m_vectorsBuffer, 0);
+
+	deviceContext->VSSetConstantBuffers(bufferNumber++, 1, &m_vectorsBuffer);
 
 	return true;
 }

@@ -38,7 +38,6 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// 모델 생성 및 초기화
 	std::string filename("./Assets/Remy.glb");
-	//std::string filename("./Assets/Character/Character.gltf");
 
 	m_AnimationModel = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
 	if (!m_AnimationModel)
@@ -167,7 +166,7 @@ bool Application::Render()
 	if (m_debugMode == true)
 	{
 		m_AnimationModel->DrawJointShader(m_Direct3D->GetDeviceContext(), m_JointShader, matrix);
-		m_AnimationModel->DrawBoneShader(m_Direct3D->GetDeviceContext(), m_BoneShader, matrix);
+		m_AnimationModel->DrawBoneShader(m_Direct3D->GetDeviceContext(), m_BoneShader, matrix, m_Camera->GetFront());
 	}
 	else
 	{

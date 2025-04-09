@@ -19,6 +19,7 @@ class Skeleton {
 public:
     std::vector<Bone> bones;
     std::unordered_map<std::string, int> nameToIndex;
+    int rootBoneIdx;
     int GetBoneIndex(const std::string& name) const;
 };
 

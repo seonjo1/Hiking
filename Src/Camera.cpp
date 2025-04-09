@@ -37,6 +37,11 @@ XMFLOAT3 Camera::GetRotation()
 	return XMFLOAT3(m_cameraPitch, m_cameraYaw, 0.0f);
 }
 
+XMFLOAT3 Camera::GetFront()
+{
+	return m_cameraFront;
+}
+
 void Camera::Render()
 {
 	constexpr float DEG_TO_RAD = XM_PI / 180.0f;

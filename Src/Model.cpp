@@ -164,19 +164,30 @@ void Model::Shutdown()
 	return;
 }
 
-bool Model::DrawBoneShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix)
+bool Model::DrawBoneShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront)
 {
 	matrix.world = getWorldMatrix();
 
-	int count = m_skeleton.bones.size();
-
 	m_boneMesh->Render(deviceContext);
 
-	for (int i = 0; i < count; i++)
+	std::queue<int> q;
+	q.push(m_skeleton.rootBoneIdx);
+	
+	while (!q.empty())
 	{
-		//  부모 , 자식 렌더링
-		if (boneShader->Render(deviceContext, m_boneMesh->GetIndexCount(), matrix, m_pose.world[i]) == false)
-			return false;
+		int idx = q.front();
+		q.pop();
+
+		Bone& bone = m_skeleton.bones[idx];
+
+		int count = bone.children.size();
+		for (int i = 0; i < count; i++)
+		{
+			int childIdx = bone.children[i];
+			if (boneShader->Render(deviceContext, m_boneMesh->GetIndexCount(), matrix, m_pose.world[idx], m_pose.world[childIdx], cameraFront) == false)
+				return false;
+			q.push(childIdx);
+		}
 	}
 
 	return true;
@@ -326,7 +337,8 @@ void Model::ParseSkeleton(aiNode* node, int parentIndex, Skeleton& skeleton, con
 	
 	if (parentIndex != -1)
 		skeleton.bones[parentIndex].children.push_back(thisIndex);
-
+	else
+		skeleton.rootBoneIdx = thisIndex;
 	//std::string s = "Add bone: " + bone.name + "\n";
 	//p(s);
 	//s = "parent Idx: " + to_string(parentIndex) + "\n";
@@ -407,7 +419,7 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 			
 			for (unsigned int k = 0; k < channel->mNumPositionKeys; ++k) {
 				auto& kf = channel->mPositionKeys[k];
-				if (skeleton.nameToIndex[boneName] == 0)
+				if (skeleton.nameToIndex[boneName] == skeleton.rootBoneIdx)
 				{
 					track.positionKeys.push_back({ kf.mTime, { 0.0f, 0.0f, 0.0f} });
 				}

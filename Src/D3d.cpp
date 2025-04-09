@@ -329,7 +329,7 @@ bool D3D::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	// 안티 앨리어실 설정
 	rasterDesc.AntialiasedLineEnable = false;
 	// Cull 설정 (CULL_BACK: 뒤쪽 면 제거)
-	rasterDesc.CullMode = D3D11_CULL_BACK;
+	rasterDesc.CullMode = D3D11_CULL_NONE;
 	// 깊이 편향 설정 (값을 추가하면 깊이의 차이를 인위적으로 확대시켜 겹침 문제 해결)
 	rasterDesc.DepthBias = 0;
 	// 깊이 편향이 적용될 때 그 최대값 설정
