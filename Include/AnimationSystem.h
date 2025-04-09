@@ -29,7 +29,7 @@ public:
     AnimationPlayer current;
     AnimationPlayer previous;
     float blendAlpha = 1.0f;
-    float blendSpeed = 2.0f;
+    float blendSpeed = 3.0f;
 
     void blendAnimTx(AnimTx& txA, AnimTx& txB, float blendAlpha);
     void GetFinalPose(Pose& outPose, Skeleton& skeleton);

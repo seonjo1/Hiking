@@ -419,15 +419,7 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 			
 			for (unsigned int k = 0; k < channel->mNumPositionKeys; ++k) {
 				auto& kf = channel->mPositionKeys[k];
-				if (skeleton.nameToIndex[boneName] == skeleton.rootBoneIdx)
-				{
-					track.positionKeys.push_back({ kf.mTime, { 0.0f, 0.0f, 0.0f} });
-				}
-				else
-				{
-					track.positionKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
-				}
-
+				track.positionKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
 			}
 
 			for (unsigned int k = 0; k < channel->mNumRotationKeys; ++k) {
@@ -541,8 +533,8 @@ void Model::speedDown()
 
 void Model::move(XMFLOAT3& targetDir)
 {
-	const static float rotSpeed = 20.0f;
-	const static float accel = 0.02f;
+	const static float rotSpeed = 10.0f;
+	const static float accel = 0.015f;
 	const static float maxSpeed = 0.15f;
 
 	// 현재 방향 벡터
@@ -562,16 +554,6 @@ void Model::move(XMFLOAT3& targetDir)
 	if (theta < rotSpeed * XM_PI / 180.0f)
 	{
 		setToTarget(targetDir);
-
-		nowDir = getRotatedVector(m_rotation.y);
-
-		m_speed = min(m_speed + accel, maxSpeed);
-		XMVECTOR dirVec = XMLoadFloat3(&nowDir);
-		XMVECTOR pos = XMLoadFloat3(&m_position);
-		dirVec = XMVectorScale(dirVec, m_speed);
-		pos = XMVectorAdd(dirVec, pos);
-
-		XMStoreFloat3(&m_position, pos);
 	}
 	else
 	{
@@ -591,4 +573,13 @@ void Model::move(XMFLOAT3& targetDir)
 			m_rotation.y -= 360.0f;
 	}
 
+	//nowDir = getRotatedVector(m_rotation.y);
+
+	m_speed = min(m_speed + accel, maxSpeed);
+	XMVECTOR dirVec = XMLoadFloat3(&targetDir);
+	XMVECTOR pos = XMLoadFloat3(&m_position);
+	dirVec = XMVectorScale(dirVec, m_speed);
+	pos = XMVectorAdd(dirVec, pos);
+
+	XMStoreFloat3(&m_position, pos);
 }

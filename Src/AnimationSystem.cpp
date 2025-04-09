@@ -103,8 +103,8 @@ void AnimationStateManager::SetState(std::string newState, std::unordered_map<st
 }
 
 void AnimationStateManager::Update(float dt) {
-    previous.Update(dt);
-    current.Update(dt);
+	previous.Update(dt);
+	current.Update(dt);
     blendAlpha += dt * blendSpeed;
     if (blendAlpha > 1.0f) blendAlpha = 1.0f;
 }
@@ -152,9 +152,8 @@ void AnimationStateManager::GetFinalPose(Pose& outPose, Skeleton& skeleton) {
     else {
         previous.SamplePose(txA, skeleton);
         current.SamplePose(txB, skeleton);
-
+        blendAnimTx(txA, txB, blendAlpha);
         for (size_t i = 0; i < skeleton.bones.size(); ++i) {
-            blendAnimTx(txA, txB, blendAlpha);
             XMMATRIX T = XMMatrixTranslation(txA.position[i].x, txA.position[i].y, txA.position[i].z);
             XMMATRIX R = XMMatrixRotationQuaternion(XMLoadFloat4(&(txA.rotation[i])));
             XMMATRIX S = XMMatrixScaling(txA.scale[i].x, txA.scale[i].y, txA.scale[i].z);
