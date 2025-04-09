@@ -57,7 +57,7 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_hasAnimation = true;
 		LoadAnimationData(scene, m_skeleton);
 		m_pose.Initialize(m_skeleton.bones.size());
-		m_animStateManager.SetState("Armature|mixamo.com|Layer0", m_animationClips);
+		m_animStateManager.SetState("idle", m_animationClips);
 		m_jointMesh = Mesh::createSphere(device);
 		m_boneMesh = Mesh::createBone(device);
 	}

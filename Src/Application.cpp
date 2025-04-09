@@ -37,7 +37,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_Camera->SetPosition(0.0f, 1.0f, -15.0f);
 
 	// 모델 생성 및 초기화
-	std::string filename("./Assets/Remy.glb");
+	std::string filename("./Assets/Remy1.glb");
 
 	m_AnimationModel = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
 	if (!m_AnimationModel)
@@ -256,9 +256,11 @@ void Application::ModelControl(Input* input)
 
 	if (inputState){
 		m_AnimationModel->move(dir);
+		m_AnimationModel->setState("walk");
 		//m_Models[0]->setState("Walk");
 	}
 	else {
+		m_AnimationModel->setState("idle");
 		m_AnimationModel->speedDown();
 	}
 	
