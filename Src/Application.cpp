@@ -50,11 +50,11 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
 
 	// ¸ðµ¨ »ý¼º
-	Model* sphere1 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.93f, 0.79f, 0.69f, 1.0f));
-	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.93f, 0.79f, 0.69f, 1.0f));
+	Model* sphere1 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.800f, 0.373f, 0.157f, 1.0f));
+	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.800f, 0.373f, 0.157f, 1.0f));
 
-	sphere1->setPosition(XMFLOAT3(0.0f, 0.0f, -1.0f));
-	box1->setPosition(XMFLOAT3(0.0f, 0.0f, -1.0f));
+	sphere1->setPosition(XMFLOAT3(-3.0f, 0.0f, 0.0f));
+	box1->setPosition(XMFLOAT3(3.0f, 0.0f, 0.0f));
 
 	m_Models.push_back(sphere1);
 	m_Models.push_back(box1);

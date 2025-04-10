@@ -31,6 +31,8 @@ Model::Model()
 	m_rotation = { 0.0f, 0.0f, 0.0f };
 	m_scale = { 1.0f, 1.0f, 1.0f };
 	m_size = 0;
+	m_boneMesh = 0;
+	m_jointMesh = 0;
 }
 
 Model::Model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::string filename)
@@ -281,6 +283,7 @@ void Model::UpdateAnimation(float dt)
 
 void Model::ReleaseTextures()
 {
+	p("model::ReleaseTextures start!!\n");
 	for (int i = 0; i < m_textures.size(); i++)
 	{
 		if (m_textures[i])

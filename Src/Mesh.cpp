@@ -45,7 +45,7 @@ Mesh* Mesh::createSphere(ID3D11Device* device)
 			float theta = u * XM_PI * 2.0f;
 			auto cosTheta = cosf(theta);
 			auto sinTheta = sinf(theta);
-			auto point = XMFLOAT3(cosPhi * cosTheta * 3.0f, sinPhi * 3.0f, -cosPhi * sinTheta * 3.0f);
+			auto point = XMFLOAT3(cosPhi * cosTheta * 0.5f, sinPhi * 0.5f, -cosPhi * sinTheta * 0.5f);
 
 			vertices[i * circleVertCount + j] = ModelVertexType{ point,  XMFLOAT2(u, v) };
 		}

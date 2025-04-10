@@ -23,9 +23,9 @@ PixelInputType ModelVertexShader(VertexInputType input)
 
     float4 position = float4(input.position, 1.0f);
 
-    output.position = mul(position, world);
-    output.position = mul(output.position, view);
-    output.position = mul(output.position, projection);
+    output.position = mul(world, position);
+    output.position = mul(view, output.position);
+    output.position = mul(projection, output.position);
 
     // Store the texture coordinates for the pixel shader.
     output.tex = input.tex;
