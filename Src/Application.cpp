@@ -34,7 +34,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// 카메라 생성 및 위치 설정
 	m_Camera = new Camera;
-	m_Camera->SetPosition(0.0f, 1.0f, -15.0f);
+	m_Camera->SetPosition(0.0f, 5.0f, -30.0f);
 
 	// 애니메이션 모델 생성
 	std::string filename("./Assets/Remy1.glb");
@@ -45,18 +45,19 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
 		return false;
 	}
-	m_AnimationModel->setPosition(XMFLOAT3(0.0f, -3.0f, 0.0f));
+	m_AnimationModel->setPosition(XMFLOAT3(0.0f, 0.5f, 0.0f));
 	m_AnimationModel->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
 	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
 
 	// 모델 생성
-	Model* sphere1 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.800f, 0.373f, 0.157f, 1.0f));
-	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.800f, 0.373f, 0.157f, 1.0f));
+	//Model* sphere1 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.800f, 0.373f, 0.157f, 1.0f));
+	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.502f, 0.329f, 1.0f));
 
-	sphere1->setPosition(XMFLOAT3(-3.0f, 0.0f, 0.0f));
-	box1->setPosition(XMFLOAT3(3.0f, 0.0f, 0.0f));
+	//sphere1->setPosition(XMFLOAT3(-3.0f, 0.0f, 0.0f));
+	box1->setPosition(XMFLOAT3(0.0f, -0.05f, 0.0f));
+	box1->setScale(XMFLOAT3(1000.0f, 1.0f, 1000.0f));
 
-	m_Models.push_back(sphere1);
+	//m_Models.push_back(sphere1);
 	m_Models.push_back(box1);
 
 	m_modelCount = m_Models.size();
@@ -180,7 +181,7 @@ bool Application::Render()
 	Matrix matrix;
 
 	// 백 버퍼 클리어
-	m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
+	m_Direct3D->BeginScene(0.812f, 0.906f, 0.984f, 1.0f);
 
 	// view Matrix 업데이트
 	m_Camera->Render();

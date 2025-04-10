@@ -10,7 +10,7 @@ Mesh* Mesh::createBone(ID3D11Device* device)
 
 	for (int i = 0; i < 4; i++)
 	{
-		vertices[i] = BoneVertex{ XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), i };
+		vertices[i] = BoneVertex{ XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), i };
 	}
 
 	indices[0] = 0;
