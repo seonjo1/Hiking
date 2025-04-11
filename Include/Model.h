@@ -5,6 +5,7 @@
 #include "mesh.h"
 #include "AnimationSystem.h"
 #include "AnimationData.h"
+#include "Physics.h"
 #include <unordered_set>
 
 class TextureShader;
@@ -77,6 +78,9 @@ public:
 	bool DrawBoneShader(ID3D11DeviceContext*, BoneShader*, Matrix&, XMFLOAT3);
 	bool DrawModelShader(ID3D11DeviceContext*, ModelShader*, Matrix&);
 
+	void createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene);
+	void createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene);
+
 	void Shutdown();
 	XMMATRIX getWorldMatrix();
 	XMMATRIX getWorldMatrixNotIncludeScale();
@@ -90,6 +94,7 @@ public:
 	void setToTarget(XMFLOAT3& targetDir);
 	void addMesh(Mesh* mesh);
 	void addTexture(Texture* texture);
+	void syncModelWithRigidbody(physx::PxPhysics* physics);
 
 private:
 	void ReleaseTextures();
@@ -103,6 +108,7 @@ private:
 	Mesh* m_boneMesh;
 	std::vector<Mesh*> m_meshes;
 	std::vector<Texture*> m_textures;
+	PhysicsObject* m_physicsObject;
 
 	Skeleton m_skeleton;							// º» °èÃþ Á¤º¸
 	std::unordered_map<std::string, AnimationClip> m_animationClips;

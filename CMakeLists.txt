@@ -32,6 +32,30 @@ else()
     set(INSTALL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/out/build/x64-Release/install/include")
 endif()
 
+# PhysX 라이브러리 경로 추가 (예시)
+set(PHYSX_INCLUDE_DIR "C:/Program Files/vcpkg/installed/x64-windows/include/physx")
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(PHYSX_LIB_DIR "C:/Program Files/vcpkg/installed/x64-windows/debug/lib")
+    set(PHYSX_DLL_DIR "C:/Program Files/vcpkg/installed/x64-windows/debug/bin")
+else()
+    set(PHYSX_LIB_DIR "C:/Program Files/vcpkg/installed/x64-windows/lib")
+    set(PHYSX_DLL_DIR "C:/Program Files/vcpkg/installed/x64-windows/bin")
+endif()
+
+
+# PhysX 헤더 경로 추가
+target_include_directories(${PROJECT_NAME} PUBLIC ${PHYSX_INCLUDE_DIR})
+
+# PhysX 라이브러리 링크
+target_link_directories(${PROJECT_NAME} PUBLIC ${PHYSX_LIB_DIR})
+
+file(GLOB PHYSX_LIBS "${PHYSX_LIB_DIR}/*.lib")
+
+# PhysX 라이브러리 링크 (실제 파일 이름에 맞게 수정)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${PHYSX_LIBS})
+
+# 추가 인클루드 경로 설정
 target_include_directories(${PROJECT_NAME} PRIVATE ${INSTALL_INCLUDE_DIR})
 
 # DX11 라이브러리 경로 추가
@@ -59,4 +83,14 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/Shaders
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/Shaders
+)
+
+# DLL 파일을 찾기
+file(GLOB PHYSX_DLLS "${PHYSX_DLL_DIR}/*.dll")
+
+# DLL 파일을 빌드 디렉토리로 복사
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PHYSX_DLLS}
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>
 )

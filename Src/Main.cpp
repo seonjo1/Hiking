@@ -5,7 +5,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	Context* context;
 	bool result;
 
-
 	// Create the system object.
 	context = new Context();
 

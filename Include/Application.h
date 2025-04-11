@@ -24,7 +24,6 @@ public:
 	bool Initialize(int, int, HWND);
 	void Shutdown();
 	bool Frame();
-	void UpdateAnimation(float dt);
 
 	void CameraMove(
 		bool pressW, bool pressS, bool pressD,
@@ -50,6 +49,7 @@ private:
 	JointShader* m_JointShader;
 	BoneShader* m_BoneShader;
 	ModelShader* m_ModelShader;
+	PhysicsManager* m_PhysicsManager;
 
 	int m_modelCount;
 	bool m_debugMode{ false };

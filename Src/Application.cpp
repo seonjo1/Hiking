@@ -36,6 +36,10 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_Camera = new Camera;
 	m_Camera->SetPosition(0.0f, 5.0f, -30.0f);
 
+	// 물리 엔진 초기화
+	m_PhysicsManager = new PhysicsManager();
+	m_PhysicsManager->initialize();
+
 	// 애니메이션 모델 생성
 	std::string filename("./Assets/Remy1.glb");
 
@@ -49,15 +53,19 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_AnimationModel->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
 	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
 
-	// 모델 생성
+	// 구 모델 생성
 	//Model* sphere1 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.800f, 0.373f, 0.157f, 1.0f));
-	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.502f, 0.329f, 1.0f));
-
+	//sphere1->createStaticSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
 	//sphere1->setPosition(XMFLOAT3(-3.0f, 0.0f, 0.0f));
+	//sphere1->syncModelWithRigidbody();
+	//m_Models.push_back(sphere1);
+
+	// 박스 모델 생성
+	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.502f, 0.329f, 1.0f));
+	box1->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
 	box1->setPosition(XMFLOAT3(0.0f, -0.05f, 0.0f));
 	box1->setScale(XMFLOAT3(1000.0f, 1.0f, 1000.0f));
-
-	//m_Models.push_back(sphere1);
+	box1->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
 	m_Models.push_back(box1);
 
 	m_modelCount = m_Models.size();
@@ -100,6 +108,12 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 void Application::Shutdown()
 {
+	if (m_PhysicsManager)
+	{
+		m_PhysicsManager->shutdown();
+		delete m_PhysicsManager;
+	}
+
 	if (m_AnimationModel)
 	{
 		m_AnimationModel->Shutdown();
@@ -164,7 +178,8 @@ bool Application::Frame()
 	float dt = m_Timer.GetDeltaTime();
 
 	// animation
-	UpdateAnimation(dt);
+	m_AnimationModel->UpdateAnimation(dt);
+	m_PhysicsManager->stepSimulation(dt);
 
 	// Render the graphics scene.
 	bool result = Render();
@@ -212,11 +227,6 @@ bool Application::Render()
 	m_Direct3D->EndScene();
 
 	return true;
-}
-
-void Application::UpdateAnimation(float dt)
-{
-	m_AnimationModel->UpdateAnimation(dt);
 }
 
 void Application::CameraMove(

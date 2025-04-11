@@ -40,7 +40,7 @@ ExternalProject_Add(
 )
 set(DEP_LIST ${DEP_LIST} dep_assimp)
 set(DEP_LIBS ${DEP_LIBS}
-	assimp-vc142-mt$<$<CONFIG:Debug>:d>
-	zlibstatic$<$<CONFIG:Debug>:d>
-	IrrXML$<$<CONFIG:Debug>:d>
+	assimp-vc142-mtd
+	zlibstaticd
+	IrrXMLd
 	)

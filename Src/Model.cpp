@@ -3,7 +3,7 @@
 #include "BoneShader.h"
 #include "ModelShader.h"
 
-Model* Model::createSphere(ID3D11Device* device, ID3D11DeviceContext* deviceContext, XMFLOAT4 color)
+Model* Model::createSphere(ID3D11Device* device, ID3D11DeviceContext* deviceContext,  XMFLOAT4 color)
 {
 	Model* model = new Model();
 	Mesh* mesh = Mesh::createSphere(device);
@@ -33,6 +33,7 @@ Model::Model()
 	m_size = 0;
 	m_boneMesh = 0;
 	m_jointMesh = 0;
+	m_physicsObject = nullptr;
 }
 
 Model::Model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::string filename)
@@ -40,6 +41,7 @@ Model::Model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::stri
 	m_position = { 0.0f, 0.0f, 0.0f };
 	m_rotation = { 0.0f, 0.0f, 0.0f };
 	m_scale = { 1.0f, 1.0f, 1.0f };
+	m_physicsObject = nullptr;
 	LoadByAssimp(device, deviceContext, filename);
 }
 
@@ -185,6 +187,12 @@ void Model::Shutdown()
 	// Release the model texture.
 	ReleaseMeshes();
 	ReleaseTextures();
+	
+	if (m_physicsObject)
+	{
+		m_physicsObject->shutdown();
+		delete m_physicsObject;
+	}
 
 	return;
 }
@@ -632,4 +640,40 @@ void Model::addMesh(Mesh* mesh)
 void Model::addTexture(Texture* texture)
 {
 	m_textures.push_back(texture);
+}
+
+void Model::createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene)
+{
+	m_physicsObject->createStaticObject(physics);
+	m_physicsObject->setMaterial(physics, 0.6f, 0.6f, 0.3f);
+	m_physicsObject->createBoxShape(physics, XMFLOAT3(0.5f, 0.5f, 0.5f));
+	m_physicsObject->addToScene(scene);
+}
+
+void Model::createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene)
+{
+	m_physicsObject->createStaticObject(physics);
+	m_physicsObject->setMaterial(physics, 0.6f, 0.6f, 0.3f);
+	m_physicsObject->createSphereShape(physics, 0.5f);
+	m_physicsObject->addToScene(scene);
+}
+
+void Model::syncModelWithRigidbody(physx::PxPhysics* physics)
+{
+	if (m_physicsObject)
+	{
+		// degree -> radian 변환
+		float pitch = m_rotation.x * (3.14159f / 180.0f);  // pitch (X축 회전)
+		float yaw = m_rotation.y * (3.14159f / 180.0f);    // yaw (Y축 회전)
+		float roll = m_rotation.z * (3.14159f / 180.0f);   // roll (Z축 회전)
+
+		// PhysX 퀘터니언으로 변환
+		physx::PxQuat quatRotation = physx::PxQuat(pitch, physx::PxVec3(1.0f, 0.0f, 0.0f)) *
+			physx::PxQuat(yaw, physx::PxVec3(0.0f, 1.0f, 0.0f)) *
+			physx::PxQuat(roll, physx::PxVec3(0.0f, 0.0f, 1.0f));
+
+		m_physicsObject->updatePosition(physx::PxVec3(m_position.x, m_position.y, m_position.z));
+		m_physicsObject->updateRotation(quatRotation);
+		m_physicsObject->updateScale(physics, m_scale);
+	}
 }
