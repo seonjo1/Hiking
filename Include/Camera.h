@@ -38,5 +38,5 @@ private:
 
 	const float m_cameraSpeed{ 0.1f };
 	const float m_cameraSensitivity{ 0.5f };
-	const float m_cameraRotSpeed{ 0.2f };
+	const float m_cameraRotSpeed{ 0.4f };
 };
