@@ -17,7 +17,6 @@ public:
 	physx::PxScene* m_Scene = nullptr;
 	physx::PxPvd* m_Pvd = nullptr;
 	physx::PxCpuDispatcher* m_Dispatcher = nullptr;
-
 	PhysicsManager() = default;
 
 	bool initialize();

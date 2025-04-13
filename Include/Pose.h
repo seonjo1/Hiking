@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AnimationData.h"
+#include <PxPhysicsAPI.h>
 #include <stack>
 
 struct LocalTx {
@@ -13,8 +14,12 @@ struct Pose {
     std::vector<LocalTx> local;
     std::vector<XMMATRIX> world;
     std::vector<XMMATRIX> finalMatrix;
+    std::vector<XMMATRIX> rayMatrix;
     int count;
     
     void Initialize(size_t boneCount);
+    physx::PxVec3 getBonePos(XMMATRIX& worldMatrix, int boneIdx);
+    void UpdateWorldPos(const Skeleton& skeleton);
     void UpdateFinalPos(const Skeleton& skeleton);
+
 };

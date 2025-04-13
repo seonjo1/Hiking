@@ -1,5 +1,4 @@
 #include "PhysicsObject.h"
-// PhysicsObject!!
 
 void PhysicsObject::createDynamicObject(physx::PxPhysics* physics) {
 	// 동적 물리 객체 생성
@@ -24,20 +23,128 @@ void PhysicsObject::setMaterial(physx::PxPhysics* physics, float staticFriction,
 	m_material = physics->createMaterial(staticFriction, dynamicFriction, restitution);
 }
 
-void PhysicsObject::createSphereShape(physx::PxPhysics* physics, float radius)
+void PhysicsObject::initSphereMesh(std::vector<physx::PxVec3>& vertices, std::vector<physx::PxU32>& indices)
 {
-	// 구 형태의 충돌체 생성
-	physx::PxSphereGeometry sphereGeometry(radius);  // 반지름 설정
-	m_shape = physics->createShape(sphereGeometry, *m_material);  // 재질을 설정하여 충돌체 생성
+	uint32_t latiSegmentCount = 16;
+	uint32_t longiSegmentCount = 32;
+
+	uint32_t circleVertCount = longiSegmentCount + 1;
+	vertices.resize((latiSegmentCount + 1) * circleVertCount);
+	for (uint32_t i = 0; i <= latiSegmentCount; i++)
+	{
+		float v = (float)i / (float)latiSegmentCount;
+		float phi = (v - 0.5f) * XM_PI;
+		auto cosPhi = cosf(phi);
+		auto sinPhi = sinf(phi);
+		for (uint32_t j = 0; j <= longiSegmentCount; j++)
+		{
+			float u = (float)j / (float)longiSegmentCount;
+			float theta = u * XM_PI * 2.0f;
+			auto cosTheta = cosf(theta);
+			auto sinTheta = sinf(theta);
+			vertices[i * circleVertCount + j] = physx::PxVec3(cosPhi * cosTheta * 0.5f, sinPhi * 0.5f, -cosPhi * sinTheta * 0.5f);
+		}
+	}
+
+	indices.resize(latiSegmentCount * longiSegmentCount * 6);
+	for (uint32_t i = 0; i < latiSegmentCount; i++)
+	{
+		for (uint32_t j = 0; j < longiSegmentCount; j++)
+		{
+			uint32_t vertexOffset = i * circleVertCount + j;
+			uint32_t indexOffset = (i * longiSegmentCount + j) * 6;
+			indices[indexOffset] = vertexOffset;
+			indices[indexOffset + 1] = vertexOffset + 1;
+			indices[indexOffset + 2] = vertexOffset + 1 + circleVertCount;
+			indices[indexOffset + 3] = vertexOffset;
+			indices[indexOffset + 4] = vertexOffset + 1 + circleVertCount;
+			indices[indexOffset + 5] = vertexOffset + circleVertCount;
+		}
+	}
+}
+
+void PhysicsObject::createMeshCollider(physx::PxPhysics* physics, std::vector<physx::PxVec3>& vertices, std::vector<physx::PxU32>& indices, physx::PxMeshScale meshScale)
+{
+	physx::PxTriangleMeshDesc meshDesc{};
+	meshDesc.points.count = static_cast<uint32_t>(vertices.size());
+	meshDesc.points.stride = sizeof(physx::PxVec3);
+	meshDesc.points.data = vertices.data();
+
+	meshDesc.triangles.count = static_cast<uint32_t>(indices.size() / 3);
+	meshDesc.triangles.stride = sizeof(uint32_t) * 3;
+	meshDesc.triangles.data = indices.data();
+
+	physx::PxCookingParams cookParams(physics->getTolerancesScale());
+	cookParams.meshPreprocessParams |= physx::PxMeshPreprocessingFlag::eWELD_VERTICES;
+	cookParams.meshWeldTolerance = 0.0001f;  // 너무 가까운 정점 병합 방지용
+
+	physx::PxDefaultMemoryOutputStream outStream;
+	bool result = PxCookTriangleMesh(cookParams, meshDesc, outStream);
+
+	if (!result) {
+		p("CookTriangleMesh failed!\n");
+		return;
+	}
+
+	physx::PxDefaultMemoryInputData inputStream(outStream.getData(), outStream.getSize());
+	physx::PxTriangleMesh* triMesh = physics->createTriangleMesh(inputStream);
+
+	physx::PxTriangleMeshGeometry geometry(triMesh, meshScale);
+	m_shape = physics->createShape(geometry, *m_material);
 	m_actor->attachShape(*m_shape);
 }
 
-void PhysicsObject::createBoxShape(physx::PxPhysics* physics, XMFLOAT3 scale)
+void PhysicsObject::createSphereShape(physx::PxPhysics* physics, physx::PxMeshScale meshScale)
 {
+	static std::vector<physx::PxVec3> vertices;
+	static std::vector <uint32_t> indices;
+	static bool init = false;
+	
+	if (init != true)
+	{
+		initSphereMesh(vertices, indices);
+	}
+
+	createMeshCollider(physics, vertices, indices, meshScale);
+	m_collider = ECollider::SPHERE;
+
+	// 구 형태의 충돌체 생성
+	//physx::PxSphereGeometry sphereGeometry(radius);  // 반지름 설정
+	//m_shape = physics->createShape(sphereGeometry, *m_material);  // 재질을 설정하여 충돌체 생성
+	//m_shape->setContactOffset(0.01f);
+	//m_actor->attachShape(*m_shape);
+}
+
+void PhysicsObject::createBoxShape(physx::PxPhysics* physics, physx::PxMeshScale meshScale)
+{
+	static std::vector<physx::PxVec3> vertices = {
+		physx::PxVec3(-0.5f, -0.5f, -0.5f), physx::PxVec3(0.5f, -0.5f, -0.5f),
+		physx::PxVec3(0.5f, 0.5f, -0.5f), physx::PxVec3(-0.5f, 0.5f, -0.5f),
+		physx::PxVec3(-0.5f, -0.5f, 0.5f), physx::PxVec3(0.5f, -0.5f, 0.5f),
+		physx::PxVec3(0.5f, 0.5f, 0.5f), physx::PxVec3(-0.5f, 0.5f, 0.5f),
+		physx::PxVec3(-0.5f, 0.5f, 0.5f), physx::PxVec3(-0.5f, 0.5f, -0.5f),
+		physx::PxVec3(-0.5f, -0.5f, -0.5f), physx::PxVec3(-0.5f, -0.5f, 0.5f),
+		physx::PxVec3(0.5f, 0.5f, 0.5f), physx::PxVec3(0.5f, 0.5f, -0.5f),
+		physx::PxVec3(0.5f, -0.5f, -0.5f), physx::PxVec3(0.5f, -0.5f, 0.5f),
+		physx::PxVec3(-0.5f, -0.5f, -0.5f), physx::PxVec3(0.5f, -0.5f, -0.5f),
+		physx::PxVec3(0.5f, -0.5f, 0.5f), physx::PxVec3(-0.5f, -0.5f, 0.5f),
+		physx::PxVec3(-0.5f, 0.5f, -0.5f), physx::PxVec3(0.5f, 0.5f, -0.5f),
+		physx::PxVec3(0.5f, 0.5f, 0.5f), physx::PxVec3(-0.5f, 0.5f, 0.5f),
+	};
+
+	static std::vector<uint32_t> indices = {
+		0,	2,	1,	2,	0,	3,	4,	5,	6,	6,	7,	4,	8,	9,	10, 10, 11, 8,
+		12, 14, 13, 14, 12, 15, 16, 17, 18, 18, 19, 16, 20, 22, 21, 22, 20, 23,
+	};
+
+	createMeshCollider(physics, vertices, indices, meshScale);
+	m_collider = ECollider::BOX;
+
 	// 충돌체 생성 (예: 박스 형태)
-	physx::PxBoxGeometry boxGeometry(scale.x, scale.y, scale.z);  // 크기 설정
-	m_shape = physics->createShape(boxGeometry, *m_material);  // 재질을 설정하여 충돌체 생성
-	m_actor->attachShape(*m_shape);
+	//physx::PxBoxGeometry boxGeometry(scale.x, scale.y, scale.z);  // 크기 설정
+	//m_shape = physics->createShape(boxGeometry, *m_material);  // 재질을 설정하여 충돌체 생성
+	//m_shape->setContactOffset(0.01f);
+	//m_actor->attachShape(*m_shape);
 }
 
 void PhysicsObject::setMass(float mass)
@@ -60,27 +167,27 @@ void PhysicsObject::updateScale(physx::PxPhysics* physics, XMFLOAT3& newScale)
 {
 	if (m_shape)
 	{
-		const physx::PxGeometry& geometry = m_shape->getGeometry();
-		physx::PxGeometryType::Enum shapeType = geometry.getType();
-		switch (shapeType) {
-		case physx::PxGeometryType::eBOX:
+		switch (m_collider) {
+		case ECollider::BOX:
 		{
-			const physx::PxBoxGeometry& boxGeometry = static_cast<const physx::PxBoxGeometry&>(geometry);
-			newScale.x *= boxGeometry.halfExtents.x;
-			newScale.y *= boxGeometry.halfExtents.y;
-			newScale.z *= boxGeometry.halfExtents.z;
+			physx::PxMeshScale meshScale(1.0f);
+			meshScale.scale.x *= newScale.x;
+			meshScale.scale.y *= newScale.y;
+			meshScale.scale.z *= newScale.z;
 			m_actor->detachShape(*m_shape);
 			m_shape->release();
-			createBoxShape(physics, newScale);
+			createBoxShape(physics, meshScale);
 			break;
 		}
-		case physx::PxGeometryType::eSPHERE:
+		case ECollider::SPHERE:
 		{
-			const physx::PxSphereGeometry& sphereGeometry = static_cast<const physx::PxSphereGeometry&>(geometry);
-			float radius = sphereGeometry.radius * newScale.x;
+			physx::PxMeshScale meshScale(1.0f);
+			meshScale.scale.x *= newScale.x;
+			meshScale.scale.y *= newScale.y;
+			meshScale.scale.z *= newScale.z;
 			m_actor->detachShape(*m_shape);
 			m_shape->release();
-			createSphereShape(physics, radius);
+			createSphereShape(physics, meshScale);
 			break;
 		}
 		default:

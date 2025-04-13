@@ -33,6 +33,8 @@ Model::Model()
 	m_size = 0;
 	m_boneMesh = 0;
 	m_jointMesh = 0;
+	m_rayToTargetMesh = 0;
+	m_rayNormalMesh = 0;
 	m_physicsObject = nullptr;
 }
 
@@ -85,8 +87,10 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		LoadAnimationData(scene, m_skeleton);
 		m_pose.Initialize(m_skeleton.bones.size());
 		m_animStateManager.SetState("idle", m_animationClips);
-		m_jointMesh = Mesh::createJoint(device);
-		m_boneMesh = Mesh::createBone(device);
+		m_jointMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), 3.0f);
+		m_boneMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+		m_rayToTargetMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
+		m_rayNormalMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f));
 	}
 
 	// node 데이터 처리
@@ -136,8 +140,6 @@ void Model::processMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 	{
 		VertexType& v = vertices[i];
 		v.position = XMFLOAT3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-		//v.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
-
 		v.texture = XMFLOAT2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
 
 		vertexBones[i].NormalizeAndTrim();
@@ -226,8 +228,71 @@ bool Model::DrawBoneShader(ID3D11DeviceContext* deviceContext, BoneShader* boneS
 	return true;
 }
 
+bool Model::DrawRayLineShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront)
+{
+	matrix.world = getWorldMatrix();
+
+	// left foot
+	int idx = -1;
+	if (m_RaycastingManager.m_LeftFoot.part == EIKPart::FOOT)
+	{
+		idx = m_skeleton.GetBoneIndex("mixamorig:LeftToeBase");
+	}
+	else if (m_RaycastingManager.m_LeftFoot.part == EIKPart::TOE)
+	{
+		idx = m_skeleton.GetBoneIndex("mixamorig:LeftToe_End");
+	}
+
+	if (idx != -1)
+	{
+		// bone to target
+		m_rayToTargetMesh->Render(deviceContext);
+		if (boneShader->RenderRayLine(deviceContext, m_boneMesh->GetIndexCount(), matrix, m_pose.world[idx], m_RaycastingManager.m_LeftFoot, cameraFront) == false)
+			return false;
+
+		// target normal
+		m_rayNormalMesh->Render(deviceContext);
+		m_RaycastingManager.m_LeftFoot.dir = m_RaycastingManager.m_LeftFoot.normal;
+		m_RaycastingManager.m_LeftFoot.distance = 0.5f;
+		if (boneShader->RenderRayLine(deviceContext, m_boneMesh->GetIndexCount(), matrix, m_pose.world[idx], m_RaycastingManager.m_LeftFoot, cameraFront) == false)
+			return false;
+	}
+
+
+
+	// right foot
+	idx = -1;
+	if (m_RaycastingManager.m_RightFoot.part == EIKPart::FOOT)
+	{
+		idx = m_skeleton.GetBoneIndex("mixamorig:RightToeBase");
+	}
+	else if (m_RaycastingManager.m_RightFoot.part == EIKPart::TOE)
+	{
+		idx = m_skeleton.GetBoneIndex("mixamorig:RightToe_End");
+	}
+
+	if (idx != -1)
+	{
+		// bone to target
+		m_rayToTargetMesh->Render(deviceContext);
+		if (boneShader->RenderRayLine(deviceContext, m_boneMesh->GetIndexCount(), matrix, m_pose.world[idx], m_RaycastingManager.m_RightFoot, cameraFront) == false)
+			return false;
+
+		// target normal
+		m_rayNormalMesh->Render(deviceContext);
+		m_RaycastingManager.m_RightFoot.dir = m_RaycastingManager.m_RightFoot.normal;
+		m_RaycastingManager.m_RightFoot.distance = 0.5f;
+		if (boneShader->RenderRayLine(deviceContext, m_boneMesh->GetIndexCount(), matrix, m_pose.world[idx], m_RaycastingManager.m_RightFoot, cameraFront) == false)
+			return false;
+	}
+
+
+	return true;
+}
+
 bool Model::DrawModelShader(ID3D11DeviceContext* deviceContext, ModelShader* modelShader, Matrix& matrix)
 {
+	p("draw box!!\n");
 	matrix.world = getWorldMatrix();
 
 	for (int i = 0; i < m_size; i++)
@@ -248,15 +313,35 @@ bool Model::DrawJointShader(ID3D11DeviceContext* deviceContext, JointShader* joi
 
 	m_jointMesh->Render(deviceContext);
 
+	int footIdx = m_skeleton.GetBoneIndex("mixamorig:LeftToeBase");
+	int toeIdx = m_skeleton.GetBoneIndex("mixamorig:LeftToe_End");
+
 	for (int i = 0; i < count; i++)
 	{
+		if (i == toeIdx)
+		{
+			XMMATRIX ma = XMMatrixMultiply(m_pose.world[i], matrix.world);
+			XMVECTOR v = XMVector3TransformCoord(XMVectorZero(), ma);
+			XMFLOAT3 pos;
+			XMStoreFloat3(&pos, v);
+			p("toe joint : " + to_string(pos.x) + " " + to_string(pos.y) + " " + to_string(pos.z) + "\n");
+		}
+
+		if (i == footIdx)
+		{
+			XMMATRIX ma = XMMatrixMultiply(m_pose.world[i], matrix.world);
+			XMVECTOR v = XMVector3TransformCoord(XMVectorZero(), ma);
+			XMFLOAT3 pos;
+			XMStoreFloat3(&pos, v);
+			p("foot joint : " + to_string(pos.x) + " " + to_string(pos.y) + " " + to_string(pos.z) + "\n");
+		}
+
 		if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, m_pose.world[i]) == false)
 			return false;
 	}
 
 	return true;
 }
-
 
 bool Model::DrawTextureShader(ID3D11DeviceContext* deviceContext, TextureShader* textureShader, Matrix& matrix)
 {
@@ -280,12 +365,24 @@ void Model::setState(std::string state)
 	}
 }
 
-void Model::UpdateAnimation(float dt)
+void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 {
 	if (m_hasAnimation == true){
 		m_animStateManager.UpdateTime(dt);
 		m_animStateManager.UpdateAnimationClip(m_pose, m_skeleton);
+		m_pose.UpdateWorldPos(m_skeleton);
 		// Raycasting
+		XMMATRIX worldMatrix = getWorldMatrix();
+		m_RaycastingManager.raycastingForLeftFootIK(
+			scene, 
+			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase")), 
+			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"))
+		);
+		m_RaycastingManager.raycastingForRightFootIK(
+			scene,
+			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase")),
+			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"))
+		);
 		
 		// Foot IK 적용
 		m_pose.UpdateFinalPos(m_skeleton);
@@ -314,10 +411,23 @@ void Model::ReleaseMeshes()
 		m_boneMesh->Shutdown();
 		delete m_boneMesh;
 	}
+
 	if (m_jointMesh)
 	{
 		m_jointMesh->Shutdown();
 		delete m_jointMesh;
+	}
+
+	if (m_rayToTargetMesh)
+	{
+		m_rayToTargetMesh->Shutdown();
+		delete m_rayToTargetMesh;
+	}
+
+	if (m_rayNormalMesh)
+	{
+		m_rayNormalMesh->Shutdown();
+		delete m_rayNormalMesh;
 	}
 
 	for (int i = 0; i < m_size; i++)
@@ -328,6 +438,7 @@ void Model::ReleaseMeshes()
 			delete m_meshes[i];
 		}
 	}
+
 	return;
 }
 
@@ -338,6 +449,8 @@ XMMATRIX Model::getWorldMatrix()
 	XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(m_rotation.x * toRadian, m_rotation.y * toRadian, m_rotation.z * toRadian);
 	XMMATRIX rotation = XMMatrixRotationQuaternion(quaternion);
 	XMMATRIX scale = XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
+
+	p("scale: " + to_string(m_scale.x) + " " + to_string(m_scale.y) + " " + to_string(m_scale.z) + "\n");
 
 	return scale * rotation * translation;  // 순서대로 적용: 스케일 -> 회전 -> 위치
 }
@@ -650,7 +763,7 @@ void Model::createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene)
 	m_physicsObject = new PhysicsObject();
 	m_physicsObject->createStaticObject(physics);
 	m_physicsObject->setMaterial(physics, 0.6f, 0.6f, 0.3f);
-	m_physicsObject->createBoxShape(physics, XMFLOAT3(0.5f, 0.5f, 0.5f));
+	m_physicsObject->createBoxShape(physics, physx::PxMeshScale(1.0f));
 	m_physicsObject->addToScene(scene);
 }
 
@@ -659,7 +772,7 @@ void Model::createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene)
 	m_physicsObject = new PhysicsObject();
 	m_physicsObject->createStaticObject(physics);
 	m_physicsObject->setMaterial(physics, 0.6f, 0.6f, 0.3f);
-	m_physicsObject->createSphereShape(physics, 0.5f);
+	m_physicsObject->createSphereShape(physics, physx::PxMeshScale(1.0f));
 	m_physicsObject->addToScene(scene);
 }
 

@@ -34,6 +34,7 @@ endif()
 
 # PhysX 라이브러리 경로 추가 (예시)
 set(PHYSX_INCLUDE_DIR "C:/Program Files/vcpkg/installed/x64-windows/include/physx")
+set(PHYSX_INCLUDE_DIR_COOK "C:/Program Files/vcpkg/installed/x64-windows/include/physx/cooking")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(PHYSX_LIB_DIR "C:/Program Files/vcpkg/installed/x64-windows/debug/lib")
@@ -46,6 +47,7 @@ endif()
 
 # PhysX 헤더 경로 추가
 target_include_directories(${PROJECT_NAME} PUBLIC ${PHYSX_INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC ${PHYSX_INCLUDE_DIR_COOK})
 
 # PhysX 라이브러리 링크
 target_link_directories(${PROJECT_NAME} PUBLIC ${PHYSX_LIB_DIR})

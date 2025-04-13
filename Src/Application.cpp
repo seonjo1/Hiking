@@ -49,25 +49,41 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
 		return false;
 	}
-	m_AnimationModel->setPosition(XMFLOAT3(0.0f, 0.5f, 0.0f));
+	m_AnimationModel->setPosition(XMFLOAT3(0.0f, 1.5f, 0.0f));
 	m_AnimationModel->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
 	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
 
 	// 备 葛胆 积己
 	Model* sphere1 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.525f, 0.502f, 0.329f, 1.0f));
 	sphere1->createStaticSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	sphere1->setPosition(XMFLOAT3(-10.0f, 0.0f, 0.0f));
-	sphere1->setScale(XMFLOAT3(10.0f, 10.0f, 10.0f));
+	sphere1->setPosition(XMFLOAT3(-10.0f, -40.0f, -10.0f));
+	sphere1->setScale(XMFLOAT3(100.0f, 100.0f, 100.0f));
 	sphere1->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
 	m_Models.push_back(sphere1);
+
+	//Model* sphere2 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.525f, 0.502f, 0.329f, 1.0f));
+	//sphere2->createStaticSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
+	//sphere2->setPosition(XMFLOAT3(-10.0f, 0.5f, -10.0f));
+	//sphere2->setScale(XMFLOAT3(1.0f, 1.0f, 1.0f));
+	//sphere2->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
+	//m_Models.push_back(sphere2);
 
 	// 冠胶 葛胆 积己
 	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.502f, 0.329f, 1.0f));
 	box1->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	box1->setPosition(XMFLOAT3(0.0f, -0.05f, 0.0f));
+	box1->setPosition(XMFLOAT3(10.0f, -0.5f, 10.0f));
 	box1->setScale(XMFLOAT3(1000.0f, 1.0f, 1000.0f));
 	box1->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
 	m_Models.push_back(box1);
+
+
+	//// 冠胶 葛胆 积己
+	//Model* box2 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+	//box2->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
+	//box2->setPosition(XMFLOAT3(10.0f, 0.5f, 10.0f));
+	//box2->setScale(XMFLOAT3(1.0f, 1.0f, 1.0f));
+	//box2->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
+	//m_Models.push_back(box2);
 
 	m_modelCount = m_Models.size();
 	
@@ -180,8 +196,8 @@ bool Application::Frame()
 	float dt = m_Timer.GetDeltaTime();
 
 	// animation
-	m_AnimationModel->UpdateAnimation(dt);
 	m_PhysicsManager->stepSimulation(dt);
+	m_AnimationModel->UpdateAnimation(m_PhysicsManager->m_Scene, dt);
 
 	// Render the graphics scene.
 	bool result = Render();
@@ -207,7 +223,7 @@ bool Application::Render()
 	m_Camera->GetViewMatrix(matrix.view);
 	m_Direct3D->GetProjectionMatrix(matrix.projection);
 
-	if (m_debugMode == true)
+	if (m_boneDebugMode == true)
 	{
 		m_AnimationModel->DrawJointShader(m_Direct3D->GetDeviceContext(), m_JointShader, matrix);
 		m_AnimationModel->DrawBoneShader(m_Direct3D->GetDeviceContext(), m_BoneShader, matrix, m_Camera->GetFront());
@@ -215,6 +231,11 @@ bool Application::Render()
 	else
 	{
 		m_AnimationModel->DrawTextureShader(m_Direct3D->GetDeviceContext(), m_TextureShader, matrix);
+	}
+
+	if (m_rayDebugMode == true)
+	{
+		m_AnimationModel->DrawRayLineShader(m_Direct3D->GetDeviceContext(), m_BoneShader, matrix, m_Camera->GetFront());
 	}
 
 	for (int i = 0; i < m_Models.size(); i++)
@@ -306,7 +327,12 @@ void Application::ModelControl(Input* input)
 	
 }
 
-void Application::setDebugMode(bool flag)
+void Application::setBoneDebugMode(bool flag)
 {
-	m_debugMode = flag;
+	m_boneDebugMode = flag;
+}
+
+void Application::setRayDebugMode(bool flag)
+{
+	m_rayDebugMode = flag;
 }

@@ -32,8 +32,8 @@ struct JointVertex
 class Mesh
 {
 public:
-	static Mesh* createJoint(ID3D11Device* device);
-	static Mesh* createBone(ID3D11Device* device);
+	static Mesh* createDebugSphere(ID3D11Device* device, XMFLOAT4 color, float size);
+	static Mesh* createDebugLine(ID3D11Device* device, XMFLOAT4 color);
 	static Mesh* createSphere(ID3D11Device* device);
 	static Mesh* createBox(ID3D11Device* device);
 

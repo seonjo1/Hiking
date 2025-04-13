@@ -32,7 +32,8 @@ public:
 	void ModelControl(Input*);
 	XMFLOAT3 getDirection(int& inputState, bool pressUp, bool pressLeft, bool pressDown, bool pressRight);
 
-	void setDebugMode(bool);
+	void setBoneDebugMode(bool);
+	void setRayDebugMode(bool);
 	void CameraRotate(int x, int y);
 	void SaveCameraCurrentPos(int x, int y);
 
@@ -52,5 +53,6 @@ private:
 	PhysicsManager* m_PhysicsManager;
 
 	int m_modelCount;
-	bool m_debugMode{ false };
+	bool m_boneDebugMode{ false };
+	bool m_rayDebugMode{ false };
 };

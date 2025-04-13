@@ -7,6 +7,7 @@
 #include "AnimationData.h"
 #include "PhysicsObject.h"
 #include "PhysicsManager.h"
+#include "RaycastingManager.h"
 #include <unordered_set>
 
 class TextureShader;
@@ -73,11 +74,12 @@ public:
 	bool HasAnimationInfo(const aiScene* scene);
 	void setState(std::string state);
 
-	void UpdateAnimation(float dt);
+	void UpdateAnimation(physx::PxScene* scene, float dt);
 	bool DrawTextureShader(ID3D11DeviceContext*, TextureShader*, Matrix&);
 	bool DrawJointShader(ID3D11DeviceContext*, JointShader*, Matrix&);
 	bool DrawBoneShader(ID3D11DeviceContext*, BoneShader*, Matrix&, XMFLOAT3);
 	bool DrawModelShader(ID3D11DeviceContext*, ModelShader*, Matrix&);
+	bool DrawRayLineShader(ID3D11DeviceContext*, BoneShader*, Matrix&, XMFLOAT3);
 
 	void createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene);
 	void createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene);
@@ -107,6 +109,8 @@ private:
 
 	Mesh* m_jointMesh;
 	Mesh* m_boneMesh;
+	Mesh* m_rayToTargetMesh;
+	Mesh* m_rayNormalMesh;
 	std::vector<Mesh*> m_meshes;
 	std::vector<Texture*> m_textures;
 	PhysicsObject* m_physicsObject;
@@ -114,9 +118,9 @@ private:
 	Skeleton m_skeleton;							// 본 계층 정보
 	std::unordered_map<std::string, AnimationClip> m_animationClips;
 	AnimationStateManager m_animStateManager;		// 상태별 애니메이션 관리
+	RaycastingManager m_RaycastingManager;
 
 	Pose m_pose;									// Pose (현재 프레임의 뼈 트랜스폼들)
-	std::vector<XMMATRIX> m_skinningMatrices;		// GPU에 넘길 본 행렬들 (최종 스키닝용)
 
 	// 애니메이션 여부
 	bool m_hasAnimation = false;

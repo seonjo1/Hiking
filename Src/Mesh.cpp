@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-Mesh* Mesh::createBone(ID3D11Device* device)
+Mesh* Mesh::createDebugLine(ID3D11Device* device, XMFLOAT4 color)
 {
 	std::vector<BoneVertex> vertices;
 	std::vector<uint32_t> indices;
@@ -10,7 +10,7 @@ Mesh* Mesh::createBone(ID3D11Device* device)
 
 	for (int i = 0; i < 4; i++)
 	{
-		vertices[i] = BoneVertex{ XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), i };
+		vertices[i] = BoneVertex{ XMFLOAT3(0.0f, 0.0f, 0.0f), color, i };
 	}
 
 	indices[0] = 0;
@@ -111,7 +111,7 @@ Mesh* Mesh::createBox(ID3D11Device* device)
 	return new Mesh(device, vertices, indices);
 }
 
-Mesh* Mesh::createJoint(ID3D11Device* device)
+Mesh* Mesh::createDebugSphere(ID3D11Device* device, XMFLOAT4 color, float size)
 {
 	std::vector<JointVertex> vertices;
 	std::vector<uint32_t> indices;
@@ -133,9 +133,9 @@ Mesh* Mesh::createJoint(ID3D11Device* device)
 			float theta = u * XM_PI * 2.0f;
 			auto cosTheta = cosf(theta);
 			auto sinTheta = sinf(theta);
-			auto point = XMFLOAT3(cosPhi * cosTheta * 3.0f, sinPhi * 3.0f, -cosPhi * sinTheta * 3.0f);
+			auto point = XMFLOAT3(cosPhi * cosTheta * size, sinPhi * size, -cosPhi * sinTheta * size);
 
-			vertices[i * circleVertCount + j] = JointVertex{ point,  XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)};
+			vertices[i * circleVertCount + j] = JointVertex{ point, color};
 		}
 	}
 

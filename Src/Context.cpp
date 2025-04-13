@@ -134,7 +134,8 @@ bool Context::Frame()
 	}
 
 	m_Application->ModelControl(m_Input);
-	m_Application->setDebugMode(m_Input->IsKeyDown('P'));
+	m_Application->setBoneDebugMode(m_Input->IsKeyDown('T'));
+	m_Application->setRayDebugMode(m_Input->IsKeyDown('R'));
 
 	// 애플리케이션 클래스의 프레임 처리
 	result = m_Application->Frame();
