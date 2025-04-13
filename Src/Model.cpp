@@ -644,6 +644,7 @@ void Model::addTexture(Texture* texture)
 
 void Model::createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene)
 {
+	m_physicsObject = new PhysicsObject();
 	m_physicsObject->createStaticObject(physics);
 	m_physicsObject->setMaterial(physics, 0.6f, 0.6f, 0.3f);
 	m_physicsObject->createBoxShape(physics, XMFLOAT3(0.5f, 0.5f, 0.5f));
@@ -652,6 +653,7 @@ void Model::createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene)
 
 void Model::createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene)
 {
+	m_physicsObject = new PhysicsObject();
 	m_physicsObject->createStaticObject(physics);
 	m_physicsObject->setMaterial(physics, 0.6f, 0.6f, 0.3f);
 	m_physicsObject->createSphereShape(physics, 0.5f);

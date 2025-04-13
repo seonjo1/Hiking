@@ -54,11 +54,12 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
 
 	// 备 葛胆 积己
-	//Model* sphere1 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.800f, 0.373f, 0.157f, 1.0f));
-	//sphere1->createStaticSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	//sphere1->setPosition(XMFLOAT3(-3.0f, 0.0f, 0.0f));
-	//sphere1->syncModelWithRigidbody();
-	//m_Models.push_back(sphere1);
+	Model* sphere1 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.525f, 0.502f, 0.329f, 1.0f));
+	sphere1->createStaticSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
+	sphere1->setPosition(XMFLOAT3(-10.0f, 0.0f, 0.0f));
+	sphere1->setScale(XMFLOAT3(10.0f, 10.0f, 10.0f));
+	sphere1->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
+	m_Models.push_back(sphere1);
 
 	// 冠胶 葛胆 积己
 	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.502f, 0.329f, 1.0f));
@@ -108,12 +109,6 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 void Application::Shutdown()
 {
-	if (m_PhysicsManager)
-	{
-		m_PhysicsManager->shutdown();
-		delete m_PhysicsManager;
-	}
-
 	if (m_AnimationModel)
 	{
 		m_AnimationModel->Shutdown();
@@ -170,6 +165,13 @@ void Application::Shutdown()
 		delete m_Direct3D;
 		m_Direct3D = 0;
 	}
+
+	if (m_PhysicsManager)
+	{
+		m_PhysicsManager->shutdown();
+		delete m_PhysicsManager;
+	}
+
 	return;
 }
 

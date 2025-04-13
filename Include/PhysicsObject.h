@@ -1,34 +1,18 @@
 #pragma once
+
 #include <DirectXMath.h>
 #include <PxPhysicsAPI.h>
-#include <PxScene.h>
-#include <PxSceneDesc.h>
 #include <PxMaterial.h>
 #include <PxShape.h>
 #include "Common.h"
 
 using namespace DirectX;
 
-class PhysicsManager {
-public:
-	physx::PxFoundation* m_Foundation = nullptr;
-	physx::PxPhysics* m_Physics = nullptr;
-	physx::PxScene* m_Scene = nullptr;
-	physx::PxPvd* m_Pvd = nullptr;
-	physx::PxCpuDispatcher* m_Dispatcher = nullptr;
-
-	PhysicsManager() = default;
-
-	bool initialize();
-	void stepSimulation(float deltaTime);
-	void shutdown();
-};
-
 class PhysicsObject {
 public:
-	physx::PxRigidActor* m_actor;  // 물리 객체 (RigidBody 등)
-	physx::PxShape* m_shape;       // 충돌체
-	physx::PxMaterial* m_material; // 물리 재질
+	physx::PxRigidActor* m_actor = nullptr;  // 물리 객체 (RigidBody 등)
+	physx::PxShape* m_shape = nullptr;       // 충돌체
+	physx::PxMaterial* m_material = nullptr; // 물리 재질
 
 	// rigidbody -> material -> shape -> mass
 	void createDynamicObject(physx::PxPhysics* physics);

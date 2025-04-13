@@ -5,7 +5,8 @@
 #include "mesh.h"
 #include "AnimationSystem.h"
 #include "AnimationData.h"
-#include "Physics.h"
+#include "PhysicsObject.h"
+#include "PhysicsManager.h"
 #include <unordered_set>
 
 class TextureShader;
