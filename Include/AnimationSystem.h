@@ -2,12 +2,6 @@
 
 #include "Pose.h"
 
-struct AnimTx {
-    std::vector<XMFLOAT3> position;
-    std::vector<XMFLOAT4> rotation;
-    std::vector<XMFLOAT3> scale;
-};
-
 class AnimationPlayer {
 public:
     AnimationClip* clip = nullptr;
@@ -16,7 +10,7 @@ public:
 
     void Play(AnimationClip* clip);
     void UpdateTime(float deltaTime);
-    void SamplePose(AnimTx& tx, const Skeleton& skeleton);
+    void SamplePose(std::vector<LocalTx>& tx, const Skeleton& skeleton);
     XMFLOAT3 InterpolatePosition(const std::vector<PositionKeyframe>& keys, float time);
     XMFLOAT4 InterpolateRotation(const std::vector<RotationKeyframe>& keys, float time);
     XMFLOAT3 InterpolateScale(const std::vector<ScaleKeyframe>& keys, float time);
@@ -31,8 +25,8 @@ public:
     float blendAlpha = 1.0f;
     float blendSpeed = 3.0f;
 
-    void blendAnimTx(AnimTx& txA, AnimTx& txB, float blendAlpha);
-    void UpdateAnimationClip(Pose& outPose, Skeleton& skeleton);
+    void blendAnimTx(std::vector<LocalTx>& txVectorTarget, std::vector<LocalTx>& txVectorA, std::vector<LocalTx>& txVectorB, float blendAlpha);
+    void UpdateAnimationClip(Pose& pose, Skeleton& skeleton);
     void UpdateTime(float dt);
     void SetState(std::string newState, std::unordered_map<std::string, AnimationClip>& clips);
 

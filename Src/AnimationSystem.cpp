@@ -70,19 +70,15 @@ XMFLOAT3 AnimationPlayer::InterpolateScale(const std::vector<ScaleKeyframe>& key
     return keys.back().scale;
 }
 
-void AnimationPlayer::SamplePose(AnimTx& tx, const Skeleton& skeleton) {
-    tx.position.resize(skeleton.bones.size());
-    tx.rotation.resize(skeleton.bones.size());
-    tx.scale.resize(skeleton.bones.size());
-
+void AnimationPlayer::SamplePose(std::vector<LocalTx>& txVector, const Skeleton& skeleton) {
     for (size_t i = 0; i < skeleton.bones.size(); ++i) {
         const std::string& boneName = skeleton.bones[i].name;
         BoneTrack* track = clip->GetTrack(boneName);
 
         if (track) {
-            tx.position[i] = InterpolatePosition(track->positionKeys, currentTime);
-            tx.rotation[i] = InterpolateRotation(track->rotationKeys, currentTime);
-            tx.scale[i] = InterpolateScale(track->scaleKeys, currentTime);
+            txVector[i].position = InterpolatePosition(track->positionKeys, currentTime);
+            txVector[i].rotation = InterpolateRotation(track->rotationKeys, currentTime);
+            txVector[i].scale = InterpolateScale(track->scaleKeys, currentTime);
         }
     }
 }
@@ -109,53 +105,42 @@ void AnimationStateManager::UpdateTime(float dt) {
     if (blendAlpha > 1.0f) blendAlpha = 1.0f;
 }
 
-void AnimationStateManager::blendAnimTx(AnimTx& txA, AnimTx& txB, float blendAlpha)
+void AnimationStateManager::blendAnimTx(std::vector<LocalTx>& txVectorTarget, std::vector<LocalTx>& txVectorA, std::vector<LocalTx>& txVectorB, float blendAlpha)
 {
-    size_t count = txA.position.size();
+    size_t count = txVectorTarget.size();
 
     for (size_t i = 0; i < count; ++i) {
         // Position
-        XMVECTOR posA = XMLoadFloat3(&txA.position[i]);
-        XMVECTOR posB = XMLoadFloat3(&txB.position[i]);
+        XMVECTOR posA = XMLoadFloat3(&txVectorA[i].position);
+        XMVECTOR posB = XMLoadFloat3(&txVectorB[i].position);
         XMVECTOR posLerp = XMVectorLerp(posA, posB, blendAlpha);
-        XMStoreFloat3(&txA.position[i], posLerp);
+        XMStoreFloat3(&(txVectorTarget[i].position), posLerp);
 
         // Scale
-        XMVECTOR scaleA = XMLoadFloat3(&txA.scale[i]);
-        XMVECTOR scaleB = XMLoadFloat3(&txB.scale[i]);
+        XMVECTOR scaleA = XMLoadFloat3(&txVectorA[i].scale);
+        XMVECTOR scaleB = XMLoadFloat3(&txVectorB[i].scale);
         XMVECTOR scaleLerp = XMVectorLerp(scaleA, scaleB, blendAlpha);
-        XMStoreFloat3(&txA.scale[i], scaleLerp);
+        XMStoreFloat3(&(txVectorTarget[i].scale), scaleLerp);
 
         // Rotation (quaternion SLERP)
-        XMVECTOR rotA = XMLoadFloat4(&txA.rotation[i]);
-        XMVECTOR rotB = XMLoadFloat4(&txB.rotation[i]);
+        XMVECTOR rotA = XMLoadFloat4(&txVectorA[i].rotation);
+        XMVECTOR rotB = XMLoadFloat4(&txVectorB[i].rotation);
         XMVECTOR rotSlerp = XMQuaternionSlerp(rotA, rotB, blendAlpha);
-        XMStoreFloat4(&txA.rotation[i], rotSlerp);
+        XMStoreFloat4(&(txVectorTarget[i].rotation), rotSlerp);
     }
 }
-void AnimationStateManager::UpdateAnimationClip(Pose& outPose, Skeleton& skeleton) {
-    AnimTx txA, txB;
-
+void AnimationStateManager::UpdateAnimationClip(Pose& pose, Skeleton& skeleton) {
     if (previous.clip == nullptr)
     {
-        current.SamplePose(txB, skeleton);
-        for (size_t i = 0; i < skeleton.bones.size(); ++i) {
-            XMMATRIX T = XMMatrixTranslation(txB.position[i].x, txB.position[i].y, txB.position[i].z);
-            XMMATRIX R = XMMatrixRotationQuaternion(XMLoadFloat4(&(txB.rotation[i])));
-            XMMATRIX S = XMMatrixScaling(txB.scale[i].x, txB.scale[i].y, txB.scale[i].z);
-            outPose.local[i] = S * R * T;
-        }
+        current.SamplePose(pose.local, skeleton);
     }
     else {
-        previous.SamplePose(txA, skeleton);
-        current.SamplePose(txB, skeleton);
-        blendAnimTx(txA, txB, blendAlpha);
-        for (size_t i = 0; i < skeleton.bones.size(); ++i) {
-            XMMATRIX T = XMMatrixTranslation(txA.position[i].x, txA.position[i].y, txA.position[i].z);
-            XMMATRIX R = XMMatrixRotationQuaternion(XMLoadFloat4(&(txA.rotation[i])));
-            XMMATRIX S = XMMatrixScaling(txA.scale[i].x, txA.scale[i].y, txA.scale[i].z);
-            outPose.local[i] = S * R * T;
-        }
+        std::vector<LocalTx> txVectorA(skeleton.bones.size());
+        std::vector<LocalTx> txVectorB(skeleton.bones.size());
+
+        previous.SamplePose(txVectorA, skeleton);
+        current.SamplePose(txVectorB, skeleton);
+        blendAnimTx(pose.local, txVectorA, txVectorB, blendAlpha);
     }
 }
 

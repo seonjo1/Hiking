@@ -285,6 +285,9 @@ void Model::UpdateAnimation(float dt)
 	if (m_hasAnimation == true){
 		m_animStateManager.UpdateTime(dt);
 		m_animStateManager.UpdateAnimationClip(m_pose, m_skeleton);
+		// Raycasting
+		
+		// Foot IK Àû¿ë
 		m_pose.UpdateFinalPos(m_skeleton);
 	}
 }
