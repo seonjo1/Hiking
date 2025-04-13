@@ -5,7 +5,7 @@ void AnimationPlayer::Play(AnimationClip* newClip) {
     currentTime = 0.0f;
 }
 
-void AnimationPlayer::Update(float deltaTime) {
+void AnimationPlayer::UpdateTime(float deltaTime) {
     static const float speed = 20.0f;
 
     if (!clip) return;
@@ -102,9 +102,9 @@ void AnimationStateManager::SetState(std::string newState, std::unordered_map<st
     blendAlpha = 0.0f;
 }
 
-void AnimationStateManager::Update(float dt) {
-	previous.Update(dt);
-	current.Update(dt);
+void AnimationStateManager::UpdateTime(float dt) {
+	previous.UpdateTime(dt);
+	current.UpdateTime(dt);
     blendAlpha += dt * blendSpeed;
     if (blendAlpha > 1.0f) blendAlpha = 1.0f;
 }
@@ -133,9 +133,7 @@ void AnimationStateManager::blendAnimTx(AnimTx& txA, AnimTx& txB, float blendAlp
         XMStoreFloat4(&txA.rotation[i], rotSlerp);
     }
 }
-
-void AnimationStateManager::GetFinalPose(Pose& outPose, Skeleton& skeleton) {
-	
+void AnimationStateManager::UpdateAnimationClip(Pose& outPose, Skeleton& skeleton) {
     AnimTx txA, txB;
 
     if (previous.clip == nullptr)
@@ -147,7 +145,6 @@ void AnimationStateManager::GetFinalPose(Pose& outPose, Skeleton& skeleton) {
             XMMATRIX S = XMMatrixScaling(txB.scale[i].x, txB.scale[i].y, txB.scale[i].z);
             outPose.local[i] = S * R * T;
         }
-        outPose.ApplyHierarchy(skeleton);
     }
     else {
         previous.SamplePose(txA, skeleton);
@@ -159,6 +156,6 @@ void AnimationStateManager::GetFinalPose(Pose& outPose, Skeleton& skeleton) {
             XMMATRIX S = XMMatrixScaling(txA.scale[i].x, txA.scale[i].y, txA.scale[i].z);
             outPose.local[i] = S * R * T;
         }
-        outPose.ApplyHierarchy(skeleton);
     }
 }
+

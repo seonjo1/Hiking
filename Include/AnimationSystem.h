@@ -15,7 +15,7 @@ public:
     float speed = 1.0f;
 
     void Play(AnimationClip* clip);
-    void Update(float deltaTime);
+    void UpdateTime(float deltaTime);
     void SamplePose(AnimTx& tx, const Skeleton& skeleton);
     XMFLOAT3 InterpolatePosition(const std::vector<PositionKeyframe>& keys, float time);
     XMFLOAT4 InterpolateRotation(const std::vector<RotationKeyframe>& keys, float time);
@@ -32,8 +32,8 @@ public:
     float blendSpeed = 3.0f;
 
     void blendAnimTx(AnimTx& txA, AnimTx& txB, float blendAlpha);
-    void GetFinalPose(Pose& outPose, Skeleton& skeleton);
-    void Update(float dt);
+    void UpdateAnimationClip(Pose& outPose, Skeleton& skeleton);
+    void UpdateTime(float dt);
     void SetState(std::string newState, std::unordered_map<std::string, AnimationClip>& clips);
 
 };

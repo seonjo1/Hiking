@@ -283,15 +283,15 @@ void Model::setState(std::string state)
 void Model::UpdateAnimation(float dt)
 {
 	if (m_hasAnimation == true){
-		m_animStateManager.Update(dt);
-		m_animStateManager.GetFinalPose(m_pose, m_skeleton);
+		m_animStateManager.UpdateTime(dt);
+		m_animStateManager.UpdateAnimationClip(m_pose, m_skeleton);
+		m_pose.UpdateFinalPos(m_skeleton);
 	}
 }
 
 
 void Model::ReleaseTextures()
 {
-	p("model::ReleaseTextures start!!\n");
 	for (int i = 0; i < m_textures.size(); i++)
 	{
 		if (m_textures[i])
@@ -572,7 +572,7 @@ void Model::setToTarget(XMFLOAT3& targetDir)
 
 void Model::speedDown()
 {
-	const static float accel = 0.02f;
+	const static float accel = 0.005f;
 	const static float minSpeed = 0.0f;
 	
 	m_speed = max(minSpeed, m_speed - accel);
@@ -580,9 +580,9 @@ void Model::speedDown()
 
 void Model::move(XMFLOAT3& targetDir)
 {
-	const static float rotSpeed = 10.0f;
-	const static float accel = 0.015f;
-	const static float maxSpeed = 0.15f;
+	const static float rotSpeed = 5.0f;
+	const static float accel = 0.005f;
+	const static float maxSpeed = 0.05f;
 
 	// 현재 방향 벡터
 	XMFLOAT3 nowDir = getRotatedVector(m_rotation.y);

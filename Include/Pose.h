@@ -10,5 +10,5 @@ struct Pose {
     int count;
     
     void Initialize(size_t boneCount);
-    void ApplyHierarchy(const Skeleton& skeleton);
+    void UpdateFinalPos(const Skeleton& skeleton);
 };
