@@ -3,7 +3,7 @@
 #include <queue>
 #include <cmath>
 #include "mesh.h"
-#include "AnimationSystem.h"
+#include "AnimationStateManager.h"
 #include "AnimationData.h"
 #include "PhysicsObject.h"
 #include "PhysicsManager.h"
