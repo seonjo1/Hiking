@@ -292,7 +292,6 @@ bool Model::DrawRayLineShader(ID3D11DeviceContext* deviceContext, BoneShader* bo
 
 bool Model::DrawModelShader(ID3D11DeviceContext* deviceContext, ModelShader* modelShader, Matrix& matrix)
 {
-	p("draw box!!\n");
 	matrix.world = getWorldMatrix();
 
 	for (int i = 0; i < m_size; i++)
@@ -449,8 +448,6 @@ XMMATRIX Model::getWorldMatrix()
 	XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(m_rotation.x * toRadian, m_rotation.y * toRadian, m_rotation.z * toRadian);
 	XMMATRIX rotation = XMMatrixRotationQuaternion(quaternion);
 	XMMATRIX scale = XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
-
-	p("scale: " + to_string(m_scale.x) + " " + to_string(m_scale.y) + " " + to_string(m_scale.z) + "\n");
 
 	return scale * rotation * translation;  // 순서대로 적용: 스케일 -> 회전 -> 위치
 }
@@ -688,7 +685,7 @@ void Model::setToTarget(XMFLOAT3& targetDir)
 
 void Model::speedDown()
 {
-	const static float accel = 0.005f;
+	const static float accel = 0.015f;
 	const static float minSpeed = 0.0f;
 	
 	m_speed = max(minSpeed, m_speed - accel);
@@ -697,8 +694,8 @@ void Model::speedDown()
 void Model::move(XMFLOAT3& targetDir)
 {
 	const static float rotSpeed = 5.0f;
-	const static float accel = 0.005f;
-	const static float maxSpeed = 0.05f;
+	const static float accel = 0.015f;
+	const static float maxSpeed = 0.15f;
 
 	// 현재 방향 벡터
 	XMFLOAT3 nowDir = getRotatedVector(m_rotation.y);

@@ -3,16 +3,10 @@
 physx::PxVec3 Pose::getBonePos(XMMATRIX& worldMatrix, int boneIdx)
 {
     XMMATRIX boneWorld = XMMatrixMultiply(world[boneIdx], worldMatrix);
-    XMVECTOR deb = XMVector3TransformCoord(XMVectorZero(), world[boneIdx]);
-    XMFLOAT3 de;
-    XMStoreFloat3(&de, deb);
-    p("bone: " + std::to_string(de.x) + " " + std::to_string(de.y) + " " + std::to_string(de.z) + "\n");
-    XMStoreFloat3(&de, deb);
     XMVECTOR pos = XMVector3TransformCoord(XMVectorZero(), boneWorld);
 
     XMFLOAT3 out;
     XMStoreFloat3(&out, pos);
-    p("world: " + std::to_string(out.x) + " " + std::to_string(out.y) + " " + std::to_string(out.z) + "\n");
 
     return physx::PxVec3(out.x, out.y, out.z);
 }

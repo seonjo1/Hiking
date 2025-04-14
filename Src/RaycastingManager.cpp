@@ -75,10 +75,6 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
             info.part = EIKPart::TOE;
             info.distance = toeDistance;
             info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-            p("pose: " + std::to_string(info.pos.x) + " " + std::to_string(info.pos.y) + " " + std::to_string(info.pos.z) + "\n");
-            p("toe pose: " + std::to_string(toePose.x) + " " + std::to_string(toePose.y) + " " + std::to_string(toePose.z) + "\n");
-            p("distance: " + std::to_string(info.distance) + "\n");
-
         }
         else
         {
@@ -87,10 +83,6 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
             info.part = EIKPart::FOOT;
             info.distance = footDistance;
             info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-            p("pose: " + std::to_string(info.pos.x) + " " + std::to_string(info.pos.y) + " " + std::to_string(info.pos.z) + "\n");
-            p("foot pose: " + std::to_string(footPose.x) + " " + std::to_string(footPose.y) + " " + std::to_string(footPose.z) + "\n");
-            p("distance: " + std::to_string(info.distance) + "\n");
-
         }
     }
     else if (toeRaySuccess)
@@ -101,10 +93,6 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
         info.part = EIKPart::TOE;
         info.distance = toeDistance;
         info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-        p("pose: " + std::to_string(info.pos.x) + " " + std::to_string(info.pos.y) + " " + std::to_string(info.pos.z) + "\n");
-        p("toe pose: " + std::to_string(toePose.x) + " " + std::to_string(toePose.y) + " " + std::to_string(toePose.z) + "\n");
-        p("distance: " + std::to_string(info.distance) + "\n");
-
     }
     else if (footRaySuccess)
     {
@@ -114,9 +102,6 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
         info.part = EIKPart::FOOT;
         info.distance = footDistance;
         info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-        p("pose: " + std::to_string(info.pos.x) + " " + std::to_string(info.pos.y) + " " + std::to_string(info.pos.z) + "\n");
-        p("foot pose: " + std::to_string(footPose.x) + " " + std::to_string(footPose.y) + " " + std::to_string(footPose.z) + "\n");
-        p("distance: " + std::to_string(info.distance) + "\n");
     }
 }
 

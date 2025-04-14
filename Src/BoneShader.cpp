@@ -432,7 +432,6 @@ bool BoneShader::SetShaderParametersRayLine(ID3D11DeviceContext* deviceContext, 
 	WorldMatrixBufferType* worldMatrixDataPtr = (WorldMatrixBufferType*)mappedResource.pData;
 	
 	XMMATRIX translation = XMMatrixTranslation(info.dir.x * info.distance, info.dir.y * info.distance, info.dir.z * info.distance);
-	p("world translation: " + to_string(info.dir.x * info.distance) + " " + to_string(info.dir.y * info.distance) + " " + to_string(info.dir.z * info.distance) + "\n");
 	XMMATRIX parentWorldMatrix = XMMatrixMultiply(parentMatrix, matrix.world);
 	XMMATRIX childWorldMatrix = XMMatrixMultiply(parentWorldMatrix, translation);
 	worldMatrixDataPtr->world[0] = parentWorldMatrix;
