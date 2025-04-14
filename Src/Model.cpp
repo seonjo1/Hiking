@@ -323,7 +323,6 @@ bool Model::DrawJointShader(ID3D11DeviceContext* deviceContext, JointShader* joi
 			XMVECTOR v = XMVector3TransformCoord(XMVectorZero(), ma);
 			XMFLOAT3 pos;
 			XMStoreFloat3(&pos, v);
-			p("toe joint : " + to_string(pos.x) + " " + to_string(pos.y) + " " + to_string(pos.z) + "\n");
 		}
 
 		if (i == footIdx)
@@ -332,7 +331,6 @@ bool Model::DrawJointShader(ID3D11DeviceContext* deviceContext, JointShader* joi
 			XMVECTOR v = XMVector3TransformCoord(XMVectorZero(), ma);
 			XMFLOAT3 pos;
 			XMStoreFloat3(&pos, v);
-			p("foot joint : " + to_string(pos.x) + " " + to_string(pos.y) + " " + to_string(pos.z) + "\n");
 		}
 
 		if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, m_pose.world[i]) == false)
@@ -384,6 +382,8 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		);
 		
 		// Foot IK Àû¿ë
+
+
 		m_pose.UpdateFinalPos(m_skeleton);
 	}
 }
@@ -753,6 +753,11 @@ void Model::addMesh(Mesh* mesh)
 void Model::addTexture(Texture* texture)
 {
 	m_textures.push_back(texture);
+}
+
+float Model::getSpeed()
+{
+	return m_speed;
 }
 
 void Model::createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene)

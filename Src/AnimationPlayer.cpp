@@ -14,8 +14,6 @@ void AnimationPlayer::UpdateTime(float deltaTime, float& walkPhase) {
 
 	if (!clip) return ;
 
-	p(clip->name + "\n");
-
 	currentTime += speed * deltaTime * clip->ticksPerSecond;
 	if (currentTime >= clip->duration)
 		currentTime = fmod(currentTime, clip->duration);

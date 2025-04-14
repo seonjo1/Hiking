@@ -8,6 +8,7 @@
 #include "PhysicsObject.h"
 #include "PhysicsManager.h"
 #include "RaycastingManager.h"
+#include "IKManager.h"
 #include <unordered_set>
 
 class TextureShader;
@@ -98,6 +99,7 @@ public:
 	void addMesh(Mesh* mesh);
 	void addTexture(Texture* texture);
 	void syncModelWithRigidbody(physx::PxPhysics* physics);
+	float getSpeed();
 
 private:
 	void ReleaseTextures();
@@ -119,6 +121,7 @@ private:
 	std::unordered_map<std::string, AnimationClip> m_animationClips;
 	AnimationStateManager m_animStateManager;		// 상태별 애니메이션 관리
 	RaycastingManager m_RaycastingManager;
+	IKManager m_IKManager;
 
 	Pose m_pose;									// Pose (현재 프레임의 뼈 트랜스폼들)
 
