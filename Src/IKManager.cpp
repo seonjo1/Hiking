@@ -162,6 +162,8 @@ void IKManager::calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingMan
 		XMStoreFloat3(&m_chains[i].EndEffector, endEffector);
 		// target µî·Ï
 		m_chains[i].Target = raycastingManager.m_LeftFoot.pos;
+		p("endEffector : " + std::to_string(m_chains[i].EndEffector.x) + " " + std::to_string(m_chains[i].EndEffector.y) + " " + std::to_string(m_chains[i].EndEffector.z) + "\n");
+		p("target : " + std::to_string(m_chains[i].Target.x) + " " + std::to_string(m_chains[i].Target.y) + " " + std::to_string(m_chains[i].Target.z) + "\n");
 	}
 }
 
@@ -216,6 +218,16 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 			}
 		}
 	}
+
+	// debuging
+	p("print J!!\n");
+	J.print();
+	p("print dP!!\n");
+	for (int i = 0; i < dP.size(); i++)
+	{
+		p(std::to_string(dP[i]) + " ");
+	}
+	p("\n");
 }
 
 void IKManager::solveDLS()

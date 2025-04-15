@@ -196,8 +196,12 @@ bool Application::Frame()
 	float dt = m_Timer.GetDeltaTime();
 
 	// animation
-	m_PhysicsManager->stepSimulation(dt);
-	m_AnimationModel->UpdateAnimation(m_PhysicsManager->m_Scene, dt);
+	if (dt > 0.0f)
+	{
+		m_PhysicsManager->stepSimulation(dt);
+		m_AnimationModel->UpdateAnimation(m_PhysicsManager->m_Scene, dt);
+	}
+
 
 	// Render the graphics scene.
 	bool result = Render();

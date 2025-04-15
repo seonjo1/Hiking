@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Common.h"
 #include "DirectXMath.h"
 #include <vector>
 #include <algorithm>
@@ -38,6 +39,8 @@ public:
 	std::vector<std::vector<float>> m_data;
 
 	void Resize(int rows, int cols) {
+		rowCount = rows;
+		colCount = cols;
 		m_data.resize(rows);
 		for (int i = 0; i < rows; i++)
 		{
@@ -63,6 +66,18 @@ public:
 			{
 				m_data[i][j] = 0.0f;
 			}
+		}
+	}
+
+	void print()
+	{
+		for (int i = 0; i < rowCount; ++i)
+		{
+			for (int j = 0; j < colCount; ++j)
+			{
+				p(std::to_string(m_data[i][j]) + " ");
+			}
+			p("\n");
 		}
 	}
 };
