@@ -83,6 +83,7 @@ public:
 	void updateAngle();
 	void updatePose(Pose& pose);
 	bool isFinish(Pose& pose, XMMATRIX& worldMatrix);
+	IKChain& getChain(int idx);
 
 private:
 	void initLeftFootChains(Skeleton& skeleton);

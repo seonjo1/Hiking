@@ -10,6 +10,8 @@ struct LocalTx {
     XMFLOAT3 scale {1.0f, 1.0f, 1.0f};
 };
 
+struct IKChain;
+
 struct Pose {
 	std::vector<LocalTx> local;
 	std::vector<XMFLOAT4> IKRotation;
@@ -24,5 +26,5 @@ struct Pose {
     void UpdateFinalPos(const Skeleton& skeleton);
     void UpdateIKRotation();
 	void UpdateIKWorldPos(const Skeleton& skeleton);
-
+    void IKChainBlending(IKChain& chain, float blendAlpha);
 };

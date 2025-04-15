@@ -1,4 +1,5 @@
 #include "Pose.h"
+#include "IKManager.h"
 
 physx::PxVec3 Pose::getBonePos(XMMATRIX& worldMatrix, int boneIdx)
 {
@@ -121,4 +122,19 @@ void Pose::UpdateIKWorldPos(const Skeleton& skeleton) {
 			s.push(skeleton.bones[idx].children[i]);
 		}
 	}
+}
+
+void Pose::IKChainBlending(IKChain& chain, float blendAlpha)
+{
+    int count = chain.Bones.size();
+    for (int i = 0; i < count; i++)
+    {
+        IKBone& bone = chain.Bones[i];
+        int idx = bone.idx;
+
+        XMVECTOR aniQuat = XMLoadFloat4(&local[idx].rotation);
+		XMVECTOR ikQuat = XMLoadFloat4(&IKRotation[idx]);
+		XMVECTOR result = XMQuaternionSlerp(aniQuat, ikQuat, blendAlpha);
+        XMStoreFloat4(&local[idx].rotation, result);
+    }
 }

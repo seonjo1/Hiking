@@ -365,3 +365,8 @@ bool IKManager::isFinish(Pose& pose, XMMATRIX& worldMatrix)
 	}
 	return success;
 }
+
+IKChain& IKManager::getChain(int idx)
+{
+	return m_chains[idx];
+}

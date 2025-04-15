@@ -419,7 +419,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			}
 			iteration++;
 		}
-		//m_pose.leftFootIKBlending(1.0f);
+		m_pose.IKChainBlending(m_IKManager.getChain(0), 0.0f);
 		m_pose.UpdateFinalPos(m_skeleton);
 	}
 }
