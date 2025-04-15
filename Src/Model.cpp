@@ -91,6 +91,7 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_boneMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 		m_rayToTargetMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
 		m_rayNormalMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f));
+		m_IKManager.initIKChains(m_skeleton);
 	}
 
 	// node 데이터 처리
@@ -364,15 +365,15 @@ void Model::setState(std::string state)
 
 void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 {
-	if (m_hasAnimation == true){
+	if (m_hasAnimation == true) {
 		m_animStateManager.UpdateTime(dt);
 		m_animStateManager.UpdateAnimationClip(m_pose, m_skeleton);
 		m_pose.UpdateWorldPos(m_skeleton);
 		// Raycasting
 		XMMATRIX worldMatrix = getWorldMatrix();
 		m_RaycastingManager.raycastingForLeftFootIK(
-			scene, 
-			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase")), 
+			scene,
+			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase")),
 			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"))
 		);
 		m_RaycastingManager.raycastingForRightFootIK(
@@ -380,10 +381,45 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase")),
 			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"))
 		);
-		
-		// Foot IK 적용
 
+		/*
+		 [Foot IK 적용]
+		 0. IKangle Update
+		 반복
+		 1. pose 업데이트
+		 2. Target, EndEffector, dx 계산
+		 3. Jacobian Matrix 생성
+		 4. DLS 적용
+		 5. 각도 갱신
+		 6. 반복 or 종료
+		*/
+		// 0. IKangle 업데이트
+		m_pose.UpdateIKRotation();
+		m_pose.UpdateIKWorldPos(m_skeleton);
 
+		static const int MAX_ITERATION = 10;
+		int iteration = 0;
+		while (iteration < MAX_ITERATION)
+		{
+			// 1. Target, EndEffector, dx 계산
+			m_IKManager.calculateTarget(m_pose, worldMatrix, m_RaycastingManager);
+			// 2. Jacobian Matrix 생성
+			m_IKManager.calculateJacobianMatrix(m_pose, worldMatrix);
+			// 3. DLS 적용
+			m_IKManager.solveDLS();
+			// 4. 각도 갱신
+			m_IKManager.updateAngle();
+			// 5. pose 업데이트
+			m_IKManager.updatePose(m_pose);
+			m_pose.UpdateIKWorldPos(m_skeleton);
+			// 6. 반복 or 종료
+			if (m_IKManager.isFinish(m_pose, worldMatrix) == true)
+			{
+				break;
+			}
+			iteration++;
+		}
+		//m_pose.leftFootIKBlending(1.0f);
 		m_pose.UpdateFinalPos(m_skeleton);
 	}
 }

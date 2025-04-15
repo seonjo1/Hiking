@@ -11,7 +11,8 @@ struct LocalTx {
 };
 
 struct Pose {
-    std::vector<LocalTx> local;
+	std::vector<LocalTx> local;
+	std::vector<XMFLOAT4> IKRotation;
     std::vector<XMMATRIX> world;
     std::vector<XMMATRIX> finalMatrix;
     std::vector<XMMATRIX> rayMatrix;
@@ -19,7 +20,9 @@ struct Pose {
     
     void Initialize(size_t boneCount);
     physx::PxVec3 getBonePos(XMMATRIX& worldMatrix, int boneIdx);
-    void UpdateWorldPos(const Skeleton& skeleton);
+	void UpdateWorldPos(const Skeleton& skeleton);
     void UpdateFinalPos(const Skeleton& skeleton);
+    void UpdateIKRotation();
+	void UpdateIKWorldPos(const Skeleton& skeleton);
 
 };
