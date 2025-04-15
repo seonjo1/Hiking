@@ -347,7 +347,11 @@ void IKManager::updatePose(Pose& pose)
 		for (int j = 0; j < count; ++j)
 		{
 			IKBone& bone = m_chains[i].Bones[j];
-			XMVECTOR quat = XMQuaternionRotationRollPitchYaw(bone.angle[0], bone.angle[1], bone.angle[2]);
+			XMVECTOR quat = XMQuaternionRotationRollPitchYaw(
+				XMConvertToRadians(bone.angle[0]), 
+				XMConvertToRadians(bone.angle[1]), 
+				XMConvertToRadians(bone.angle[2])
+			);
 			XMStoreFloat4(&(pose.IKRotation[bone.idx]), quat);
 		}
 	}
