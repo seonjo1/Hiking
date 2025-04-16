@@ -394,40 +394,32 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		 6. 반복 or 종료
 		*/
 		// 0. IKangle 업데이트
-		m_pose.UpdateIKRotation();
-		m_pose.UpdateIKWorldPos(m_skeleton);
+		p("\n\n\nstart IK!!!\n");
+		m_IKManager.updateNowRotation(m_pose);
+		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 
-		p("\n\n\n\nstart IK!\n");
-		static const int MAX_ITERATION = 10;
+		static const int MAX_ITERATION = 20;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{
 			// 1. Target, EndEffector, dx 계산
-			p("start calculateTarget\n");
 			m_IKManager.calculateTarget(m_pose, worldMatrix, m_RaycastingManager);
 			// 2. Jacobian Matrix 생성
-			p("start calculateJacobianMatrix\n");
 			m_IKManager.calculateJacobianMatrix(m_pose, worldMatrix);
 			// 3. DLS 적용
-			p("start solveDLS\n");
 			m_IKManager.solveDLS();
 			// 4. 각도 갱신
-			p("start updateAngle\n");
 			m_IKManager.updateAngle();
-			// 5. pose 업데이트
-			p("start updatePose\n");
-			m_IKManager.updatePose(m_pose);
-			p("start UpdateIKWorldPos\n");
-			m_pose.UpdateIKWorldPos(m_skeleton);
+			// 5. worldPos 업데이트
+			m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 			// 6. 반복 or 종료
-			p("start isFinish\n");
 			if (m_IKManager.isFinish(m_pose, worldMatrix) == true)
 			{
 				break;
 			}
 			iteration++;
 		}
-		m_pose.IKChainBlending(m_IKManager.getChain(0), 1.0f);
+		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
 		m_pose.UpdateFinalPos(m_skeleton);
 	}
 }
@@ -543,12 +535,12 @@ void Model::ParseSkeleton(aiNode* node, int parentIndex, Skeleton& skeleton, con
 		skeleton.bones[parentIndex].children.push_back(thisIndex);
 	else
 		skeleton.rootBoneIdx = thisIndex;
-	//std::string s = "Add bone: " + bone.name + "\n";
-	//p(s);
-	//s = "parent Idx: " + to_string(parentIndex) + "\n";
-	//p(s);
-	//s = "now Idx: " + to_string(thisIndex) + "\n";
-	//p(s);
+	std::string s = "Add bone: " + bone.name + "\n";
+	p(s);
+	s = "parent Idx: " + to_string(parentIndex) + "\n";
+	p(s);
+	s = "now Idx: " + to_string(thisIndex) + "\n";
+	p(s);
 
 	for (unsigned int i = 0; i < node->mNumChildren; ++i)
 		ParseSkeleton(node->mChildren[i], thisIndex, skeleton, usedBones);

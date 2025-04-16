@@ -15,7 +15,6 @@ struct IKBone
 {
 	int idx;
 	// x, y, z ¼ø¼­ (pitch, yaw, roll)
-	float angle[3];
 	bool angleEnable[3];
 	float anglePlusLimits[3];
 	float angleMinusLimits[3];
@@ -95,14 +94,16 @@ public:
 	void calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingManager& raycastingManager);
 	void calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix);
 	void solveDLS();
+	void updateNowRotation(Pose& pose);
 	void updateAngle();
-	void updatePose(Pose& pose);
 	bool isFinish(Pose& pose, XMMATRIX& worldMatrix);
 	IKChain& getChain(int idx);
+	std::vector<XMFLOAT4>& getNowRotation();
 
 private:
 	void initLeftFootChains(Skeleton& skeleton);
 	void initRightFootChains(Skeleton& skeleton);
+	void quaternionToEuler(const XMFLOAT4& q, float* eulerDeg);
 
 	JacobianMatrix J;
 	JacobianMatrix JTJ;
@@ -111,6 +112,8 @@ private:
 	std::vector<float> dTheta;
 	std::vector<float> JTx;
 	std::vector<IKChain> m_chains;
+	std::vector<XMFLOAT4> m_nowRotation;
+
 	int m_chainNum{ 0 };
 	int m_rowNum{ 0 };
 	int m_colNum{ 0 };

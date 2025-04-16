@@ -14,7 +14,6 @@ struct IKChain;
 
 struct Pose {
 	std::vector<LocalTx> local;
-	std::vector<XMFLOAT4> IKRotation;
     std::vector<XMMATRIX> world;
     std::vector<XMMATRIX> finalMatrix;
     std::vector<XMMATRIX> rayMatrix;
@@ -24,7 +23,6 @@ struct Pose {
     physx::PxVec3 getBonePos(XMMATRIX& worldMatrix, int boneIdx);
 	void UpdateWorldPos(const Skeleton& skeleton);
     void UpdateFinalPos(const Skeleton& skeleton);
-    void UpdateIKRotation();
-	void UpdateIKWorldPos(const Skeleton& skeleton);
-    void IKChainBlending(IKChain& chain, float blendAlpha);
+    void UpdateIKWorldPos(const Skeleton& skeleton, std::vector<XMFLOAT4>& IKRotation);
+    void IKChainBlending(IKChain& chain, std::vector<XMFLOAT4>& IKRotation, float blendAlpha);
 };

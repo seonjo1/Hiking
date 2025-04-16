@@ -82,18 +82,9 @@ void Pose::Initialize(size_t boneCount) {
     world.resize(boneCount, XMMatrixIdentity());
     finalMatrix.resize(boneCount, XMMatrixIdentity());
     rayMatrix.resize(boneCount, XMMatrixIdentity());
-    IKRotation.resize(boneCount);
 }
 
-void Pose::UpdateIKRotation()
-{
-    for (int i = 0; i < count; i++)
-    {
-        IKRotation[i] = local[i].rotation;
-    }
-}
-
-void Pose::UpdateIKWorldPos(const Skeleton& skeleton) {
+void Pose::UpdateIKWorldPos(const Skeleton& skeleton, std::vector<XMFLOAT4>& IKRotation) {
 	std::stack<int> s;
 	s.push(0);
 	while (!s.empty()) {
@@ -124,7 +115,7 @@ void Pose::UpdateIKWorldPos(const Skeleton& skeleton) {
 	}
 }
 
-void Pose::IKChainBlending(IKChain& chain, float blendAlpha)
+void Pose::IKChainBlending(IKChain& chain, std::vector<XMFLOAT4>& IKRotation, float blendAlpha)
 {
     int count = chain.Bones.size();
     for (int i = 0; i < count; i++)
