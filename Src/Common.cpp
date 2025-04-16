@@ -17,7 +17,6 @@ std::wstring ConvertToWString(const char* str)
 
 void p(std::string s)
 {
-	return;
 	OutputDebugStringA(s.c_str());
 }
 

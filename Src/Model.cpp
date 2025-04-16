@@ -398,7 +398,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_IKManager.updateNowRotation(m_pose);
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 
-		static const int MAX_ITERATION = 20;
+		static const int MAX_ITERATION = 25;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{
@@ -413,10 +413,10 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			// 5. worldPos 업데이트
 			m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 			// 6. 반복 or 종료
-			if (m_IKManager.isFinish(m_pose, worldMatrix) == true)
-			{
-				break;
-			}
+			//if (m_IKManager.isFinish(m_pose, worldMatrix) == true)
+			//{
+			//	break;
+			//}
 			iteration++;
 		}
 		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
