@@ -35,7 +35,7 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[1].angleMinusLimits[1] = -30.0f;
 
 	m_chains[idx].Bones[1].angleEnable[2] = true;
-	m_chains[idx].Bones[1].anglePlusLimits[2] = 10.0f;
+	m_chains[idx].Bones[1].anglePlusLimits[2] = 5.0f;
 	m_chains[idx].Bones[1].angleMinusLimits[2] = 0.0f;
 
 	// LeftLeg
@@ -377,13 +377,24 @@ void IKManager::updateAngle()
 				float dT = XMConvertToDegrees(dTheta[idx]);
 				result[k] = dT;
 
+				// 1. clamping
+				if (dT + angle[k] > bone.anglePlusLimits[k] && dT > 0.0f)
+				{
+					result[k] = bone.anglePlusLimits[k] - angle[k];
+				}
+				else if (dT + angle[k] < bone.angleMinusLimits[k] && dT < 0.0f)
+				{
+					result[k] = angle[k] - bone.angleMinusLimits[k];
+				}
+
+				// 2. dampping
 				//if (dT + angle[k] > bone.anglePlusLimits[k])
 				//{
-				//	result[k] = bone.anglePlusLimits[k] - angle[k];
+				//	result[k] * 0.1f;
 				//}
 				//else if (dT + angle[k] < bone.angleMinusLimits[k])
 				//{
-				//	result[k] = bone.angleMinusLimits[k] - angle[k];
+				//	result[k] * 0.1f;
 				//}
 
 				idx++;
