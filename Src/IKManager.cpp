@@ -386,7 +386,7 @@ void IKManager::updateAngle()
 				}
 				else if (dT + angle[k] < bone.angleMinusLimits[k] && dT < 0.0f)
 				{
-					result[k] = angle[k] - bone.angleMinusLimits[k];
+					result[k] = bone.angleMinusLimits[k] - angle[k];
 				}
 
 				// 2. dampping
@@ -412,7 +412,7 @@ void IKManager::updateAngle()
 			);
 
 			XMVECTOR nowQuat = XMLoadFloat4(&m_nowRotation[bone.idx]);
-			XMVECTOR newQuat = XMQuaternionMultiply(quat, nowQuat);
+			XMVECTOR newQuat = XMQuaternionMultiply(nowQuat, quat);
 			XMStoreFloat4(&m_nowRotation[bone.idx], newQuat);
 		}
 		p("\n");
