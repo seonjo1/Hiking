@@ -364,8 +364,8 @@ void IKManager::updateAngle()
 
 			// 기존 quaternion을 pitch yaw roll로 변환
 			quaternionToEuler(m_nowRotation[bone.idx], angle);
-			//p("bone["+ std::to_string(bone.idx) + "]\n");
-			//p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+			p("bone["+ std::to_string(bone.idx) + "]\n");
+			p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 
 			for (int k = 0; k < 3; ++k)
 			{
@@ -376,6 +376,8 @@ void IKManager::updateAngle()
 				// dTheta와 합쳐서 클램프
 				float dT = XMConvertToDegrees(dTheta[idx]);
 				result[k] = dT;
+
+				p("dT["+ std::to_string(k) + "]: " + std::to_string(dT) + "\n");
 
 				// 1. clamping
 				if (dT + angle[k] > bone.anglePlusLimits[k] && dT > 0.0f)
@@ -399,6 +401,9 @@ void IKManager::updateAngle()
 
 				idx++;
 			}
+
+			p("result!!!\n");
+			p("x: " + std::to_string(result[0]) + " " + std::to_string(result[1]) + " " + std::to_string(result[2]) + "\n");
 
 			XMVECTOR quat = XMQuaternionRotationRollPitchYaw(
 				XMConvertToRadians(result[0]),
