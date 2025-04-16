@@ -13,8 +13,9 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	// LeftToeBase
 	m_chains[idx].Bones[0].idx = skeleton.GetBoneIndex("mixamorig:LeftToeBase");
 	
+	// x축 default 45도
 	m_chains[idx].Bones[0].angleEnable[0] = true;
-	m_chains[idx].Bones[0].anglePlusLimits[0] = 0.0f;
+	m_chains[idx].Bones[0].anglePlusLimits[0] = -40.0f;
 	m_chains[idx].Bones[0].angleMinusLimits[0] = -60.0f;
 
 	m_chains[idx].Bones[0].angleEnable[1] = false;
@@ -24,9 +25,10 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	// LeftFoot
 	m_chains[idx].Bones[1].idx = skeleton.GetBoneIndex("mixamorig:LeftFoot");
 
+	// x축 default 50도
 	m_chains[idx].Bones[1].angleEnable[0] = true;
-	m_chains[idx].Bones[1].anglePlusLimits[0] = 40.0f;
-	m_chains[idx].Bones[1].angleMinusLimits[0] = -30.0f;
+	m_chains[idx].Bones[1].anglePlusLimits[0] = -30.0f;
+	m_chains[idx].Bones[1].angleMinusLimits[0] = -60.0f;
 
 	m_chains[idx].Bones[1].angleEnable[1] = true;
 	m_chains[idx].Bones[1].anglePlusLimits[1] = 30.0f;
@@ -39,6 +41,7 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	// LeftLeg
 	m_chains[idx].Bones[2].idx = skeleton.GetBoneIndex("mixamorig:LeftLeg");
 
+	
 	m_chains[idx].Bones[2].angleEnable[0] = true;
 	m_chains[idx].Bones[2].anglePlusLimits[0] = 150.0f;
 	m_chains[idx].Bones[2].angleMinusLimits[0] = 0.0f;
@@ -58,9 +61,10 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[3].anglePlusLimits[1] = 30.0f;
 	m_chains[idx].Bones[3].angleMinusLimits[1] = -30.0f;
 
+	// z축 default -170도
 	m_chains[idx].Bones[3].angleEnable[2] = true;
-	m_chains[idx].Bones[3].anglePlusLimits[2] = 10.0f;
-	m_chains[idx].Bones[3].angleMinusLimits[2] = -30.0f;
+	m_chains[idx].Bones[3].anglePlusLimits[2] = -160.0f;
+	m_chains[idx].Bones[3].angleMinusLimits[2] = -180.0f;
 }
 
 void IKManager::initRightFootChains(Skeleton& skeleton)
@@ -358,8 +362,10 @@ void IKManager::updateAngle()
 			float angle[3] = { 0.0f, 0.0f, 0.0f };
 			float result[3] = { 0.0f, 0.0f, 0.0f };
 
-			//// 기존 quaternion을 pitch yaw roll로 변환
+			// 기존 quaternion을 pitch yaw roll로 변환
 			quaternionToEuler(m_nowRotation[bone.idx], angle);
+			//p("bone["+ std::to_string(bone.idx) + "]\n");
+			//p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 
 			for (int k = 0; k < 3; ++k)
 			{
@@ -395,43 +401,6 @@ void IKManager::updateAngle()
 		}
 	}
 }
-
-//void IKManager::updateAngle()
-//{
-//	static float angle[3] = { 0.0f, 0.0f, 0.0f };
-//
-//	for (int i = 0; i < m_chainNum; ++i)
-//	{
-//		int idx = 0;
-//		int count = m_chains[i].Bones.size();
-//		for (int j = 0; j < count; ++j)
-//		{
-//			IKBone& bone = m_chains[i].Bones[j];
-//
-//			for (int k = 0; k < 3; ++k)
-//			{
-//				if (bone.angleEnable[k] == false)
-//				{
-//					continue;
-//				}
-//
-//				angle[i] = XMConvertToDegrees(dTheta[idx]);
-//				idx++;
-//			}
-//			XMVECTOR deltaQuat = XMQuaternionRotationRollPitchYaw(
-//				XMConvertToRadians(angle[0]),
-//				XMConvertToRadians(angle[1]),
-//				XMConvertToRadians(angle[2])
-//			);
-//
-//			// 기존 회전에 덧붙이기 (이 순서 맞음: 새 회전 먼저 적용됨)
-//			XMVECTOR nowQuat = XMLoadFloat4(&m_nowRotation[bone.idx]);
-//			XMVECTOR newQuat = XMQuaternionMultiply(deltaQuat, nowQuat);
-//
-//			XMStoreFloat4(&m_nowRotation[bone.idx], newQuat);
-//		}
-//	}
-//}
 
 bool IKManager::isFinish(Pose& pose, XMMATRIX& worldMatrix)
 {
