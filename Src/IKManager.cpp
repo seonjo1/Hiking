@@ -414,8 +414,9 @@ void IKManager::updateAngle()
 			XMVECTOR nowQuat = XMLoadFloat4(&m_nowRotation[bone.idx]);
 			XMVECTOR newQuat = XMQuaternionMultiply(quat, nowQuat);
 			XMStoreFloat4(&m_nowRotation[bone.idx], newQuat);
-			p("\n");
 		}
+		p("\n");
+
 	}
 }
 
