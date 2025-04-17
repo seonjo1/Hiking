@@ -54,8 +54,8 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[3].idx = skeleton.GetBoneIndex("mixamorig:LeftUpLeg");
 
 	m_chains[idx].Bones[3].angleEnable[0] = true;
-	m_chains[idx].Bones[3].anglePlusLimits[0] = 45.0f;
-	m_chains[idx].Bones[3].angleMinusLimits[0] = -100.0f;
+	m_chains[idx].Bones[3].anglePlusLimits[0] = 100.0f;
+	m_chains[idx].Bones[3].angleMinusLimits[0] = -45.0f;
 
 	m_chains[idx].Bones[3].angleEnable[1] = true;
 	m_chains[idx].Bones[3].anglePlusLimits[1] = 30.0f;
@@ -383,55 +383,68 @@ void IKManager::updateAngle()
 			IKBone& bone = m_chains[i].Bones[j];
 
 			float angle[3] = { 0.0f, 0.0f, 0.0f };
-			float result[3] = { 0.0f, 0.0f, 0.0f };
 
 			// 기존 quaternion을 pitch yaw roll로 변환
-			quaternionToEuler(m_nowRotation[bone.idx], angle);
-			
-			p("before bone["+ std::to_string(bone.idx) + "]\n");
-			p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 			
 			for (int k = 0; k < 3; ++k)
 			{
-				if (bone.angleEnable[k] == false)
+				if (bone.angleEnable[k] == true)
 				{
-					continue;
+					angle[k] = XMConvertToDegrees(dTheta[idx]);
+					idx++;
 				}
-				// dTheta와 합쳐서 클램프
-				float dT = XMConvertToDegrees(dTheta[idx]);
-				result[k] = dT;
-
-				p("dT[" + std::to_string(k) + "]: " + std::to_string(dT) + "\n");
-
-				// clamping
-				//if (dT + angle[k] > bone.anglePlusLimits[k])
-				//{
-				//	result[k] = bone.anglePlusLimits[k] - angle[k];
-				//}
-				//else if (dT + angle[k] < bone.angleMinusLimits[k])
-				//{
-				//	result[k] = bone.angleMinusLimits[k] - angle[k];
-				//}
-				idx++;
 			}
 
-			p("result!!!\n");
-			p("x: " + std::to_string(result[0]) + " " + std::to_string(result[1]) + " " + std::to_string(result[2]) + "\n");
+			p("angle: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 
 			XMVECTOR quat = XMQuaternionRotationRollPitchYaw(
-				XMConvertToRadians(result[0]),
-				XMConvertToRadians(result[1]),
-				XMConvertToRadians(result[2])
+				XMConvertToRadians(angle[0]),
+				XMConvertToRadians(angle[1]),
+				XMConvertToRadians(angle[2])
 			);
 
 			XMVECTOR nowQuat = XMLoadFloat4(&m_nowRotation[bone.idx]);
 			XMVECTOR newQuat = XMQuaternionMultiply(quat, nowQuat);
 			XMStoreFloat4(&m_nowRotation[bone.idx], newQuat);
 
+
+			// clamping
+
+			float result[3] = { 0.0f, 0.0f, 0.0f };
+			quaternionToEuler(m_nowRotation[bone.idx], result);
+
+			p("result: " + std::to_string(result[0]) + " " + std::to_string(result[1]) + " " + std::to_string(result[2]) + "\n");
+
+			for (int k = 0; k < 3; k++)
+			{
+				if (bone.angleEnable[k] == true)
+				{
+					// clamping
+					if (result[k] > bone.anglePlusLimits[k])
+					{
+						result[k] = bone.anglePlusLimits[k];
+					}
+					else if (result[k] < bone.angleMinusLimits[k])
+					{
+						result[k] = bone.angleMinusLimits[k];
+					}
+				}
+			}
+
+			p("after clamp: " + std::to_string(result[0]) + " " + std::to_string(result[1]) + " " + std::to_string(result[2]) + "\n");
+
+			quat = XMQuaternionRotationRollPitchYaw(
+				XMConvertToRadians(result[0]),
+				XMConvertToRadians(result[1]),
+				XMConvertToRadians(result[2])
+			);
+
+			XMStoreFloat4(&m_nowRotation[bone.idx], quat);
+
 			// debuging
-			quaternionToEuler(m_nowRotation[bone.idx], angle);
-			p("after bone[" + std::to_string(bone.idx) + "]\n");
-			p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+			//quaternionToEuler(m_nowRotation[bone.idx], angle);
+			//p("after bone[" + std::to_string(bone.idx) + "]\n");
+			//p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 		}
 		p("\n");
 
