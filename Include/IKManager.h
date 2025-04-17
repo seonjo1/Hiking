@@ -104,6 +104,16 @@ private:
 	void initLeftFootChains(Skeleton& skeleton);
 	void initRightFootChains(Skeleton& skeleton);
 	void quaternionToEuler(const XMFLOAT4& q, float* eulerDeg);
+	void clampBoneAngle(IKBone& bone, XMFLOAT4& quat);
+	XMVECTOR ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float minDeg, float maxDeg);
+	XMVECTOR ClampSwingAsymmetric(
+		XMVECTOR swing, XMVECTOR twistAxis,
+		XMVECTOR localX, XMVECTOR localZ,
+		float xMin, float xMax,
+		float zMin, float zMax
+	);
+	void DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& outSwing, XMVECTOR& outTwist);
+	static inline float ClampF(float v, float lo, float hi);
 
 	JacobianMatrix J;
 	JacobianMatrix JTJ;

@@ -7,7 +7,7 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 {
 	int idx = static_cast<int>(EChainPart::LEFT_FOOT);
 	m_chains[idx].Bones.resize(4);
-	m_chains[idx].DoFNum = 8;
+	m_chains[idx].DoFNum = 12;
 	m_chains[idx].EndEffectorIdx = skeleton.GetBoneIndex(("mixamorig:LeftToe_End"));
 
 	// LeftToeBase
@@ -18,9 +18,13 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[0].anglePlusLimits[0] = -40.0f;
 	m_chains[idx].Bones[0].angleMinusLimits[0] = -60.0f;
 
-	m_chains[idx].Bones[0].angleEnable[1] = false;
+	m_chains[idx].Bones[0].angleEnable[1] = true;
+	m_chains[idx].Bones[0].anglePlusLimits[1] = 10.0f;
+	m_chains[idx].Bones[0].angleMinusLimits[1] = -10.0f;
 
-	m_chains[idx].Bones[0].angleEnable[2] = false;
+	m_chains[idx].Bones[0].angleEnable[2] = true;
+	m_chains[idx].Bones[0].anglePlusLimits[2] = 10.0f;
+	m_chains[idx].Bones[0].angleMinusLimits[2] = -10.0f;
 
 	// LeftFoot
 	m_chains[idx].Bones[1].idx = skeleton.GetBoneIndex("mixamorig:LeftFoot");
@@ -35,20 +39,23 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[1].angleMinusLimits[1] = -30.0f;
 
 	m_chains[idx].Bones[1].angleEnable[2] = true;
-	m_chains[idx].Bones[1].anglePlusLimits[2] = 5.0f;
-	m_chains[idx].Bones[1].angleMinusLimits[2] = 0.0f;
+	m_chains[idx].Bones[1].anglePlusLimits[2] = 0.0f;
+	m_chains[idx].Bones[1].angleMinusLimits[2] = -10.0f;
 
 	// LeftLeg
 	m_chains[idx].Bones[2].idx = skeleton.GetBoneIndex("mixamorig:LeftLeg");
-
 	
 	m_chains[idx].Bones[2].angleEnable[0] = true;
 	m_chains[idx].Bones[2].anglePlusLimits[0] = 150.0f;
 	m_chains[idx].Bones[2].angleMinusLimits[0] = 0.0f;
 
-	m_chains[idx].Bones[2].angleEnable[1] = false;
+	m_chains[idx].Bones[2].angleEnable[1] = true;
+	m_chains[idx].Bones[2].anglePlusLimits[1] = 10.0f;
+	m_chains[idx].Bones[2].angleMinusLimits[1] = -10.0f;
 
-	m_chains[idx].Bones[2].angleEnable[2] = false;
+	m_chains[idx].Bones[2].angleEnable[2] = true;
+	m_chains[idx].Bones[2].anglePlusLimits[2] = 10.0f;
+	m_chains[idx].Bones[2].angleMinusLimits[2] = -10.0f;
 
 	// LeftUpLeg
 	m_chains[idx].Bones[3].idx = skeleton.GetBoneIndex("mixamorig:LeftUpLeg");
@@ -253,6 +260,12 @@ void IKManager::solveDLS()
 {
 	static const float lambda = 1.0f;
 	static const float thetaAlpha = 0.5f;
+	float w[12] = { 
+		0.1f, 0.1f, 0.1f,
+		0.1f, 0.1f, 0.1f,
+		1.5f, 0.1f, 0.1f,
+		1.5f, 0.1f, 0.1f
+	};
 
 	// JTJ 구하기
 	JTJ.SetZero();
@@ -265,7 +278,7 @@ void IKManager::solveDLS()
 			{
 				sum += J.Get(k, i) * J.Get(k, j);
 			}
-			JTJ.Set(i, j, sum);
+			JTJ.Set(i, j, sum * w[i]);
 		}
 	}
 
@@ -282,7 +295,7 @@ void IKManager::solveDLS()
 		JTx[i] = 0.0f;
 		for (int j = 0; j < m_rowNum; ++j)
 		{
-			JTx[i] += J.Get(j, i) * dP[j];
+			JTx[i] += w[i] * J.Get(j, i) * dP[j];
 		}
 	}
 
@@ -382,6 +395,11 @@ void IKManager::updateAngle()
 		{
 			IKBone& bone = m_chains[i].Bones[j];
 
+			float debugAngle[3] = { 0.0f, 0.0f, 0.0f };
+			quaternionToEuler(m_nowRotation[bone.idx], debugAngle);
+			p("before bone[" + std::to_string(bone.idx) + "]\n");
+			p("x: " + std::to_string(debugAngle[0]) + " " + std::to_string(debugAngle[1]) + " " + std::to_string(debugAngle[2]) + "\n");
+			
 			float angle[3] = { 0.0f, 0.0f, 0.0f };
 
 			// 기존 quaternion을 pitch yaw roll로 변환
@@ -406,45 +424,16 @@ void IKManager::updateAngle()
 			XMVECTOR nowQuat = XMLoadFloat4(&m_nowRotation[bone.idx]);
 			XMVECTOR newQuat = XMQuaternionMultiply(quat, nowQuat);
 			XMStoreFloat4(&m_nowRotation[bone.idx], newQuat);
-
-
+			quaternionToEuler(m_nowRotation[bone.idx], debugAngle);
+			p("before clamping\n");
+			p("x: " + std::to_string(debugAngle[0]) + " " + std::to_string(debugAngle[1]) + " " + std::to_string(debugAngle[2]) + "\n");
 			// clamping
-
-			float result[3] = { 0.0f, 0.0f, 0.0f };
-			quaternionToEuler(m_nowRotation[bone.idx], result);
-
-			p("result: " + std::to_string(result[0]) + " " + std::to_string(result[1]) + " " + std::to_string(result[2]) + "\n");
-
-			for (int k = 0; k < 3; k++)
-			{
-				if (bone.angleEnable[k] == true)
-				{
-					// clamping
-					if (result[k] > bone.anglePlusLimits[k])
-					{
-						result[k] = bone.anglePlusLimits[k];
-					}
-					else if (result[k] < bone.angleMinusLimits[k])
-					{
-						result[k] = bone.angleMinusLimits[k];
-					}
-				}
-			}
-
-			p("after clamp: " + std::to_string(result[0]) + " " + std::to_string(result[1]) + " " + std::to_string(result[2]) + "\n");
-
-			quat = XMQuaternionRotationRollPitchYaw(
-				XMConvertToRadians(result[0]),
-				XMConvertToRadians(result[1]),
-				XMConvertToRadians(result[2])
-			);
-
-			XMStoreFloat4(&m_nowRotation[bone.idx], quat);
+			clampBoneAngle(bone, m_nowRotation[bone.idx]);
 
 			// debuging
-			//quaternionToEuler(m_nowRotation[bone.idx], angle);
-			//p("after bone[" + std::to_string(bone.idx) + "]\n");
-			//p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+			quaternionToEuler(m_nowRotation[bone.idx], angle);
+			p("after bone[" + std::to_string(bone.idx) + "]\n");
+			p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 		}
 		p("\n");
 
@@ -528,3 +517,143 @@ void IKManager::quaternionToEuler(const XMFLOAT4& q, float* eulerDeg)
 //	eulerDeg[1] = XMConvertToDegrees(yaw);   // Y
 //	eulerDeg[2] = XMConvertToDegrees(roll);  // Z
 //}
+
+inline float IKManager::ClampF(float v, float lo, float hi) {
+	return v < lo ? lo : (v > hi ? hi : v);
+}
+
+void IKManager::DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& outSwing, XMVECTOR& outTwist)
+{
+	// 1. twist 축 정규화
+	twistAxis = XMVector3Normalize(twistAxis);
+
+	// 2. q 의 벡터 부분을 twist 축에 사영 (쿼터니언의 x, y, z를 다른 축에 내적하면 축에대한 회전을 분리할 수 있음)
+	XMVECTOR qVec = XMVectorSet(XMVectorGetX(q), XMVectorGetY(q), XMVectorGetZ(q), 0.0f);
+	float dotVT = XMVectorGetX(XMVector3Dot(qVec, twistAxis));
+	XMVECTOR proj = XMVectorScale(twistAxis, dotVT);
+
+	// 3. twist 쿼터니언 (proj xyz + q.w) 정규화
+	outTwist = XMQuaternionNormalize(
+		XMVectorSet(XMVectorGetX(proj),
+			XMVectorGetY(proj),
+			XMVectorGetZ(proj),
+			XMVectorGetW(q))
+	);
+
+	// 4. swing = q * twist^-1 (기존 회전에서 twist 회전을 뺀 것을 swing으로 추출)
+	outSwing = XMQuaternionMultiply(q, XMQuaternionInverse(outTwist));
+}
+
+XMVECTOR IKManager::ClampSwingAsymmetric(
+	XMVECTOR swing, XMVECTOR twistAxis,
+	XMVECTOR localX, XMVECTOR localZ,
+	float xMin, float xMax,
+	float zMin, float zMax)
+{
+	XMVECTOR swungDir = XMVector3Rotate(twistAxis, swing);
+
+	float projScale = XMVectorGetX(XMVector3Dot(swungDir, twistAxis));
+	XMVECTOR proj = XMVectorSubtract(swungDir, XMVectorScale(twistAxis, projScale));
+
+	float len = XMVectorGetX(XMVector3Length(proj));
+	if (len < 1e-6f)
+		return XMQuaternionIdentity();
+	proj = XMVectorScale(proj, 1.0f / len);
+
+	float dotX = ClampF(XMVectorGetX(XMVector3Dot(proj, localX)), -1.0f, 1.0f);
+	float dotZ = ClampF(XMVectorGetX(XMVector3Dot(proj, localZ)), -1.0f, 1.0f);
+	float angX = acosf(dotX);
+	float angZ = acosf(dotZ);
+
+	float signX = XMVectorGetX(XMVector3Dot(XMVector3Cross(localX, proj), twistAxis)) < 0 ? -1.0f : +1.0f;
+	float signZ = XMVectorGetX(XMVector3Dot(XMVector3Cross(localZ, proj), twistAxis)) < 0 ? -1.0f : +1.0f;
+	angX *= signX;
+	angZ *= signZ;
+
+	float degX = ClampF(XMConvertToDegrees(angX), xMin, xMax);
+	float degZ = ClampF(XMConvertToDegrees(angZ), zMin, zMax);
+
+	float radX = XMConvertToRadians(degX);
+	float radZ = XMConvertToRadians(degZ);
+	XMVECTOR qX = XMQuaternionRotationAxis(localX, radX);
+	XMVECTOR qZ = XMQuaternionRotationAxis(localZ, radZ);
+	XMVECTOR swingClamped = XMQuaternionMultiply(qZ, qX);
+
+	return XMQuaternionNormalize(swingClamped);
+}
+
+XMVECTOR IKManager::ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float minDeg, float maxDeg)
+{
+	float qw = XMVectorGetW(twist);
+	float angle = 2.0f * acosf(ClampF(qw, -1.0f, 1.0f));
+	if (angle > XM_PI) // wrap to [-pi, pi]
+		angle -= XM_2PI;
+
+	float deg = ClampF(XMConvertToDegrees(angle), minDeg, maxDeg);
+	float rad = XMConvertToRadians(deg);
+
+	return XMQuaternionRotationAxis(twistAxis, rad);
+}
+
+void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
+{
+	// IK로 계산된 최종 회전 쿼터니언
+	XMVECTOR qIK = XMLoadFloat4(&quat);
+
+	// local 축 정의
+	XMVECTOR twistAxis = XMVectorSet(0, 1, 0, 0);
+	XMVECTOR localX = XMVectorSet(1, 0, 0, 0);
+	XMVECTOR localZ = XMVectorSet(0, 0, 1, 0);
+
+	float xMin = bone.angleMinusLimits[0];
+	float xMax = bone.anglePlusLimits[0];
+	float tMin = bone.angleMinusLimits[1];
+	float tMax = bone.anglePlusLimits[1];
+	float zMin = bone.angleMinusLimits[2];
+	float zMax = bone.anglePlusLimits[2];
+
+	XMVECTOR swing, twist;
+
+	// 기존 quat을 Swing과 Twist quaternion으로 분리
+	DecomposeSwingTwist(qIK, twistAxis, swing, twist);
+
+	XMFLOAT4 dgTA, dgSW;
+	float angle[3] = { 0.0f, 0.0f, 0.0f };
+	XMStoreFloat4(&dgTA, twist);
+	quaternionToEuler(dgTA, angle);
+	p("before twist\n");
+	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+	XMStoreFloat4(&dgSW, swing);
+	quaternionToEuler(dgSW, angle);
+	p("before swing\n");
+	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+
+	p("merge twist and swing\n");
+	XMVECTOR merge = XMQuaternionMultiply(swing, twist);
+	XMStoreFloat4(&dgSW, merge);
+	quaternionToEuler(dgSW, angle);
+	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+
+
+
+	// Swing 회전 clamping
+	XMVECTOR swingClamped = ClampSwingAsymmetric(
+		swing, twistAxis, localX, localZ,
+		xMin, xMax, zMin, zMax);
+
+	// Twist 회전 clamping
+	XMVECTOR twistClamped = ClampTwist(twist, twistAxis, tMin, tMax);
+
+
+	XMStoreFloat4(&dgTA, twistClamped);
+	quaternionToEuler(dgTA, angle);
+	p("after twist\n");
+	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+	XMStoreFloat4(&dgSW, swingClamped);
+	quaternionToEuler(dgSW, angle);
+	p("after swing\n");
+	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+	XMVECTOR qFinal = XMQuaternionMultiply(swingClamped, twistClamped);
+
+	XMStoreFloat4(&quat, qFinal);
+}
