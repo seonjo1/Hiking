@@ -351,6 +351,29 @@ void IKManager::updateNowRotation(Pose& pose)
 void IKManager::updateAngle()
 {
 
+	// TEST
+	//p("TEST\n");
+	//float a[3] = { 0.0f, 0.0f, 0.0f };
+	//XMVECTOR quat = XMQuaternionRotationRollPitchYaw(
+	//	XMConvertToRadians(35.0f),
+	//	XMConvertToRadians(-30.0f),
+	//	XMConvertToRadians(130.0f)
+	//);
+	//XMFLOAT4 q1;
+	//XMStoreFloat4(&q1, quat);
+	//quaternionToEuler(q1, a);
+	//p("before q: " + std::to_string(q1.x) + " " + std::to_string(q1.y) + " " + std::to_string(q1.z) + " " + std::to_string(q1.w) + "\n");
+	//p("before a: " + std::to_string(a[0]) + " " + std::to_string(a[1]) + " " + std::to_string(a[2]) + "\n");
+	//quat = XMQuaternionRotationRollPitchYaw(
+	//	XMConvertToRadians(a[0]),
+	//	XMConvertToRadians(a[1]),
+	//	XMConvertToRadians(a[2])
+	//);
+	//XMStoreFloat4(&q1, quat);
+	//quaternionToEuler(q1, a);
+	//p("after q: " + std::to_string(q1.x) + " " + std::to_string(q1.y) + " " + std::to_string(q1.z) + " " + std::to_string(q1.w) + "\n");
+	//p("after a: " + std::to_string(a[0]) + " " + std::to_string(a[1]) + " " + std::to_string(a[2]) + "\n");
+	
 	for (int i = 0; i < m_chainNum; ++i)
 	{
 		int idx = 0;
@@ -364,9 +387,10 @@ void IKManager::updateAngle()
 
 			// 기존 quaternion을 pitch yaw roll로 변환
 			quaternionToEuler(m_nowRotation[bone.idx], angle);
-			p("bone["+ std::to_string(bone.idx) + "]\n");
+			
+			p("before bone["+ std::to_string(bone.idx) + "]\n");
 			p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
-
+			
 			for (int k = 0; k < 3; ++k)
 			{
 				if (bone.angleEnable[k] == false)
@@ -377,28 +401,17 @@ void IKManager::updateAngle()
 				float dT = XMConvertToDegrees(dTheta[idx]);
 				result[k] = dT;
 
-				p("dT["+ std::to_string(k) + "]: " + std::to_string(dT) + "\n");
+				p("dT[" + std::to_string(k) + "]: " + std::to_string(dT) + "\n");
 
-				// 1. clamping
-				if (dT + angle[k] > bone.anglePlusLimits[k] && dT > 0.0f)
-				{
-					result[k] = bone.anglePlusLimits[k] - angle[k];
-				}
-				else if (dT + angle[k] < bone.angleMinusLimits[k] && dT < 0.0f)
-				{
-					result[k] = bone.angleMinusLimits[k] - angle[k];
-				}
-
-				// 2. dampping
+				// clamping
 				//if (dT + angle[k] > bone.anglePlusLimits[k])
 				//{
-				//	result[k] * 0.1f;
+				//	result[k] = bone.anglePlusLimits[k] - angle[k];
 				//}
 				//else if (dT + angle[k] < bone.angleMinusLimits[k])
 				//{
-				//	result[k] * 0.1f;
+				//	result[k] = bone.angleMinusLimits[k] - angle[k];
 				//}
-
 				idx++;
 			}
 
@@ -412,8 +425,13 @@ void IKManager::updateAngle()
 			);
 
 			XMVECTOR nowQuat = XMLoadFloat4(&m_nowRotation[bone.idx]);
-			XMVECTOR newQuat = XMQuaternionMultiply(nowQuat, quat);
+			XMVECTOR newQuat = XMQuaternionMultiply(quat, nowQuat);
 			XMStoreFloat4(&m_nowRotation[bone.idx], newQuat);
+
+			// debuging
+			quaternionToEuler(m_nowRotation[bone.idx], angle);
+			p("after bone[" + std::to_string(bone.idx) + "]\n");
+			p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 		}
 		p("\n");
 
@@ -455,31 +473,45 @@ std::vector<XMFLOAT4>& IKManager::getNowRotation()
 	return m_nowRotation;
 }
 
+// X -> Y -> Z 순서
 void IKManager::quaternionToEuler(const XMFLOAT4& q, float* eulerDeg)
 {
-	XMVECTOR quat = XMLoadFloat4(&q);
-	XMMATRIX m = XMMatrixRotationQuaternion(quat);  // LH 기준 행렬
+	float sqw = q.w * q.w;
+	float sqx = q.x * q.x;
+	float sqy = q.y * q.y;
+	float sqz = q.z * q.z;
 
-	XMFLOAT4X4 mat;
-	XMStoreFloat4x4(&mat, m);
 
-	float pitch, yaw, roll;
-
-	// Gimbal lock 예외 처리
-	if (fabsf(mat._31) < 0.9999f)
-	{
-		yaw = -asinf(mat._31);                      // LH → 음의 sin
-		pitch = atan2f(-mat._32, mat._33);            // X축 Pitch
-		roll = atan2f(-mat._21, mat._11);            // Z축 Roll
-	}
-	else
-	{
-		yaw = (mat._31 < 0.0f) ? XM_PIDIV2 : -XM_PIDIV2;
-		pitch = atan2f(mat._23, mat._22);             // 근사값
-		roll = 0.0f;
-	}
-
-	eulerDeg[0] = XMConvertToDegrees(pitch); // Pitch (X)
-	eulerDeg[1] = XMConvertToDegrees(yaw);   // Yaw   (Y)
-	eulerDeg[2] = XMConvertToDegrees(roll);
+	eulerDeg[0] = XMConvertToDegrees(asinf(2.0f * (q.w * q.x - q.y * q.z)));  // Pitch
+	eulerDeg[1] = XMConvertToDegrees(atan2f(2.0f * (q.x * q.z + q.w * q.y), (-sqx - sqy + sqz + sqw)));  // Yaw
+	eulerDeg[2] = XMConvertToDegrees(atan2f(2.0f * (q.x * q.y + q.w * q.z), (-sqx + sqy - sqz + sqw)));  // Roll
 }
+
+// X -> Y -> Z 순서 quat의 x, y, z의 부호가 반대로 나옴
+//void IKManager::quaternionToEuler(const XMFLOAT4& q, float* eulerDeg)
+//{
+//	XMVECTOR quat = XMLoadFloat4(&q);
+//	XMMATRIX m = XMMatrixRotationQuaternion(quat);
+//
+//	XMFLOAT4X4 mat;
+//	XMStoreFloat4x4(&mat, m);
+//
+//	float pitch, yaw, roll;
+//
+//	if (fabsf(mat._23) < 0.9999f)
+//	{
+//		pitch = asinf(-mat._23);              // X
+//		yaw = atan2f(mat._13, mat._33);     // Y
+//		roll = atan2f(mat._21, mat._22);     // Z
+//	}
+//	else
+//	{
+//		pitch = (mat._23 < 0.0f) ? XM_PIDIV2 : -XM_PIDIV2;
+//		yaw = atan2f(-mat._31, mat._11);
+//		roll = 0.0f;
+//	}
+//
+//	eulerDeg[0] = XMConvertToDegrees(pitch); // X
+//	eulerDeg[1] = XMConvertToDegrees(yaw);   // Y
+//	eulerDeg[2] = XMConvertToDegrees(roll);  // Z
+//}

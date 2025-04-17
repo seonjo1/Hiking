@@ -323,7 +323,7 @@ void Application::ModelControl(Input* input)
 
 	if (inputState){
 		m_AnimationModel->move(dir);
-		m_AnimationModel->setState("walk");
+		//m_AnimationModel->setState("walk");
 	}
 	else {
 		if (m_AnimationModel->getSpeed() < walkSpeed)
