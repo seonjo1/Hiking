@@ -35,6 +35,7 @@ Model::Model()
 	m_jointMesh = 0;
 	m_rayToTargetMesh = 0;
 	m_rayNormalMesh = 0;
+	m_rangeAxisMesh = 0;
 	m_physicsObject = nullptr;
 }
 
@@ -91,7 +92,10 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_boneMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 		m_rayToTargetMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
 		m_rayNormalMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f));
+		m_rangeAxisMesh = Mesh::createDebugLine(device, XMFLOAT4(0.5f, 0.5f, 0.0f, 1.0f));
+		initRangeAxis();
 		m_IKManager.initIKChains(m_skeleton);
+
 	}
 
 	// node 데이터 처리
@@ -291,6 +295,62 @@ bool Model::DrawRayLineShader(ID3D11DeviceContext* deviceContext, BoneShader* bo
 	return true;
 }
 
+XMFLOAT3 Model::getAxis(float xDeg, float yDeg, float zDeg)
+{
+	XMVECTOR baseDirection = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+	float xRad = XMConvertToRadians(xDeg);
+	float yRad = XMConvertToRadians(yDeg);
+	float zRad = XMConvertToRadians(zDeg);
+
+	// 회전 쿼터니언 구성 (X → Y → Z 순서 회전)
+	XMVECTOR qX = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), xRad);
+	XMVECTOR qY = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), yRad);
+	XMVECTOR qZ = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), zRad);
+
+	// 회전 순서: Z → Y → X 적용
+	XMVECTOR rotQ = XMQuaternionMultiply(qX, XMQuaternionMultiply(qY, qZ));
+
+	// 기준 방향 벡터를 회전 (예: 기본 정면 벡터는 {0, 0, 1})
+	XMVECTOR rotatedDir = XMVector3Rotate(baseDirection, rotQ);
+	XMVector3Normalize(rotatedDir);
+
+	XMFLOAT3 axis;
+	XMStoreFloat3(&axis, rotatedDir);
+	return axis;
+}
+
+void Model::initRangeAxis()
+{
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(-50.0f, 0.0f, 0.0f), 10.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(-45.0f, -15.0f, -5.0f), 15.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(30.0f, 0.0f, 0.0f), 15.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 0.0f, -170.0f), 20.0f);
+}
+
+bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront)
+{
+	matrix.world = getWorldMatrix();
+
+	int count = m_skeleton.bones.size();
+	
+	m_rangeAxisMesh->Render(deviceContext);
+
+
+	for (int i = 0; i < count; ++i)
+	{
+		Bone& bone = m_skeleton.bones[i];
+
+		if (bone.hasAxis == true)
+		{
+			if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, m_pose.world[i], bone.axis, cameraFront) == false)
+				return false;
+		}
+	}
+
+	return true;
+}
+
 bool Model::DrawModelShader(ID3D11DeviceContext* deviceContext, ModelShader* modelShader, Matrix& matrix)
 {
 	matrix.world = getWorldMatrix();
@@ -445,6 +505,12 @@ void Model::ReleaseMeshes()
 	{
 		m_boneMesh->Shutdown();
 		delete m_boneMesh;
+	}
+
+	if (m_rangeAxisMesh)
+	{
+		m_rangeAxisMesh->Shutdown();
+		delete m_rangeAxisMesh;
 	}
 
 	if (m_jointMesh)

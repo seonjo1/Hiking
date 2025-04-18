@@ -11,67 +11,50 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].EndEffectorIdx = skeleton.GetBoneIndex(("mixamorig:LeftToe_End"));
 
 	// LeftToeBase
-	m_chains[idx].Bones[0].idx = skeleton.GetBoneIndex("mixamorig:LeftToeBase");
-	
+	int boneIdx = skeleton.GetBoneIndex("mixamorig:LeftToeBase");
+	m_chains[idx].Bones[0].idx = boneIdx;
+	m_chains[idx].Bones[0].maxDeg = skeleton.bones[boneIdx].limit;
+	m_chains[idx].Bones[0].minDeg = -skeleton.bones[boneIdx].limit;
+	m_chains[idx].Bones[0].axis = skeleton.bones[boneIdx].axis;
+
 	// x축 default 45도
 	m_chains[idx].Bones[0].angleEnable[0] = true;
-	m_chains[idx].Bones[0].anglePlusLimits[0] = -40.0f;
-	m_chains[idx].Bones[0].angleMinusLimits[0] = -60.0f;
-
 	m_chains[idx].Bones[0].angleEnable[1] = true;
-	m_chains[idx].Bones[0].anglePlusLimits[1] = 10.0f;
-	m_chains[idx].Bones[0].angleMinusLimits[1] = -10.0f;
-
 	m_chains[idx].Bones[0].angleEnable[2] = true;
-	m_chains[idx].Bones[0].anglePlusLimits[2] = 10.0f;
-	m_chains[idx].Bones[0].angleMinusLimits[2] = -10.0f;
 
 	// LeftFoot
-	m_chains[idx].Bones[1].idx = skeleton.GetBoneIndex("mixamorig:LeftFoot");
+	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftFoot");
+	m_chains[idx].Bones[1].idx = boneIdx;
+	m_chains[idx].Bones[1].maxDeg = skeleton.bones[boneIdx].limit;
+	m_chains[idx].Bones[1].minDeg = -skeleton.bones[boneIdx].limit;
+	m_chains[idx].Bones[1].axis = skeleton.bones[boneIdx].axis;
 
 	// x축 default 50도
 	m_chains[idx].Bones[1].angleEnable[0] = true;
-	m_chains[idx].Bones[1].anglePlusLimits[0] = -30.0f;
-	m_chains[idx].Bones[1].angleMinusLimits[0] = -60.0f;
-
 	m_chains[idx].Bones[1].angleEnable[1] = true;
-	m_chains[idx].Bones[1].anglePlusLimits[1] = 30.0f;
-	m_chains[idx].Bones[1].angleMinusLimits[1] = -30.0f;
-
 	m_chains[idx].Bones[1].angleEnable[2] = true;
-	m_chains[idx].Bones[1].anglePlusLimits[2] = 0.0f;
-	m_chains[idx].Bones[1].angleMinusLimits[2] = -10.0f;
 
 	// LeftLeg
-	m_chains[idx].Bones[2].idx = skeleton.GetBoneIndex("mixamorig:LeftLeg");
-	
+	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftLeg");
+	m_chains[idx].Bones[2].idx = boneIdx;
+	m_chains[idx].Bones[2].maxDeg = skeleton.bones[boneIdx].limit;
+	m_chains[idx].Bones[2].minDeg = -skeleton.bones[boneIdx].limit;
+	m_chains[idx].Bones[2].axis = skeleton.bones[boneIdx].axis;
+
 	m_chains[idx].Bones[2].angleEnable[0] = true;
-	m_chains[idx].Bones[2].anglePlusLimits[0] = 150.0f;
-	m_chains[idx].Bones[2].angleMinusLimits[0] = 0.0f;
-
 	m_chains[idx].Bones[2].angleEnable[1] = true;
-	m_chains[idx].Bones[2].anglePlusLimits[1] = 10.0f;
-	m_chains[idx].Bones[2].angleMinusLimits[1] = -10.0f;
-
 	m_chains[idx].Bones[2].angleEnable[2] = true;
-	m_chains[idx].Bones[2].anglePlusLimits[2] = 10.0f;
-	m_chains[idx].Bones[2].angleMinusLimits[2] = -10.0f;
 
 	// LeftUpLeg
-	m_chains[idx].Bones[3].idx = skeleton.GetBoneIndex("mixamorig:LeftUpLeg");
+	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftUpLeg");
+	m_chains[idx].Bones[3].idx = boneIdx;
+	m_chains[idx].Bones[3].maxDeg = skeleton.bones[boneIdx].limit;
+	m_chains[idx].Bones[3].minDeg = -skeleton.bones[boneIdx].limit;
+	m_chains[idx].Bones[3].axis = skeleton.bones[boneIdx].axis;
 
 	m_chains[idx].Bones[3].angleEnable[0] = true;
-	m_chains[idx].Bones[3].anglePlusLimits[0] = 100.0f;
-	m_chains[idx].Bones[3].angleMinusLimits[0] = -45.0f;
-
 	m_chains[idx].Bones[3].angleEnable[1] = true;
-	m_chains[idx].Bones[3].anglePlusLimits[1] = 30.0f;
-	m_chains[idx].Bones[3].angleMinusLimits[1] = -30.0f;
-
-	// z축 default -170도
 	m_chains[idx].Bones[3].angleEnable[2] = true;
-	m_chains[idx].Bones[3].anglePlusLimits[2] = -160.0f;
-	m_chains[idx].Bones[3].angleMinusLimits[2] = -180.0f;
 }
 
 void IKManager::initRightFootChains(Skeleton& skeleton)
@@ -534,52 +517,40 @@ void IKManager::DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& ou
 
 	// 3. twist 쿼터니언 (proj xyz + q.w) 정규화
 	outTwist = XMQuaternionNormalize(
-		XMVectorSet(XMVectorGetX(proj),
+		XMVectorSet(
+			XMVectorGetX(proj),
 			XMVectorGetY(proj),
 			XMVectorGetZ(proj),
-			XMVectorGetW(q))
+			XMVectorGetW(q)
+		)
 	);
 
 	// 4. swing = q * twist^-1 (기존 회전에서 twist 회전을 뺀 것을 swing으로 추출)
 	outSwing = XMQuaternionMultiply(q, XMQuaternionInverse(outTwist));
 }
 
-XMVECTOR IKManager::ClampSwingAsymmetric(
-	XMVECTOR swing, XMVECTOR twistAxis,
-	XMVECTOR localX, XMVECTOR localZ,
-	float xMin, float xMax,
-	float zMin, float zMax)
+XMVECTOR IKManager::ClampSwingAsymmetric(XMVECTOR swing, XMVECTOR twistAxis, float maxDeg, float minDeg)
 {
+	twistAxis = XMVector3Normalize(twistAxis);
+
 	XMVECTOR swungDir = XMVector3Rotate(twistAxis, swing);
 
-	float projScale = XMVectorGetX(XMVector3Dot(swungDir, twistAxis));
-	XMVECTOR proj = XMVectorSubtract(swungDir, XMVectorScale(twistAxis, projScale));
+	float cosTheta = XMVectorGetX(XMVector3Dot(twistAxis, swungDir));
+	cosTheta = ClampF(cosTheta, -1.0f, 1.0f);
+	float theta = acosf(cosTheta);                    // [0, π]
 
-	float len = XMVectorGetX(XMVector3Length(proj));
-	if (len < 1e-6f)
-		return XMQuaternionIdentity();
-	proj = XMVectorScale(proj, 1.0f / len);
+	float minRad = XMConvertToRadians(-180.0f);
+	float maxRad = XMConvertToRadians(180.0f);
+	float clampedTheta = ClampF(theta, minRad, maxRad);
 
-	float dotX = ClampF(XMVectorGetX(XMVector3Dot(proj, localX)), -1.0f, 1.0f);
-	float dotZ = ClampF(XMVectorGetX(XMVector3Dot(proj, localZ)), -1.0f, 1.0f);
-	float angX = acosf(dotX);
-	float angZ = acosf(dotZ);
+	if (fabsf(theta) < 1e-6f || fabsf(clampedTheta - theta) < 1e-6f) {
+		return swing;
+	}
 
-	float signX = XMVectorGetX(XMVector3Dot(XMVector3Cross(localX, proj), twistAxis)) < 0 ? -1.0f : +1.0f;
-	float signZ = XMVectorGetX(XMVector3Dot(XMVector3Cross(localZ, proj), twistAxis)) < 0 ? -1.0f : +1.0f;
-	angX *= signX;
-	angZ *= signZ;
+	XMVECTOR axis = XMVector3Cross(twistAxis, swungDir);
+	axis = XMVector3Normalize(axis);
 
-	float degX = ClampF(XMConvertToDegrees(angX), xMin, xMax);
-	float degZ = ClampF(XMConvertToDegrees(angZ), zMin, zMax);
-
-	float radX = XMConvertToRadians(degX);
-	float radZ = XMConvertToRadians(degZ);
-	XMVECTOR qX = XMQuaternionRotationAxis(localX, radX);
-	XMVECTOR qZ = XMQuaternionRotationAxis(localZ, radZ);
-	XMVECTOR swingClamped = XMQuaternionMultiply(qZ, qX);
-
-	return XMQuaternionNormalize(swingClamped);
+	return XMQuaternionRotationAxis(axis, clampedTheta);
 }
 
 XMVECTOR IKManager::ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float minDeg, float maxDeg)
@@ -589,6 +560,9 @@ XMVECTOR IKManager::ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float minDe
 	if (angle > XM_PI) // wrap to [-pi, pi]
 		angle -= XM_2PI;
 
+	// no clamp
+	//float deg = XMConvertToDegrees(angle);
+	// clamp
 	float deg = ClampF(XMConvertToDegrees(angle), minDeg, maxDeg);
 	float rad = XMConvertToRadians(deg);
 
@@ -601,58 +575,54 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
 	XMVECTOR qIK = XMLoadFloat4(&quat);
 
 	// local 축 정의
-	XMVECTOR twistAxis = XMVectorSet(0, 1, 0, 0);
-	XMVECTOR localX = XMVectorSet(1, 0, 0, 0);
-	XMVECTOR localZ = XMVectorSet(0, 0, 1, 0);
+	XMVECTOR twistAxis = XMLoadFloat3(&bone.axis);
 
-	float xMin = bone.angleMinusLimits[0];
-	float xMax = bone.anglePlusLimits[0];
-	float tMin = bone.angleMinusLimits[1];
-	float tMax = bone.anglePlusLimits[1];
-	float zMin = bone.angleMinusLimits[2];
-	float zMax = bone.anglePlusLimits[2];
+	float minDeg = bone.minDeg;
+	float maxDeg = bone.maxDeg;
+
 
 	XMVECTOR swing, twist;
 
 	// 기존 quat을 Swing과 Twist quaternion으로 분리
 	DecomposeSwingTwist(qIK, twistAxis, swing, twist);
 
-	XMFLOAT4 dgTA, dgSW;
-	float angle[3] = { 0.0f, 0.0f, 0.0f };
-	XMStoreFloat4(&dgTA, twist);
-	quaternionToEuler(dgTA, angle);
-	p("before twist\n");
-	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
-	XMStoreFloat4(&dgSW, swing);
-	quaternionToEuler(dgSW, angle);
-	p("before swing\n");
-	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+	// debuging
+	//XMFLOAT4 dgTA, dgSW;
+	//float angle[3] = { 0.0f, 0.0f, 0.0f };
+	//XMStoreFloat4(&dgTA, twist);
+	//quaternionToEuler(dgTA, angle);
+	//p("before twist\n");
+	//p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+	//XMStoreFloat4(&dgSW, swing);
+	//quaternionToEuler(dgSW, angle);
+	//p("before swing\n");
+	//p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 
-	p("merge twist and swing\n");
-	XMVECTOR merge = XMQuaternionMultiply(swing, twist);
-	XMStoreFloat4(&dgSW, merge);
-	quaternionToEuler(dgSW, angle);
-	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
-
-
+	//p("merge twist and swing\n");
+	//XMVECTOR merge = XMQuaternionMultiply(swing, twist);
+	//XMStoreFloat4(&dgSW, merge);
+	//quaternionToEuler(dgSW, angle);
+	//p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 
 	// Swing 회전 clamping
 	XMVECTOR swingClamped = ClampSwingAsymmetric(
-		swing, twistAxis, localX, localZ,
-		xMin, xMax, zMin, zMax);
+		swing, twistAxis, minDeg, maxDeg
+	);
 
 	// Twist 회전 clamping
-	XMVECTOR twistClamped = ClampTwist(twist, twistAxis, tMin, tMax);
+	XMVECTOR twistClamped = ClampTwist(twist, twistAxis, minDeg, maxDeg);
 
 
-	XMStoreFloat4(&dgTA, twistClamped);
-	quaternionToEuler(dgTA, angle);
-	p("after twist\n");
-	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
-	XMStoreFloat4(&dgSW, swingClamped);
-	quaternionToEuler(dgSW, angle);
-	p("after swing\n");
-	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+	//XMStoreFloat4(&dgTA, twistClamped);
+	//quaternionToEuler(dgTA, angle);
+	//p("after twist\n");
+	//p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+	//XMStoreFloat4(&dgSW, swingClamped);
+	//quaternionToEuler(dgSW, angle);
+	//p("after swing\n");
+	//p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+
+
 	XMVECTOR qFinal = XMQuaternionMultiply(swingClamped, twistClamped);
 
 	XMStoreFloat4(&quat, qFinal);

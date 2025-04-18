@@ -88,6 +88,21 @@ bool BoneShader::RenderRayLine(ID3D11DeviceContext* deviceContext, int indexCoun
 	return true;
 }
 
+bool BoneShader::RenderRangeAxis(ID3D11DeviceContext* deviceContext, int indexCount, Matrix& matrix, XMMATRIX& parentMatrix, XMFLOAT3 axis, XMFLOAT3 cameraFront)
+{
+	bool result;
+
+	result = SetShaderParametersRangeAxis(deviceContext, matrix, parentMatrix, axis, cameraFront);
+	if (!result)
+	{
+		return false;
+	}
+
+	RenderShader(deviceContext, indexCount);
+
+	return true;
+}
+
 bool BoneShader::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename)
 {
 	// Initialize the pointers this function will use to null.
@@ -400,7 +415,6 @@ bool BoneShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, Matrix&
 	return true;
 }
 
-
 bool BoneShader::SetShaderParametersRayLine(ID3D11DeviceContext* deviceContext, Matrix& matrix, XMMATRIX& parentMatrix, RaycastingInfo& info, XMFLOAT3 cameraFront)
 {
 	unsigned int bufferNumber = 0;
@@ -475,4 +489,67 @@ void BoneShader::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount
 	deviceContext->DrawIndexed(indexCount, 0, 0);
 
 	return;
+}
+
+bool BoneShader::SetShaderParametersRangeAxis(ID3D11DeviceContext* deviceContext, Matrix& matrix, XMMATRIX& parentMatrix, XMFLOAT3 axis, XMFLOAT3 cameraFront)
+{
+	static const float length = 1.0f;
+
+	unsigned int bufferNumber = 0;
+
+	// matrix buffer (상수버퍼)
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	HRESULT result = deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	BoneMatrixBufferType* matrixDataPtr = (BoneMatrixBufferType*)mappedResource.pData;
+
+	matrixDataPtr->view = matrix.view;
+	matrixDataPtr->projection = matrix.projection;
+
+	deviceContext->Unmap(m_matrixBuffer, 0);
+
+	deviceContext->VSSetConstantBuffers(bufferNumber++, 1, &m_matrixBuffer);
+
+	// worldMatrix buffer (상수버퍼)
+	result = deviceContext->Map(m_worldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	WorldMatrixBufferType* worldMatrixDataPtr = (WorldMatrixBufferType*)mappedResource.pData;
+
+	XMMATRIX translation = XMMatrixTranslation(axis.x * length, axis.y * length, axis.z * length);
+	XMMATRIX parentWorldMatrix = XMMatrixMultiply(parentMatrix, matrix.world);
+	XMMATRIX childWorldMatrix = XMMatrixMultiply(parentWorldMatrix, translation);
+	worldMatrixDataPtr->world[0] = parentWorldMatrix;
+	worldMatrixDataPtr->world[1] = parentWorldMatrix;
+	worldMatrixDataPtr->world[2] = childWorldMatrix;
+	worldMatrixDataPtr->world[3] = childWorldMatrix;
+
+	deviceContext->Unmap(m_worldMatrixBuffer, 0);
+
+	deviceContext->VSSetConstantBuffers(bufferNumber++, 1, &m_worldMatrixBuffer);
+
+	// moveVector buffer (상수버퍼)
+	result = deviceContext->Map(m_vectorsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	VectorsBufferType* vectorsDataPtr = (VectorsBufferType*)mappedResource.pData;
+
+	vectorsDataPtr->toChildVector = XMFLOAT4(axis.x, axis.y, axis.z, 1.0f);
+	vectorsDataPtr->cameraFrontVector = XMFLOAT4(cameraFront.x, cameraFront.y, cameraFront.z, 1.0f);
+
+	deviceContext->Unmap(m_vectorsBuffer, 0);
+
+	deviceContext->VSSetConstantBuffers(bufferNumber++, 1, &m_vectorsBuffer);
+
+	return true;
 }

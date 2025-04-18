@@ -81,6 +81,7 @@ public:
 	bool DrawBoneShader(ID3D11DeviceContext*, BoneShader*, Matrix&, XMFLOAT3);
 	bool DrawModelShader(ID3D11DeviceContext*, ModelShader*, Matrix&);
 	bool DrawRayLineShader(ID3D11DeviceContext*, BoneShader*, Matrix&, XMFLOAT3);
+	bool DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront);
 
 	void createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene);
 	void createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene);
@@ -99,7 +100,10 @@ public:
 	void addMesh(Mesh* mesh);
 	void addTexture(Texture* texture);
 	void syncModelWithRigidbody(physx::PxPhysics* physics);
+	void initRangeAxis();
 	float getSpeed();
+	XMFLOAT3 getAxis(float xDeg, float yDeg, float zDeg);
+
 
 private:
 	void ReleaseTextures();
@@ -109,6 +113,7 @@ private:
 	XMFLOAT3 m_rotation;
 	XMFLOAT3 m_scale;
 
+	Mesh* m_rangeAxisMesh;
 	Mesh* m_jointMesh;
 	Mesh* m_boneMesh;
 	Mesh* m_rayToTargetMesh;

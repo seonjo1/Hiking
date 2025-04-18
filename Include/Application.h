@@ -33,6 +33,7 @@ public:
 	XMFLOAT3 getDirection(int& inputState, bool pressUp, bool pressLeft, bool pressDown, bool pressRight);
 
 	void setBoneDebugMode(bool);
+	void setRangeDebugMode(bool);
 	void setRayDebugMode(bool);
 	void CameraRotate(int x, int y);
 	void SaveCameraCurrentPos(int x, int y);
@@ -55,4 +56,5 @@ private:
 	int m_modelCount;
 	bool m_boneDebugMode{ false };
 	bool m_rayDebugMode{ false };
+	bool m_rangeDebugMode{ false };
 };

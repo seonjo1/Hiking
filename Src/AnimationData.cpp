@@ -9,3 +9,11 @@ int Skeleton::GetBoneIndex(const std::string& name) const {
     auto it = nameToIndex.find(name);
     return (it != nameToIndex.end()) ? it->second : -1;
 }
+
+void Skeleton::SetBoneAxisAndRange(const std::string& name, XMFLOAT3 axis, float limit)
+{
+    Bone& bone =  bones[GetBoneIndex(name)];
+    bone.axis = axis;
+    bone.limit = limit;
+    bone.hasAxis = true;
+}

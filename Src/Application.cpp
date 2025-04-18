@@ -242,6 +242,11 @@ bool Application::Render()
 		m_AnimationModel->DrawRayLineShader(m_Direct3D->GetDeviceContext(), m_BoneShader, matrix, m_Camera->GetFront());
 	}
 
+	if (m_rangeDebugMode == true)
+	{
+		m_AnimationModel->DrawRangeAxisShader(m_Direct3D->GetDeviceContext(), m_BoneShader, matrix, m_Camera->GetFront());
+	}
+
 	for (int i = 0; i < m_Models.size(); i++)
 	{
 		if (m_Models[i]->DrawModelShader(m_Direct3D->GetDeviceContext(), m_ModelShader, matrix) == false)
@@ -341,4 +346,9 @@ void Application::setBoneDebugMode(bool flag)
 void Application::setRayDebugMode(bool flag)
 {
 	m_rayDebugMode = flag;
+}
+
+void Application::setRangeDebugMode(bool flag)
+{
+	m_rangeDebugMode = flag;
 }
