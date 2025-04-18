@@ -69,6 +69,11 @@ Mesh* Mesh::createSphere(ID3D11Device* device)
 	return new Mesh(device, vertices, indices);
 }
 
+Mesh* Mesh::createCone(ID3D11Device* device)
+{
+	return new Mesh(device);
+}
+
 Mesh* Mesh::createBox(ID3D11Device* device)
 {
 	std::vector<ModelVertexType> vertices = {
@@ -164,6 +169,11 @@ Mesh::Mesh()
 	m_Texture = 0;
 }
 
+Mesh::Mesh(ID3D11Device* device)
+{
+	Initialize(device);
+}
+
 Mesh::Mesh(ID3D11Device* device, std::vector<VertexType>& vertices, std::vector<UINT32>& indices)
 {
 	Initialize(device, vertices, indices);
@@ -191,6 +201,57 @@ Mesh::Mesh(const Mesh& other)
 
 Mesh::~Mesh()
 {
+}
+
+// 모델 초기화
+bool Mesh::Initialize(ID3D11Device* device)
+{
+	const int segmentCount = 64;
+
+	m_isDynamic = true;
+
+	m_vertexCount = 1 + (segmentCount + 1); // tip + 외곽
+
+	m_stride = sizeof(JointVertex);
+	D3D11_BUFFER_DESC vbDesc = {};
+	vbDesc.Usage = D3D11_USAGE_DYNAMIC;
+	vbDesc.ByteWidth = sizeof(JointVertex) * m_vertexCount;
+	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	HRESULT hr = device->CreateBuffer(&vbDesc, nullptr, &m_vertexBuffer);
+	if (FAILED(hr)) {
+		p("fail to create corn mesh vertex\n");
+		return false;
+	}
+
+	std::vector<UINT> indices;
+	indices.reserve(segmentCount * 3);
+
+	for (int i = 0; i < segmentCount; ++i)
+	{
+		indices.push_back(0);         // tip
+		indices.push_back(i + 1);     // current outer vertex
+		indices.push_back(i + 2);     // next outer vertex
+	}
+
+	m_indexCount = (UINT)indices.size();
+
+	D3D11_BUFFER_DESC ibDesc = {};
+	ibDesc.Usage = D3D11_USAGE_DEFAULT;
+	ibDesc.ByteWidth = sizeof(UINT) * (UINT)indices.size();
+	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+	D3D11_SUBRESOURCE_DATA ibData = {};
+	ibData.pSysMem = indices.data();
+
+	HRESULT hr = device->CreateBuffer(&ibDesc, &ibData, &m_indexBuffer);
+	if (FAILED(hr)) {
+		p("fail to create corn mesh index\n");
+		return false;
+	}
+
+	return true;
 }
 
 // 모델 초기화
@@ -256,6 +317,79 @@ void Mesh::Shutdown()
 	ShutdownBuffers();
 
 	return;
+}
+
+void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, XMFLOAT3 point, float xMax, float xMin, float zMax, float zMin)
+{
+	static std::vector<JointVertex> coneVertices;
+	static const int segmentCount = 64;
+	static const float length = 2.0f;
+
+	if (m_isDynamic == true)
+	{
+		coneVertices.clear();
+		coneVertices.reserve(m_vertexCount);
+
+		XMVECTOR localX = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+		XMVECTOR localY = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+		XMVECTOR localZ = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+
+		JointVertex tip{};
+		tip.position = point;
+		tip.color = XMFLOAT4(1, 1, 0, 1); // yellow
+		coneVertices.push_back(tip);
+
+		for (int i = 0; i <= segmentCount; ++i)
+		{
+			float t = (float)i / segmentCount;
+			float angle = XM_2PI * t;
+
+			float x = cosf(angle);
+			float z = sinf(angle);
+
+			// 2. 방향별 제한 각도 선택
+			float thetaX = (x >= 0.0f ? xMax : xMin);
+			float thetaZ = (z >= 0.0f ? zMax : zMin);
+
+			float sinX = sinf(XMConvertToRadians(thetaX));
+			float sinZ = sinf(XMConvertToRadians(thetaZ));
+			float norm = sqrtf((x * x) / (sinX * sinX) + (z * z) / (sinZ * sinZ));
+			if (norm < 1e-6f) norm = 1e-6f;
+
+			float xComp = x / norm;
+			float zComp = z / norm;
+
+			// 3. 평면상 회전 방향 단위벡터 생성
+			XMVECTOR projDir = XMVector3Normalize(
+				XMVectorAdd(
+					XMVectorScale(localX, xComp),
+					XMVectorScale(localZ, zComp)
+				)
+			);
+
+			float dot = XMVectorGetX(XMVector3Dot(localY, projDir));
+			dot = std::clamp(dot, -1.0f, 1.0f);
+			float swingAngle = acosf(dot);
+
+			XMVECTOR axis = XMVector3Normalize(XMVector3Cross(localY, projDir));
+
+			XMVECTOR swungDir = XMVector3Rotate(localY, XMQuaternionRotationAxis(axis, swingAngle));
+
+			XMVECTOR p = XMVectorAdd(XMLoadFloat3(&point), XMVectorScale(swungDir, length));
+
+			JointVertex v{};
+			XMStoreFloat3(&v.position, p);
+			v.color = XMFLOAT4(1, 0.5f, 0.2f, 1); // orange
+			coneVertices.push_back(v);
+		}
+
+		m_vertexCount = coneVertices.size();
+
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		deviceContext->Map(m_vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+		memcpy(mapped.pData, coneVertices.data(), sizeof(JointVertex) * coneVertices.size());
+		deviceContext->Unmap(m_vertexBuffer, 0);
+	}
 }
 
 void Mesh::Render(ID3D11DeviceContext* deviceContext)

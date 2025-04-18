@@ -493,7 +493,7 @@ void BoneShader::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount
 
 bool BoneShader::SetShaderParametersRangeAxis(ID3D11DeviceContext* deviceContext, Matrix& matrix, XMMATRIX& parentMatrix, XMFLOAT3 axis, XMFLOAT3 cameraFront)
 {
-	static const float length = 1.0f;
+	static const float length = 50.0f;
 
 	unsigned int bufferNumber = 0;
 
@@ -525,7 +525,7 @@ bool BoneShader::SetShaderParametersRangeAxis(ID3D11DeviceContext* deviceContext
 
 	XMMATRIX translation = XMMatrixTranslation(axis.x * length, axis.y * length, axis.z * length);
 	XMMATRIX parentWorldMatrix = XMMatrixMultiply(parentMatrix, matrix.world);
-	XMMATRIX childWorldMatrix = XMMatrixMultiply(parentWorldMatrix, translation);
+	XMMATRIX childWorldMatrix = XMMatrixMultiply(translation, parentWorldMatrix);
 	worldMatrixDataPtr->world[0] = parentWorldMatrix;
 	worldMatrixDataPtr->world[1] = parentWorldMatrix;
 	worldMatrixDataPtr->world[2] = childWorldMatrix;

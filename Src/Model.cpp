@@ -36,6 +36,7 @@ Model::Model()
 	m_rayToTargetMesh = 0;
 	m_rayNormalMesh = 0;
 	m_rangeAxisMesh = 0;
+	m_cornMesh = 0;
 	m_physicsObject = nullptr;
 }
 
@@ -92,7 +93,7 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_boneMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 		m_rayToTargetMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
 		m_rayNormalMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f));
-		m_rangeAxisMesh = Mesh::createDebugLine(device, XMFLOAT4(0.5f, 0.5f, 0.0f, 1.0f));
+		m_rangeAxisMesh = Mesh::createDebugLine(device, XMFLOAT4(0.976f, 0.357f, 0.749f, 1.0f));
 		initRangeAxis();
 		m_IKManager.initIKChains(m_skeleton);
 
@@ -297,21 +298,18 @@ bool Model::DrawRayLineShader(ID3D11DeviceContext* deviceContext, BoneShader* bo
 
 XMFLOAT3 Model::getAxis(float xDeg, float yDeg, float zDeg)
 {
-	XMVECTOR baseDirection = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	XMVECTOR baseDirection = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
 
 	float xRad = XMConvertToRadians(xDeg);
 	float yRad = XMConvertToRadians(yDeg);
 	float zRad = XMConvertToRadians(zDeg);
 
-	// 회전 쿼터니언 구성 (X → Y → Z 순서 회전)
 	XMVECTOR qX = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), xRad);
 	XMVECTOR qY = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), yRad);
 	XMVECTOR qZ = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), zRad);
 
-	// 회전 순서: Z → Y → X 적용
-	XMVECTOR rotQ = XMQuaternionMultiply(qX, XMQuaternionMultiply(qY, qZ));
+	XMVECTOR rotQ = XMQuaternionMultiply(qZ, XMQuaternionMultiply(qY, qX));
 
-	// 기준 방향 벡터를 회전 (예: 기본 정면 벡터는 {0, 0, 1})
 	XMVECTOR rotatedDir = XMVector3Rotate(baseDirection, rotQ);
 	XMVector3Normalize(rotatedDir);
 
@@ -322,10 +320,10 @@ XMFLOAT3 Model::getAxis(float xDeg, float yDeg, float zDeg)
 
 void Model::initRangeAxis()
 {
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(-50.0f, 0.0f, 0.0f), 10.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(-45.0f, -15.0f, -5.0f), 15.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(30.0f, 0.0f, 0.0f), 15.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 0.0f, -170.0f), 20.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 0.0f, 0.0f), 10.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 0.0f, 0.0f), 15.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 0.0f, 0.0f), 15.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 0.0f, 0.0f), 20.0f);
 }
 
 bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront)
@@ -397,6 +395,29 @@ bool Model::DrawJointShader(ID3D11DeviceContext* deviceContext, JointShader* joi
 		if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, m_pose.world[i]) == false)
 			return false;
 	}
+
+	return true;
+}
+
+bool Model::DrawCornShader(ID3D11DeviceContext* deviceContext, JointShader* jointShader, Matrix& matrix)
+{
+	matrix.world = getWorldMatrix();
+
+	int count = m_skeleton.bones.size();
+
+	for (int i = 0; i < count; ++i)
+	{
+		Bone& bone = m_skeleton.bones[i];
+		if (bone.hasAxis == true)
+		{
+			m_cornMesh->UpdateMeshVertices(deviceContext, );
+			m_cornMesh->Render(deviceContext);
+			//if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, m_pose.world[i], bone.axis, cameraFront) == false)
+			//	return false;
+		}
+	}
+
+
 
 	return true;
 }
@@ -479,7 +500,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			//}
 			iteration++;
 		}
-		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
+		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 0.0f);
 		m_pose.UpdateFinalPos(m_skeleton);
 	}
 }
@@ -529,6 +550,12 @@ void Model::ReleaseMeshes()
 	{
 		m_rayNormalMesh->Shutdown();
 		delete m_rayNormalMesh;
+	}
+
+	if (m_cornMesh)
+	{
+		m_cornMesh->Shutdown();
+		delete m_cornMesh;
 	}
 
 	for (int i = 0; i < m_size; i++)
@@ -601,12 +628,12 @@ void Model::ParseSkeleton(aiNode* node, int parentIndex, Skeleton& skeleton, con
 		skeleton.bones[parentIndex].children.push_back(thisIndex);
 	else
 		skeleton.rootBoneIdx = thisIndex;
-	std::string s = "Add bone: " + bone.name + "\n";
-	p(s);
-	s = "parent Idx: " + to_string(parentIndex) + "\n";
-	p(s);
-	s = "now Idx: " + to_string(thisIndex) + "\n";
-	p(s);
+	//std::string s = "Add bone: " + bone.name + "\n";
+	//p(s);
+	//s = "parent Idx: " + to_string(parentIndex) + "\n";
+	//p(s);
+	//s = "now Idx: " + to_string(thisIndex) + "\n";
+	//p(s);
 
 	for (unsigned int i = 0; i < node->mNumChildren; ++i)
 		ParseSkeleton(node->mChildren[i], thisIndex, skeleton, usedBones);

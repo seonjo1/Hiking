@@ -245,6 +245,7 @@ bool Application::Render()
 	if (m_rangeDebugMode == true)
 	{
 		m_AnimationModel->DrawRangeAxisShader(m_Direct3D->GetDeviceContext(), m_BoneShader, matrix, m_Camera->GetFront());
+		m_AnimationModel->DrawRangeCornShader(m_Direct3D->GetDeviceContext(), m_JointShader, matrix);
 	}
 
 	for (int i = 0; i < m_Models.size(); i++)
