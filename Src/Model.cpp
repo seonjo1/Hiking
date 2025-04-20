@@ -94,6 +94,7 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_rayToTargetMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
 		m_rayNormalMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f));
 		m_rangeAxisMesh = Mesh::createDebugLine(device, XMFLOAT4(0.976f, 0.357f, 0.749f, 1.0f));
+		m_cornMesh = Mesh::createCone(device);
 		initRangeAxis();
 		m_IKManager.initIKChains(m_skeleton);
 
@@ -298,7 +299,7 @@ bool Model::DrawRayLineShader(ID3D11DeviceContext* deviceContext, BoneShader* bo
 
 XMFLOAT3 Model::getAxis(float xDeg, float yDeg, float zDeg)
 {
-	XMVECTOR baseDirection = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+	XMVECTOR baseDirection = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
 	float xRad = XMConvertToRadians(xDeg);
 	float yRad = XMConvertToRadians(yDeg);
@@ -320,10 +321,10 @@ XMFLOAT3 Model::getAxis(float xDeg, float yDeg, float zDeg)
 
 void Model::initRangeAxis()
 {
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 0.0f, 0.0f), 10.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 0.0f, 0.0f), 15.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 0.0f, 0.0f), 15.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 0.0f, 0.0f), 20.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 0.0f, 0.0f), 10.0f, -10.0f, 10.0f, -10.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 0.0f, 0.0f), 15.0f, -15.0f, 15.0f, -15.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 0.0f, 0.0f), 15.0f, -15.0f, 15.0f, -15.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 0.0f, 0.0f), 100.0f, -45.0f, -170.0f, -210.0f);
 }
 
 bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront)
@@ -399,8 +400,10 @@ bool Model::DrawJointShader(ID3D11DeviceContext* deviceContext, JointShader* joi
 	return true;
 }
 
-bool Model::DrawCornShader(ID3D11DeviceContext* deviceContext, JointShader* jointShader, Matrix& matrix)
+bool Model::DrawRangeCornShader(ID3D11DeviceContext* deviceContext, JointShader* jointShader, Matrix& matrix)
 {
+	p("\n\n\n draw corn\n");
+
 	matrix.world = getWorldMatrix();
 
 	int count = m_skeleton.bones.size();
@@ -410,14 +413,17 @@ bool Model::DrawCornShader(ID3D11DeviceContext* deviceContext, JointShader* join
 		Bone& bone = m_skeleton.bones[i];
 		if (bone.hasAxis == true)
 		{
-			m_cornMesh->UpdateMeshVertices(deviceContext, );
+			p("bone[" + std::to_string(i) + "] start\n");
+			m_cornMesh->UpdateMeshVertices(deviceContext, bone.xMax, bone.xMin, bone.zMax, bone.zMin);
 			m_cornMesh->Render(deviceContext);
-			//if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, m_pose.world[i], bone.axis, cameraFront) == false)
-			//	return false;
+
+
+			XMMATRIX local = m_pose.getLocalTranslationMatrix(i);
+
+			if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixMultiply(local, m_pose.world[bone.parentIndex]) ) == false)
+				return false;
 		}
 	}
-
-
 
 	return true;
 }

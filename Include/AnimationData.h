@@ -15,7 +15,10 @@ struct Bone {
     XMMATRIX offsetMatrix;
     bool hasAxis { false };
     XMFLOAT3 axis { 0.0f, 0.0f, 0.0f };
-    float limit { 0.0f };
+    float xMax{ 0.0f };
+    float xMin{ 0.0f };
+    float zMax{ 0.0f };
+    float zMin { 0.0f };
 };
     
 class Skeleton {
@@ -24,7 +27,7 @@ public:
     std::unordered_map<std::string, int> nameToIndex;
     int rootBoneIdx;
     int GetBoneIndex(const std::string& name) const;
-    void SetBoneAxisAndRange(const std::string& name, XMFLOAT3 axis, float limit);
+    void SetBoneAxisAndRange(const std::string& name, XMFLOAT3 axis, float xMax, float xMin, float zMax, float zMin);
 };
 
 struct PositionKeyframe {

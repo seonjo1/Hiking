@@ -16,8 +16,10 @@ struct IKBone
 	int idx;
 	// x, y, z ¼ø¼­ (pitch, yaw, roll)
 	XMFLOAT3 axis;
-	float maxDeg;
-	float minDeg;
+	float xMax;
+	float xMin;
+	float zMax;
+	float zMin;
 	bool angleEnable[3];
 	float anglePlusLimits[3];
 	float angleMinusLimits[3];

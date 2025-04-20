@@ -84,6 +84,11 @@ void Pose::Initialize(size_t boneCount) {
     rayMatrix.resize(boneCount, XMMatrixIdentity());
 }
 
+XMMATRIX Pose::getLocalTranslationMatrix(int idx)
+{
+    return XMMatrixTranslation(local[idx].position.x, local[idx].position.y, local[idx].position.z);
+}
+
 void Pose::UpdateIKWorldPos(const Skeleton& skeleton, std::vector<XMFLOAT4>& IKRotation) {
 	std::stack<int> s;
 	s.push(0);

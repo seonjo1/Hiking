@@ -245,7 +245,7 @@ bool Mesh::Initialize(ID3D11Device* device)
 	D3D11_SUBRESOURCE_DATA ibData = {};
 	ibData.pSysMem = indices.data();
 
-	HRESULT hr = device->CreateBuffer(&ibDesc, &ibData, &m_indexBuffer);
+	hr = device->CreateBuffer(&ibDesc, &ibData, &m_indexBuffer);
 	if (FAILED(hr)) {
 		p("fail to create corn mesh index\n");
 		return false;
@@ -319,11 +319,11 @@ void Mesh::Shutdown()
 	return;
 }
 
-void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, XMFLOAT3 point, float xMax, float xMin, float zMax, float zMin)
+void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, float xMax, float xMin, float zMax, float zMin)
 {
 	static std::vector<JointVertex> coneVertices;
 	static const int segmentCount = 64;
-	static const float length = 2.0f;
+	static const float length = 30.0f;
 
 	if (m_isDynamic == true)
 	{
@@ -334,6 +334,8 @@ void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, XMFLOAT3 point
 		XMVECTOR localY = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 		XMVECTOR localZ = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
 
+		XMFLOAT3 point(0.0f, 0.0f, 0.0f);
+
 		JointVertex tip{};
 		tip.position = point;
 		tip.color = XMFLOAT4(1, 1, 0, 1); // yellow
@@ -341,44 +343,40 @@ void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, XMFLOAT3 point
 
 		for (int i = 0; i <= segmentCount; ++i)
 		{
+			p("i: " + std::to_string(i) + "\n");
 			float t = (float)i / segmentCount;
 			float angle = XM_2PI * t;
 
-			float x = cosf(angle);
-			float z = sinf(angle);
+			float xDir = (cosf(angle) + 1) * 0.5f;
+			float zDir = (sinf(angle) + 1) * 0.5f;
 
-			// 2. 방향별 제한 각도 선택
-			float thetaX = (x >= 0.0f ? xMax : xMin);
-			float thetaZ = (z >= 0.0f ? zMax : zMin);
+			float xRange = xMax - xMin;
+			float zRange = zMax - zMin;
 
-			float sinX = sinf(XMConvertToRadians(thetaX));
-			float sinZ = sinf(XMConvertToRadians(thetaZ));
-			float norm = sqrtf((x * x) / (sinX * sinX) + (z * z) / (sinZ * sinZ));
-			if (norm < 1e-6f) norm = 1e-6f;
+			float xAngle = xMin + xRange * xDir;
+			float zAngle = zMin + zRange * zDir;
 
-			float xComp = x / norm;
-			float zComp = z / norm;
+			float tanZ = tanf(XMConvertToRadians(zAngle));
+			float tanX = tanf(XMConvertToRadians(xAngle));
+			float denom = 1 + tanZ * tanZ + tanX * tanX;
+			float y = sqrtf(length * length / denom);
 
-			// 3. 평면상 회전 방향 단위벡터 생성
-			XMVECTOR projDir = XMVector3Normalize(
-				XMVectorAdd(
-					XMVectorScale(localX, xComp),
-					XMVectorScale(localZ, zComp)
-				)
-			);
+			if (fabsf(xAngle) >= 90.0f || fabsf(zAngle) >= 90.0f)
+			{
+				y = -y;
+			}
 
-			float dot = XMVectorGetX(XMVector3Dot(localY, projDir));
-			dot = std::clamp(dot, -1.0f, 1.0f);
-			float swingAngle = acosf(dot);
+			float x = y * tanZ;
+			float z = y * tanX;
 
-			XMVECTOR axis = XMVector3Normalize(XMVector3Cross(localY, projDir));
-
-			XMVECTOR swungDir = XMVector3Rotate(localY, XMQuaternionRotationAxis(axis, swingAngle));
-
-			XMVECTOR p = XMVectorAdd(XMLoadFloat3(&point), XMVectorScale(swungDir, length));
+			p("point x: " + std::to_string(x) + "\n");
+			p("point y: " + std::to_string(y) + "\n");
+			p("point z: " + std::to_string(z) + "\n");
 
 			JointVertex v{};
-			XMStoreFloat3(&v.position, p);
+			v.position.x = x;
+			v.position.y = y;
+			v.position.z = z;
 			v.color = XMFLOAT4(1, 0.5f, 0.2f, 1); // orange
 			coneVertices.push_back(v);
 		}

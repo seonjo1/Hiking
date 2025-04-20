@@ -20,6 +20,7 @@ struct Pose {
     int count;
     
     void Initialize(size_t boneCount);
+    XMMATRIX getLocalTranslationMatrix(int idx);
     physx::PxVec3 getBonePos(XMMATRIX& worldMatrix, int boneIdx);
 	void UpdateWorldPos(const Skeleton& skeleton);
     void UpdateFinalPos(const Skeleton& skeleton);

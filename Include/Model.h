@@ -78,7 +78,7 @@ public:
 	void UpdateAnimation(physx::PxScene* scene, float dt);
 	bool DrawTextureShader(ID3D11DeviceContext*, TextureShader*, Matrix&);
 	bool DrawJointShader(ID3D11DeviceContext*, JointShader*, Matrix&);
-	bool DrawCornShader(ID3D11DeviceContext* deviceContext, JointShader* jointShader, Matrix& matrix);
+	bool DrawRangeCornShader(ID3D11DeviceContext* deviceContext, JointShader* jointShader, Matrix& matrix);
 	bool DrawBoneShader(ID3D11DeviceContext*, BoneShader*, Matrix&, XMFLOAT3);
 	bool DrawModelShader(ID3D11DeviceContext*, ModelShader*, Matrix&);
 	bool DrawRayLineShader(ID3D11DeviceContext*, BoneShader*, Matrix&, XMFLOAT3);

@@ -13,8 +13,10 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	// LeftToeBase
 	int boneIdx = skeleton.GetBoneIndex("mixamorig:LeftToeBase");
 	m_chains[idx].Bones[0].idx = boneIdx;
-	m_chains[idx].Bones[0].maxDeg = skeleton.bones[boneIdx].limit;
-	m_chains[idx].Bones[0].minDeg = -skeleton.bones[boneIdx].limit;
+	m_chains[idx].Bones[0].xMax = skeleton.bones[boneIdx].xMax;
+	m_chains[idx].Bones[0].xMin = skeleton.bones[boneIdx].xMin;
+	m_chains[idx].Bones[0].zMax = skeleton.bones[boneIdx].zMax;
+	m_chains[idx].Bones[0].zMin = skeleton.bones[boneIdx].zMin;
 	m_chains[idx].Bones[0].axis = skeleton.bones[boneIdx].axis;
 
 	// x축 default 45도
@@ -25,8 +27,10 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	// LeftFoot
 	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftFoot");
 	m_chains[idx].Bones[1].idx = boneIdx;
-	m_chains[idx].Bones[1].maxDeg = skeleton.bones[boneIdx].limit;
-	m_chains[idx].Bones[1].minDeg = -skeleton.bones[boneIdx].limit;
+	m_chains[idx].Bones[1].xMax = skeleton.bones[boneIdx].xMax;
+	m_chains[idx].Bones[1].xMin = skeleton.bones[boneIdx].xMin;
+	m_chains[idx].Bones[1].zMax = skeleton.bones[boneIdx].zMax;
+	m_chains[idx].Bones[1].zMin = skeleton.bones[boneIdx].zMin;
 	m_chains[idx].Bones[1].axis = skeleton.bones[boneIdx].axis;
 
 	// x축 default 50도
@@ -37,8 +41,10 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	// LeftLeg
 	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftLeg");
 	m_chains[idx].Bones[2].idx = boneIdx;
-	m_chains[idx].Bones[2].maxDeg = skeleton.bones[boneIdx].limit;
-	m_chains[idx].Bones[2].minDeg = -skeleton.bones[boneIdx].limit;
+	m_chains[idx].Bones[2].xMax = skeleton.bones[boneIdx].xMax;
+	m_chains[idx].Bones[2].xMin = skeleton.bones[boneIdx].xMin;
+	m_chains[idx].Bones[2].zMax = skeleton.bones[boneIdx].zMax;
+	m_chains[idx].Bones[2].zMin = skeleton.bones[boneIdx].zMin;
 	m_chains[idx].Bones[2].axis = skeleton.bones[boneIdx].axis;
 
 	m_chains[idx].Bones[2].angleEnable[0] = true;
@@ -48,8 +54,10 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	// LeftUpLeg
 	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftUpLeg");
 	m_chains[idx].Bones[3].idx = boneIdx;
-	m_chains[idx].Bones[3].maxDeg = skeleton.bones[boneIdx].limit;
-	m_chains[idx].Bones[3].minDeg = -skeleton.bones[boneIdx].limit;
+	m_chains[idx].Bones[3].xMax = skeleton.bones[boneIdx].xMax;
+	m_chains[idx].Bones[3].xMin = skeleton.bones[boneIdx].xMin;
+	m_chains[idx].Bones[3].zMax = skeleton.bones[boneIdx].zMax;
+	m_chains[idx].Bones[3].zMin = skeleton.bones[boneIdx].zMin;
 	m_chains[idx].Bones[3].axis = skeleton.bones[boneIdx].axis;
 
 	m_chains[idx].Bones[3].angleEnable[0] = true;
@@ -378,10 +386,10 @@ void IKManager::updateAngle()
 		{
 			IKBone& bone = m_chains[i].Bones[j];
 
-			float debugAngle[3] = { 0.0f, 0.0f, 0.0f };
-			quaternionToEuler(m_nowRotation[bone.idx], debugAngle);
-			p("before bone[" + std::to_string(bone.idx) + "]\n");
-			p("x: " + std::to_string(debugAngle[0]) + " " + std::to_string(debugAngle[1]) + " " + std::to_string(debugAngle[2]) + "\n");
+			//float debugAngle[3] = { 0.0f, 0.0f, 0.0f };
+			//quaternionToEuler(m_nowRotation[bone.idx], debugAngle);
+			//p("before bone[" + std::to_string(bone.idx) + "]\n");
+			//p("x: " + std::to_string(debugAngle[0]) + " " + std::to_string(debugAngle[1]) + " " + std::to_string(debugAngle[2]) + "\n");
 			
 			float angle[3] = { 0.0f, 0.0f, 0.0f };
 
@@ -396,7 +404,7 @@ void IKManager::updateAngle()
 				}
 			}
 
-			p("angle: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+			//p("angle: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 
 			XMVECTOR quat = XMQuaternionRotationRollPitchYaw(
 				XMConvertToRadians(angle[0]),
@@ -407,18 +415,19 @@ void IKManager::updateAngle()
 			XMVECTOR nowQuat = XMLoadFloat4(&m_nowRotation[bone.idx]);
 			XMVECTOR newQuat = XMQuaternionMultiply(quat, nowQuat);
 			XMStoreFloat4(&m_nowRotation[bone.idx], newQuat);
-			quaternionToEuler(m_nowRotation[bone.idx], debugAngle);
-			p("before clamping\n");
-			p("x: " + std::to_string(debugAngle[0]) + " " + std::to_string(debugAngle[1]) + " " + std::to_string(debugAngle[2]) + "\n");
+
+			//quaternionToEuler(m_nowRotation[bone.idx], debugAngle);
+			//p("before clamping\n");
+			//p("x: " + std::to_string(debugAngle[0]) + " " + std::to_string(debugAngle[1]) + " " + std::to_string(debugAngle[2]) + "\n");
 			// clamping
-			clampBoneAngle(bone, m_nowRotation[bone.idx]);
+			//clampBoneAngle(bone, m_nowRotation[bone.idx]);
 
 			// debuging
-			quaternionToEuler(m_nowRotation[bone.idx], angle);
-			p("after bone[" + std::to_string(bone.idx) + "]\n");
-			p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+			//quaternionToEuler(m_nowRotation[bone.idx], angle);
+			//p("after bone[" + std::to_string(bone.idx) + "]\n");
+			//p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 		}
-		p("\n");
+		//p("\n");
 
 	}
 }
@@ -577,8 +586,8 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
 	// local 축 정의
 	XMVECTOR twistAxis = XMLoadFloat3(&bone.axis);
 
-	float minDeg = bone.minDeg;
-	float maxDeg = bone.maxDeg;
+	float minDeg = 0.0f;
+	float maxDeg = 0.0f;
 
 
 	XMVECTOR swing, twist;
