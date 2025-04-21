@@ -56,3 +56,8 @@ void printFloat4(const XMFLOAT4& v)
 		std::to_string(v.w) + "\n";
 	p(s);
 }
+
+float Lerp(float a, float b, float t)
+{
+	return a + (b - a) * t;
+}

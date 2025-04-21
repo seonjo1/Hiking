@@ -11,3 +11,4 @@ void p(std::string s);
 void printMatrix(const XMMATRIX& mat);
 void printFloat3(const XMFLOAT3& v);
 void printFloat4(const XMFLOAT4& v);
+float Lerp(float a, float b, float t);

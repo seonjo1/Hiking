@@ -206,7 +206,7 @@ Mesh::~Mesh()
 // 모델 초기화
 bool Mesh::Initialize(ID3D11Device* device)
 {
-	const int segmentCount = 64;
+	const int segmentCount = 16;
 
 	m_isDynamic = true;
 
@@ -322,7 +322,7 @@ void Mesh::Shutdown()
 void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, float xMax, float xMin, float zMax, float zMin)
 {
 	static std::vector<JointVertex> coneVertices;
-	static const int segmentCount = 64;
+	static const int segmentCount = 16;
 	static const float length = 30.0f;
 
 	if (m_isDynamic == true)
@@ -341,39 +341,23 @@ void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, float xMax, fl
 		tip.color = XMFLOAT4(1, 1, 0, 1); // yellow
 		coneVertices.push_back(tip);
 
-		for (int i = 0; i <= segmentCount; ++i)
+		for (int i = 0; i < segmentCount + 1; ++i)
 		{
-			float t = (float)i / segmentCount;
-			float angle = XM_2PI * t;
+			float t = (float)i / segmentCount;  // 0 ~ 1
+			float xDeg = Lerp(xMin, xMax, (cosf(t * XM_2PI) + 1.0f) * 0.5f);
+			float zDeg = Lerp(zMin, zMax, (sinf(t * XM_2PI) + 1.0f) * 0.5f);
 
-			float xDir = (cosf(angle) + 1) * 0.5f;
-			float zDir = (sinf(angle) + 1) * 0.5f;
+			XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
+			XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+			XMVECTOR swing = XMQuaternionMultiply(qz, qx);  // x 먼저, z 나중
 
-			float xRange = xMax - xMin;
-			float zRange = zMax - zMin;
-
-			float xAngle = xMin + xRange * xDir;
-			float zAngle = zMin + zRange * zDir;
-
-			float x = -length * sinf(XMConvertToRadians(zAngle));
-			float z = length * sinf(XMConvertToRadians(xAngle));
-			float y2 = length * length - (x * x + z * z);
-
-			float y = 0.0f;
-			if (y2 > 0.0f)
-			{
-				y = sqrt(y2);
-			}
-
-			if ((fabs(zAngle) > 90.0f && fabs(zAngle) < 270.0f) || (fabs(xAngle) > 90.0f && fabs(xAngle) < 270.0f))
-			{
-				y = -y;
-			}
+			XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), swing); // swing에 의해 이동된 Y축yyy
+			D = XMVectorScale(D, length);
 
 			JointVertex v{};
-			v.position.x = x;
-			v.position.y = y;
-			v.position.z = z;
+			v.position.x = XMVectorGetX(D);
+			v.position.y = XMVectorGetY(D);
+			v.position.z = XMVectorGetZ(D);
 			v.color = XMFLOAT4(1, 0.5f, 0.2f, 1); // orange
 			coneVertices.push_back(v);
 		}
