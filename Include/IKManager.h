@@ -18,6 +18,8 @@ struct IKBone
 	XMFLOAT3 axis;
 	float xMax;
 	float xMin;
+	float yMax;
+	float yMin;
 	float zMax;
 	float zMin;
 	bool angleEnable[3];
@@ -111,8 +113,8 @@ private:
 	void quaternionToEuler(const XMFLOAT4& q, float* eulerDeg);
 	void clampBoneAngle(IKBone& bone, XMFLOAT4& quat);
 	XMVECTOR ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float minDeg, float maxDeg);
-	XMVECTOR ClampSwingAsymmetric(XMVECTOR swing, XMVECTOR twistAxis, float maxDeg, float minDeg);
-
+	XMVECTOR ClampSwingAsymmetric(XMVECTOR swing, XMVECTOR twistAxis, float xMax, float xMin, float zMax, float zMin);
+	XMFLOAT2 ClampToAsymmetricEllipse(const XMFLOAT2& p, float xMin, float xMax, float zMin, float zMax);
 	void DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& outSwing, XMVECTOR& outTwist);
 	static inline float ClampF(float v, float lo, float hi);
 

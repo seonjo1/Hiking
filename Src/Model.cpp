@@ -321,10 +321,10 @@ XMFLOAT3 Model::getAxis(float xDeg, float yDeg, float zDeg)
 
 void Model::initRangeAxis()
 {
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 0.0f, 0.0f), -60.0f, -45.0f, 10.0f, -10.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 0.0f, 0.0f), -80.0f, -30.0f, 15.0f, -15.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 0.0f, 0.0f), 150.0f, 0.0f, 30.0f, -30.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 0.0f, 0.0f), 270.0f, 135.0f, -160.0f, -200.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 0.0f, 0.0f), -45.0f, -60.0f, 5.0f, -5.0f, 10.0f, -10.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 0.0f, 0.0f), -30.0f, -80.0f, 5.0f, -5.0f, 15.0f, -15.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 0.0f, 0.0f), 150.0f, 0.0f, 30.0f, -20.0f, 30.0f, -30.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 0.0f, 0.0f), 200.0f, 140.0f, 5.0f, -5.0f, 45.0f, -90.0f);
 }
 
 bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront)
@@ -485,7 +485,8 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_IKManager.updateNowRotation(m_pose);
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 
-		static const int MAX_ITERATION = 25;
+		//static const int MAX_ITERATION = 25;
+		static const int MAX_ITERATION = 1;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{
@@ -506,7 +507,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			//}
 			iteration++;
 		}
-		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 0.0f);
+		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
 		m_pose.UpdateFinalPos(m_skeleton);
 	}
 }

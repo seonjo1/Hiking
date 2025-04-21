@@ -15,6 +15,8 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[0].idx = boneIdx;
 	m_chains[idx].Bones[0].xMax = skeleton.bones[boneIdx].xMax;
 	m_chains[idx].Bones[0].xMin = skeleton.bones[boneIdx].xMin;
+	m_chains[idx].Bones[0].yMax = skeleton.bones[boneIdx].yMax;
+	m_chains[idx].Bones[0].yMin = skeleton.bones[boneIdx].yMin;
 	m_chains[idx].Bones[0].zMax = skeleton.bones[boneIdx].zMax;
 	m_chains[idx].Bones[0].zMin = skeleton.bones[boneIdx].zMin;
 	m_chains[idx].Bones[0].axis = skeleton.bones[boneIdx].axis;
@@ -29,6 +31,8 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[1].idx = boneIdx;
 	m_chains[idx].Bones[1].xMax = skeleton.bones[boneIdx].xMax;
 	m_chains[idx].Bones[1].xMin = skeleton.bones[boneIdx].xMin;
+	m_chains[idx].Bones[1].yMax = skeleton.bones[boneIdx].yMax;
+	m_chains[idx].Bones[1].yMin = skeleton.bones[boneIdx].yMin;
 	m_chains[idx].Bones[1].zMax = skeleton.bones[boneIdx].zMax;
 	m_chains[idx].Bones[1].zMin = skeleton.bones[boneIdx].zMin;
 	m_chains[idx].Bones[1].axis = skeleton.bones[boneIdx].axis;
@@ -43,6 +47,8 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[2].idx = boneIdx;
 	m_chains[idx].Bones[2].xMax = skeleton.bones[boneIdx].xMax;
 	m_chains[idx].Bones[2].xMin = skeleton.bones[boneIdx].xMin;
+	m_chains[idx].Bones[2].yMax = skeleton.bones[boneIdx].yMax;
+	m_chains[idx].Bones[2].yMin = skeleton.bones[boneIdx].yMin;
 	m_chains[idx].Bones[2].zMax = skeleton.bones[boneIdx].zMax;
 	m_chains[idx].Bones[2].zMin = skeleton.bones[boneIdx].zMin;
 	m_chains[idx].Bones[2].axis = skeleton.bones[boneIdx].axis;
@@ -56,6 +62,8 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[3].idx = boneIdx;
 	m_chains[idx].Bones[3].xMax = skeleton.bones[boneIdx].xMax;
 	m_chains[idx].Bones[3].xMin = skeleton.bones[boneIdx].xMin;
+	m_chains[idx].Bones[3].yMax = skeleton.bones[boneIdx].yMax;
+	m_chains[idx].Bones[3].yMin = skeleton.bones[boneIdx].yMin;
 	m_chains[idx].Bones[3].zMax = skeleton.bones[boneIdx].zMax;
 	m_chains[idx].Bones[3].zMin = skeleton.bones[boneIdx].zMin;
 	m_chains[idx].Bones[3].axis = skeleton.bones[boneIdx].axis;
@@ -386,7 +394,7 @@ void IKManager::updateAngle()
 		{
 			IKBone& bone = m_chains[i].Bones[j];
 
-			//float debugAngle[3] = { 0.0f, 0.0f, 0.0f };
+			float debugAngle[3] = { 0.0f, 0.0f, 0.0f };
 			//quaternionToEuler(m_nowRotation[bone.idx], debugAngle);
 			//p("before bone[" + std::to_string(bone.idx) + "]\n");
 			//p("x: " + std::to_string(debugAngle[0]) + " " + std::to_string(debugAngle[1]) + " " + std::to_string(debugAngle[2]) + "\n");
@@ -419,6 +427,7 @@ void IKManager::updateAngle()
 			//quaternionToEuler(m_nowRotation[bone.idx], debugAngle);
 			//p("before clamping\n");
 			//p("x: " + std::to_string(debugAngle[0]) + " " + std::to_string(debugAngle[1]) + " " + std::to_string(debugAngle[2]) + "\n");
+			
 			// clamping
 			//clampBoneAngle(bone, m_nowRotation[bone.idx]);
 
@@ -538,28 +547,83 @@ void IKManager::DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& ou
 	outSwing = XMQuaternionMultiply(q, XMQuaternionInverse(outTwist));
 }
 
-XMVECTOR IKManager::ClampSwingAsymmetric(XMVECTOR swing, XMVECTOR twistAxis, float maxDeg, float minDeg)
+XMVECTOR IKManager::ClampSwingAsymmetric(XMVECTOR swing, XMVECTOR twistAxis, float xMax, float xMin, float zMax, float zMin)
 {
-	twistAxis = XMVector3Normalize(twistAxis);
+	//XMVECTOR axisX = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+	//XMVECTOR axisZ = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
 
-	XMVECTOR swungDir = XMVector3Rotate(twistAxis, swing);
+	//XMVECTOR axisSwing;
+	//float   angleSwing;
+	//XMQuaternionToAxisAngle(&axisSwing, &angleSwing, swing);
+	//axisSwing = XMVector3Normalize(axisSwing);
 
-	float cosTheta = XMVectorGetX(XMVector3Dot(twistAxis, swungDir));
-	cosTheta = ClampF(cosTheta, -1.0f, 1.0f);
-	float theta = acosf(cosTheta);                    // [0, π]
+	//float compX = XMVectorGetX(XMVector3Dot(axisSwing, axisX));
+	//float compZ = XMVectorGetX(XMVector3Dot(axisSwing, axisZ));
 
-	float minRad = XMConvertToRadians(-180.0f);
-	float maxRad = XMConvertToRadians(180.0f);
-	float clampedTheta = ClampF(theta, minRad, maxRad);
+	//float angleX = angleSwing * compX;
+	//float angleZ = angleSwing * compZ;
 
-	if (fabsf(theta) < 1e-6f || fabsf(clampedTheta - theta) < 1e-6f) {
-		return swing;
-	}
+	//angleX = std::clamp(angleX, xMin, xMax);
+	//angleZ = std::clamp(angleZ, zMin, zMax);
 
-	XMVECTOR axis = XMVector3Cross(twistAxis, swungDir);
-	axis = XMVector3Normalize(axis);
+	//XMVECTOR qx = XMQuaternionRotationAxis(axisX, angleX);
+	//XMVECTOR qz = XMQuaternionRotationAxis(axisZ, angleZ);
 
-	return XMQuaternionRotationAxis(axis, clampedTheta);
+	//XMVECTOR clampedSwing = XMQuaternionMultiply(qz, qx);
+
+	//return XMQuaternionNormalize(clampedSwing);
+
+
+
+
+	XMFLOAT4 swingPure;
+	XMStoreFloat4(&swingPure, swing);
+
+	float euler[3];
+	quaternionToEuler(swingPure, euler);
+
+	euler[0] = std::clamp(euler[0], xMin, xMax);
+	euler[2] = std::clamp(euler[2], zMin, zMax);
+
+	XMVECTOR clampedSwing = XMQuaternionRotationRollPitchYaw(XMConvertToRadians(euler[0]), XMConvertToRadians(euler[1]), XMConvertToRadians(euler[2]));
+
+	clampedSwing = XMQuaternionNormalize(clampedSwing);
+	return clampedSwing;
+
+}
+
+static XMFLOAT2 ClampToAsymmetricEllipse(
+    const XMFLOAT2& p,
+    float xMin, float xMax,
+    float zMin, float zMax)
+{
+    // 음수 방향 반경, 양수 방향 반경
+    float aNeg = -xMin;    // xMin은 보통 음수
+    float aPos =  xMax;    // xMax는 양수
+    float bNeg = -zMin;    // zMin은 보통 음수
+    float bPos =  zMax;    // zMax는 양수
+
+    // 1) 우선 p가 영역 안에 있으면 그대로 반환
+    //    (x/rx)^2 + (z/rz)^2 ≤ 1 인지 검사
+    float rx = (p.x >= 0 ? aPos : aNeg);
+    float rz = (p.y >= 0 ? bPos : bNeg);
+    if (rx > 0 && rz > 0)
+    {
+        float v = (p.x*p.x)/(rx*rx) + (p.y*p.y)/(rz*rz);
+        if (v <= 1.0f)
+            return p;
+    }
+
+    // 2) 영역 밖이면, 원점→p 방향 각도 φ 계산
+    float φ = atan2f(p.y, p.x);
+    float c = cosf(φ), s = sinf(φ);
+
+    // 3) φ에 따라 적절한 반경을 골라 경계점 계산
+    float rX = (c >= 0 ? aPos : aNeg);
+    float rZ = (s >= 0 ? bPos : bNeg);
+
+    // 4) 타원 경계 위의 점
+    return { rX * c, rZ * s };
 }
 
 XMVECTOR IKManager::ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float minDeg, float maxDeg)
@@ -586,9 +650,12 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
 	// local 축 정의
 	XMVECTOR twistAxis = XMLoadFloat3(&bone.axis);
 
-	float minDeg = 0.0f;
-	float maxDeg = 0.0f;
-
+	float xMax = bone.xMax;
+	float xMin = bone.xMin;
+	float yMax = bone.yMax;
+	float yMin = bone.yMin;
+	float zMax = bone.zMax;
+	float zMin = bone.zMin;
 
 	XMVECTOR swing, twist;
 
@@ -615,11 +682,11 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
 
 	// Swing 회전 clamping
 	XMVECTOR swingClamped = ClampSwingAsymmetric(
-		swing, twistAxis, minDeg, maxDeg
+		swing, twistAxis, xMax, xMin, zMax, zMin
 	);
 
 	// Twist 회전 clamping
-	XMVECTOR twistClamped = ClampTwist(twist, twistAxis, minDeg, maxDeg);
+	XMVECTOR twistClamped = ClampTwist(twist, twistAxis, yMin, yMax);
 
 
 	//XMStoreFloat4(&dgTA, twistClamped);
