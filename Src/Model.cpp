@@ -321,8 +321,8 @@ XMFLOAT3 Model::getAxis(float xDeg, float yDeg, float zDeg)
 
 void Model::initRangeAxis()
 {
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 0.0f, 0.0f), 10.0f, -10.0f, 10.0f, -10.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 0.0f, 0.0f), 15.0f, -15.0f, 15.0f, -15.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 0.0f, 0.0f), -60.0f, -45.0f, 10.0f, -10.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 0.0f, 0.0f), -80.0f, -30.0f, 15.0f, -15.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 0.0f, 0.0f), 150.0f, 0.0f, 30.0f, -30.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 0.0f, 0.0f), 270.0f, 135.0f, -160.0f, -200.0f);
 }
