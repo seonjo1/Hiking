@@ -113,10 +113,11 @@ private:
 	void quaternionToEuler(const XMFLOAT4& q, float* eulerDeg);
 	void clampBoneAngle(IKBone& bone, XMFLOAT4& quat);
 	XMVECTOR ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float minDeg, float maxDeg);
-	XMVECTOR ClampSwingAsymmetric(XMVECTOR swing, XMVECTOR twistAxis, float xMax, float xMin, float zMax, float zMin);
-	XMFLOAT2 ClampToAsymmetricEllipse(const XMFLOAT2& p, float xMin, float xMax, float zMin, float zMax);
 	void DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& outSwing, XMVECTOR& outTwist);
-	static inline float ClampF(float v, float lo, float hi);
+	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
+	XMVECTOR ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon);
+	void makePolygon(std::vector<XMVECTOR>& polygon, float xMax, float xMin, float zMax, float zMin);
+	float SafeACos(float x);
 
 	JacobianMatrix J;
 	JacobianMatrix JTJ;
