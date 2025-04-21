@@ -343,7 +343,6 @@ void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, float xMax, fl
 
 		for (int i = 0; i <= segmentCount; ++i)
 		{
-			p("i: " + std::to_string(i) + "\n");
 			float t = (float)i / segmentCount;
 			float angle = XM_2PI * t;
 
@@ -356,22 +355,20 @@ void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, float xMax, fl
 			float xAngle = xMin + xRange * xDir;
 			float zAngle = zMin + zRange * zDir;
 
-			float tanZ = tanf(XMConvertToRadians(zAngle));
-			float tanX = tanf(XMConvertToRadians(xAngle));
-			float denom = 1 + tanZ * tanZ + tanX * tanX;
-			float y = sqrtf(length * length / denom);
+			float x = -length * sinf(XMConvertToRadians(zAngle));
+			float z = length * sinf(XMConvertToRadians(xAngle));
+			float y2 = length * length - (x * x + z * z);
 
-			if (fabsf(xAngle) >= 90.0f || fabsf(zAngle) >= 90.0f)
+			float y = 0.0f;
+			if (y2 > 0.0f)
+			{
+				y = sqrt(y2);
+			}
+
+			if ((fabs(zAngle) > 90.0f && fabs(zAngle) < 270.0f) || (fabs(xAngle) > 90.0f && fabs(xAngle) < 270.0f))
 			{
 				y = -y;
 			}
-
-			float x = y * tanZ;
-			float z = y * tanX;
-
-			p("point x: " + std::to_string(x) + "\n");
-			p("point y: " + std::to_string(y) + "\n");
-			p("point z: " + std::to_string(z) + "\n");
 
 			JointVertex v{};
 			v.position.x = x;

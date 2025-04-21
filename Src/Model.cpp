@@ -323,8 +323,8 @@ void Model::initRangeAxis()
 {
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 0.0f, 0.0f), 10.0f, -10.0f, 10.0f, -10.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 0.0f, 0.0f), 15.0f, -15.0f, 15.0f, -15.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 0.0f, 0.0f), 15.0f, -15.0f, 15.0f, -15.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 0.0f, 0.0f), 100.0f, -45.0f, -170.0f, -210.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 0.0f, 0.0f), 150.0f, 0.0f, 30.0f, -30.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 0.0f, 0.0f), 270.0f, 135.0f, -160.0f, -200.0f);
 }
 
 bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront)
