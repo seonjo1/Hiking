@@ -517,7 +517,8 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
 	swingClamped = XMQuaternionNormalize(swingClamped);
 	twistClamped = XMQuaternionNormalize(twistClamped);
 
-	XMVECTOR qFinal = XMQuaternionMultiply(swingClamped, twistClamped);
+	//XMVECTOR qFinal = XMQuaternionMultiply(swingClamped, twistClamped);
+	XMVECTOR qFinal = twistClamped;
 
 	XMStoreFloat4(&quat, XMQuaternionNormalize(qFinal));
 }
