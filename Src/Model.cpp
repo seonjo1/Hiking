@@ -323,11 +323,18 @@ XMFLOAT3 Model::getAxis(float xDeg, float yDeg, float zDeg)
 
 void Model::initRangeAxis()
 {
+<<<<<<< HEAD
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 0.0f, 0.0f), -45.0f, -60.0f, 0.5f, -0.5f, 0.5f, -0.5f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 0.0f, 0.0f), -45.0f, -60.0f, 0.5f, -0.5f, 0.5f, -0.5f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 0.0f, 0.0f), -30.0f, -80.0f, 0.5f, -0.5f, 0.5f, -0.5f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 0.0f, 0.0f), 150.0f, 0.0f, 0.5f, -0.5f, 0.5f, -0.5f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 0.0f, 0.0f), -125.0f, -270.0f, 180.5f, 180.0f, 0.5f, 0.0f);
+=======
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 1.0f, 0.0f), -45.0f, -60.0f, 5.0f, -5.0f, 10.0f, -10.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 1.0f, 0.0f), -30.0f, -80.0f, 5.0f, -5.0f, 15.0f, -15.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 1.0f, 0.0f), 110.0f, 0.0f, 30.0f, -20.0f, 30.0f, -30.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 1.0f, 0.0f), 270.0f, 125.0f, 90.0f, 70.0f, 20.0f, -20.0f);
+>>>>>>> 8759a14a6b64f283895cec234aab7ae59559fb4c
 }
 
 bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront)
@@ -345,7 +352,15 @@ bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* 
 
 		if (bone.hasAxis == true)
 		{
-			if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, m_pose.world[i], bone.axis, cameraFront) == false)
+			XMMATRIX local = m_pose.getLocalTranslationMatrix(i);
+			XMMATRIX parent = m_pose.world[bone.parentIndex];
+			XMMATRIX boneMatrix = XMMatrixMultiply(local, parent);
+
+			if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, boneMatrix, XMFLOAT3(1.0f, 0.0f, 0.0f), cameraFront) == false)
+				return false;
+			if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, boneMatrix, XMFLOAT3(0.0f, 1.0f, 0.0f), cameraFront) == false)
+				return false;
+			if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, boneMatrix, XMFLOAT3(0.0f, 0.0f, 1.0f), cameraFront) == false)
 				return false;
 		}
 	}
@@ -489,7 +504,11 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 
 		//static const int MAX_ITERATION = 25;
+<<<<<<< HEAD
 		static const int MAX_ITERATION = 10;
+=======
+		static const int MAX_ITERATION = 2;
+>>>>>>> 8759a14a6b64f283895cec234aab7ae59559fb4c
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{

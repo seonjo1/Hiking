@@ -87,28 +87,9 @@ void Pose::Initialize(size_t boneCount) {
 XMMATRIX Pose::getLocalTranslationMatrix(int idx)
 {
     XMMATRIX translation = XMMatrixTranslation(local[idx].position.x, local[idx].position.y, local[idx].position.z);
+    XMMATRIX S = XMMatrixScaling(local[idx].scale.x, local[idx].scale.y, local[idx].scale.z);
 
-	// 1. twist 축 정규화
-	XMVECTOR twistAxis = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-    XMVECTOR q = XMLoadFloat4(&local[idx].rotation);
-	// 2. q 의 벡터 부분을 twist 축에 사영 (쿼터니언의 x, y, z를 다른 축에 내적하면 축에대한 회전을 분리할 수 있음)
-	XMVECTOR qVec = XMVectorSet(XMVectorGetX(q), XMVectorGetY(q), XMVectorGetZ(q), 0.0f);
-	float dotVT = XMVectorGetX(XMVector3Dot(qVec, twistAxis));
-	XMVECTOR proj = XMVectorScale(twistAxis, dotVT);
-
-	// 3. twist 쿼터니언 (proj xyz + q.w) 정규화
-	q = XMQuaternionNormalize(
-		XMVectorSet(
-			XMVectorGetX(proj),
-			XMVectorGetY(proj),
-			XMVectorGetZ(proj),
-			XMVectorGetW(q)
-		)
-	);
-
-    XMMATRIX rotation = XMMatrixRotationQuaternion(q);
-
-    return rotation * translation;
+    return S * translation;
 }
 
 void Pose::UpdateIKWorldPos(const Skeleton& skeleton, std::vector<XMFLOAT4>& IKRotation) {

@@ -351,7 +351,7 @@ void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, float xMax, fl
 			XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
 			XMVECTOR swing = XMQuaternionMultiply(qz, qx);  // x 먼저, z 나중
 
-			XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), swing); // swing에 의해 이동된 Y축yyy
+			XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), swing); // swing에 의해 이동된 Y축
 			D = XMVectorScale(D, length);
 
 			JointVertex v{};

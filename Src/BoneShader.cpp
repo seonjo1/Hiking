@@ -493,7 +493,7 @@ void BoneShader::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount
 
 bool BoneShader::SetShaderParametersRangeAxis(ID3D11DeviceContext* deviceContext, Matrix& matrix, XMMATRIX& parentMatrix, XMFLOAT3 axis, XMFLOAT3 cameraFront)
 {
-	static const float length = 50.0f;
+	static const float length = 30.0f;
 
 	unsigned int bufferNumber = 0;
 
