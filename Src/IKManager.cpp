@@ -258,12 +258,12 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 void IKManager::solveDLS()
 {
 	static const float lambda = 1.0f;
-	static const float thetaAlpha = 0.5f;
+	static const float thetaAlpha = 0.3f;
 	float w[12] = { 
 		0.1f, 0.1f, 0.1f,
 		0.1f, 0.1f, 0.1f,
-		1.5f, 0.1f, 0.1f,
-		1.5f, 0.1f, 0.1f
+		0.5f, 0.1f, 0.1f,
+		4.0f, 0.1f, 0.1f
 	};
 
 	// JTJ 구하기
@@ -411,18 +411,34 @@ void IKManager::updateAngle()
 					idx++;
 				}
 			}
-
 			p("angle: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 
-			XMVECTOR quat = XMQuaternionRotationRollPitchYaw(
-				XMConvertToRadians(angle[0]),
-				XMConvertToRadians(angle[1]),
-				XMConvertToRadians(angle[2])
-			);
+			XMVECTOR qOld = XMLoadFloat4(&m_nowRotation[bone.idx]);
+			 //로컬 축 구하기
+			XMVECTOR localX = XMVector3Rotate(XMVectorSet(1, 0, 0, 0), qOld);
+			XMVECTOR localY = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qOld);
+			XMVECTOR localZ = XMVector3Rotate(XMVectorSet(0, 0, 1, 0), qOld);
 
-			XMVECTOR nowQuat = XMLoadFloat4(&m_nowRotation[bone.idx]);
-			XMVECTOR newQuat = XMQuaternionMultiply(quat, nowQuat);
-			XMStoreFloat4(&m_nowRotation[bone.idx], newQuat);
+			//// 로컬 축 기준 델타 쿼터니언
+			XMVECTOR dqX = XMQuaternionRotationAxis(localX, XMConvertToRadians(angle[0]));
+			XMVECTOR dqY = XMQuaternionRotationAxis(localY, XMConvertToRadians(angle[1]));
+			XMVECTOR dqZ = XMQuaternionRotationAxis(localZ, XMConvertToRadians(angle[2]));
+
+			// 합성 및 적용
+			XMVECTOR newQuat = XMQuaternionMultiply(dqZ, XMQuaternionMultiply(dqY, dqX));
+			XMVECTOR qNew = XMQuaternionNormalize(XMQuaternionMultiply(newQuat, qOld));
+			XMStoreFloat4(&m_nowRotation[bone.idx], qNew);
+
+
+			//XMVECTOR quat = XMQuaternionNormalize(XMQuaternionRotationRollPitchYaw(
+			//	XMConvertToRadians(angle[0]),
+			//	XMConvertToRadians(angle[1]),
+			//	XMConvertToRadians(angle[2])
+			//));
+
+			//XMVECTOR nowQuat = XMLoadFloat4(&m_nowRotation[bone.idx]);
+			//XMVECTOR newQuat = XMQuaternionNormalize(XMQuaternionMultiply(quat, nowQuat));
+			//XMStoreFloat4(&m_nowRotation[bone.idx], newQuat);
 
 			quaternionToEuler(m_nowRotation[bone.idx], debugAngle);
 			p("before clamping\n");
@@ -435,6 +451,9 @@ void IKManager::updateAngle()
 			quaternionToEuler(m_nowRotation[bone.idx], angle);
 			p("after bone[" + std::to_string(bone.idx) + "]\n");
 			p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
+
+			// no rotation
+			//m_nowRotation[bone.idx] = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 		}
 		p("\n");
 
@@ -540,7 +559,7 @@ void IKManager::DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& ou
 	);
 
 	// 4. swing = q * twist^-1 (기존 회전에서 twist 회전을 뺀 것을 swing으로 추출)
-	outSwing = XMQuaternionMultiply(q, XMQuaternionInverse(outTwist));
+	outSwing = XMQuaternionNormalize(XMQuaternionMultiply(q, XMQuaternionInverse(outTwist)));
 }
 
 
@@ -608,6 +627,8 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
 	// Twist 회전 clamping
 	XMVECTOR twistClamped = ClampTwist(twist, twistAxis, yMin, yMax);
 
+	swingClamped = XMQuaternionNormalize(swingClamped);
+	twistClamped = XMQuaternionNormalize(twistClamped);
 
 	XMStoreFloat4(&dgTA, twistClamped);
 	quaternionToEuler(dgTA, angle);
