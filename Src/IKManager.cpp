@@ -393,7 +393,7 @@ void IKManager::updateAngle()
 
 bool IKManager::isFinish(Pose& pose, XMMATRIX& worldMatrix)
 {
-	const float THRESHOLD = 1.0f;
+	const float THRESHOLD = 0.1f;
 
 	bool success = true;
 	for (int i = 0; i < m_chainNum; i++)
@@ -517,8 +517,11 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
 	swingClamped = XMQuaternionNormalize(swingClamped);
 	twistClamped = XMQuaternionNormalize(twistClamped);
 
-	//XMVECTOR qFinal = XMQuaternionMultiply(swingClamped, twistClamped);
-	XMVECTOR qFinal = twistClamped;
+	XMVECTOR qFinal;
+	if (bone.idx == 57)
+		qFinal = XMQuaternionMultiply(swingClamped, twistClamped);
+	else
+		qFinal = twistClamped;
 
 	XMStoreFloat4(&quat, XMQuaternionNormalize(qFinal));
 }
@@ -606,15 +609,13 @@ void IKManager::makePolygon(std::vector<XMVECTOR>& polygon, float xMax, float xM
 		float zDeg = Lerp(zMin, zMax, (sinf(t * XM_2PI) + 1.0f) * 0.5f);
 
 		XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
-		XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+		XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, -1, 0), XMConvertToRadians(zDeg));
 		XMVECTOR swing = XMQuaternionMultiply(qz, qx);  // x 먼저, z 나중
 
 		XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), swing); // swing에 의해 이동된 Y축
 		polygon.push_back(XMVector3Normalize(D));
 	}
 }
-
-
 
 // X -> Y -> Z 순서 quat의 x, y, z의 부호가 반대로 나옴
 //void IKManager::quaternionToEuler(const XMFLOAT4& q, float* eulerDeg)

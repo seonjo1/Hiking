@@ -425,7 +425,6 @@ bool Model::DrawRangeCornShader(ID3D11DeviceContext* deviceContext, JointShader*
 			m_cornMesh->UpdateMeshVertices(deviceContext, bone.xMax, bone.xMin, bone.zMax, bone.zMin);
 			m_cornMesh->Render(deviceContext);
 
-
 			XMMATRIX localTranslation = m_pose.getLocalTranslationMatrix(i);
 			XMMATRIX localYRotation = m_pose.getLocalYRotationMatrix(i);
 			XMMATRIX local = XMMatrixMultiply(localYRotation, localTranslation);

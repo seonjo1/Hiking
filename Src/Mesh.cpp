@@ -348,7 +348,7 @@ void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, float xMax, fl
 			float zDeg = Lerp(zMin, zMax, (sinf(t * XM_2PI) + 1.0f) * 0.5f);
 
 			XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
-			XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+			XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, -1, 0), XMConvertToRadians(zDeg));
 			XMVECTOR swing = XMQuaternionMultiply(qz, qx);  // x 먼저, z 나중
 
 			XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), swing); // swing에 의해 이동된 Y축
@@ -359,6 +359,7 @@ void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, float xMax, fl
 			v.position.y = XMVectorGetY(D);
 			v.position.z = XMVectorGetZ(D);
 			v.color = XMFLOAT4(1, 0.5f, 0.2f, 1); // orange
+
 			coneVertices.push_back(v);
 		}
 
