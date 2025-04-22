@@ -535,8 +535,7 @@ float IKManager::SafeACos(float x)
 XMVECTOR IKManager::ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon)
 {
 	D = XMVector3Normalize(D);
-	bool inside = true;
-	float minAngle = XM_PI;
+	float maxDot = -1.1f;
 	XMVECTOR closest = D;
 
 	size_t count = polygon.size();
@@ -548,37 +547,41 @@ XMVECTOR IKManager::ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vect
 		XMVECTOR edgeNormal = XMVector3Normalize(XMVector3Cross(a, b));
 		float side = XMVectorGetX(XMVector3Dot(edgeNormal, D));
 
-		if (side < 0.0f) // ¹Ù±ùÂÊ
+		if (side > 0.0f) // ¹Ù±ùÂÊ
 		{
-			inside = false;
-
 			float dotEN = XMVectorGetX(XMVector3Dot(D, edgeNormal));
 			XMVECTOR proj = XMVector3Normalize(D - edgeNormal * dotEN);
 
-			float angle_a_proj = SafeACos(XMVectorGetX(XMVector3Dot(proj, a)));
-			float angle_b_proj = SafeACos(XMVectorGetX(XMVector3Dot(proj, b)));
-			float angle_ab = SafeACos(XMVectorGetX(XMVector3Dot(a, b)));
+			XMVECTOR AtoB = XMVector3Cross(a, b);
+			XMVECTOR AtoProj = XMVector3Cross(a, proj);
+			XMVECTOR ProjtoB = XMVector3Cross(proj, b);
 
+			float AtoProjDot = XMVectorGetX(XMVector3Dot(AtoB, AtoProj));
+			float ProjtoBDot = XMVectorGetX(XMVector3Dot(AtoB, ProjtoB));
+
+			
 			XMVECTOR candidate;
-			if (angle_a_proj + angle_b_proj <= angle_ab + 1e-3f)
+			if (AtoProjDot >= 0.0f && ProjtoBDot >= 0.0f)
+			{
 				candidate = proj;
+			}
 			else
 			{
-				float da = SafeACos(XMVectorGetX(XMVector3Dot(D, a)));
-				float db = SafeACos(XMVectorGetX(XMVector3Dot(D, b)));
-				candidate = (da < db) ? a : b;
+				float dotA = XMVectorGetX(XMVector3Dot(D, a));
+				float dotB = XMVectorGetX(XMVector3Dot(D, b));
+				candidate = (dotA > dotB) ? a : b;
 			}
 
-			float dist = SafeACos(XMVectorGetX(XMVector3Dot(D, candidate)));
-			if (dist < minAngle)
+			float dot = XMVectorGetX(XMVector3Dot(D, candidate));
+			if (dot > maxDot)
 			{
-				minAngle = dist;
+				maxDot = dot;
 				closest = candidate;
 			}
 		}
 	}
 
-	return inside ? D : closest;
+	return closest;
 }
 
 XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon)
