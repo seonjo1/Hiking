@@ -258,12 +258,12 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 void IKManager::solveDLS()
 {
 	static const float lambda = 1.0f;
-	static const float thetaAlpha = 0.3f;
+	static const float thetaAlpha = 0.1f;
 	float w[12] = { 
 		0.1f, 0.1f, 0.1f,
 		0.1f, 0.1f, 0.1f,
-		0.5f, 0.1f, 0.1f,
-		4.0f, 0.1f, 0.1f
+		0.3f, 0.1f, 0.1f,
+		1.0f, 0.1f, 0.1f
 	};
 
 	// JTJ ±¸ÇÏ±â
@@ -462,7 +462,7 @@ void IKManager::updateAngle()
 
 bool IKManager::isFinish(Pose& pose, XMMATRIX& worldMatrix)
 {
-	const float THRESHOLD = 0.001f;
+	const float THRESHOLD = 1.0f;
 
 	bool success = true;
 	for (int i = 0; i < m_chainNum; i++)

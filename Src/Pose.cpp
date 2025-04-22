@@ -87,9 +87,37 @@ void Pose::Initialize(size_t boneCount) {
 XMMATRIX Pose::getLocalTranslationMatrix(int idx)
 {
     XMMATRIX translation = XMMatrixTranslation(local[idx].position.x, local[idx].position.y, local[idx].position.z);
-    XMMATRIX S = XMMatrixScaling(local[idx].scale.x, local[idx].scale.y, local[idx].scale.z);
 
-    return S * translation;
+    return translation;
+}
+
+XMMATRIX Pose::getLocalYRotationMatrix(int idx)
+{
+	XMVECTOR q = XMQuaternionNormalize(XMLoadFloat4(&local[idx].rotation));
+
+	// 2) Y축(0,1,0) 축 벡터
+	XMVECTOR twistAxis = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+	// 3) 쿼터니언의 벡터부만 꺼내서 축에 사영
+	XMVECTOR qVec = XMVectorSet(
+		XMVectorGetX(q),
+		XMVectorGetY(q),
+		XMVectorGetZ(q),
+		0.0f
+	);
+	float dot = XMVectorGetX(XMVector3Dot(qVec, twistAxis));
+	XMVECTOR proj = XMVectorScale(twistAxis, dot);
+
+	// 4) 사영된 벡터부 + 원본 w 로 새 쿼터니언 구성
+	XMVECTOR twistQuat = XMVectorSet(
+		XMVectorGetX(proj),
+		XMVectorGetY(proj),
+		XMVectorGetZ(proj),
+		XMVectorGetW(q)
+	);
+
+	// 5) 결과 정규화해서 반환
+	return XMMatrixRotationQuaternion(XMQuaternionNormalize(twistQuat));
 }
 
 void Pose::UpdateIKWorldPos(const Skeleton& skeleton, std::vector<XMFLOAT4>& IKRotation) {
