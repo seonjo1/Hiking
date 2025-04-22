@@ -173,8 +173,6 @@ void IKManager::calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingMan
 		XMStoreFloat3(&m_chains[i].EndEffector, endEffector);
 		// target 등록
 		m_chains[i].Target = raycastingManager.m_LeftFoot.pos;
-		//p("endEffector : " + std::to_string(m_chains[i].EndEffector.x) + " " + std::to_string(m_chains[i].EndEffector.y) + " " + std::to_string(m_chains[i].EndEffector.z) + "\n");
-		//p("target : " + std::to_string(m_chains[i].Target.x) + " " + std::to_string(m_chains[i].Target.y) + " " + std::to_string(m_chains[i].Target.z) + "\n");
 	}
 }
 
@@ -203,13 +201,10 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 
 			XMFLOAT3 debugBonePose;
 			XMStoreFloat3(&debugBonePose, bonePos);
-			//p("bone[" + std::to_string(bone.idx) + "]\n");
-			//p("Pose: " + std::to_string(debugBonePose.x) + " " + std::to_string(debugBonePose.y) + " " + std::to_string(debugBonePose.z) + "\n");
 
 			XMVECTOR toEffector = XMVectorSubtract(effectPos, bonePos);
 			XMFLOAT3 debugToEffector;
 			XMStoreFloat3(&debugToEffector, toEffector);
-			//p("toEffector: " + std::to_string(debugToEffector.x) + " " + std::to_string(debugToEffector.y) + " " + std::to_string(debugToEffector.z) + "\n");
 
 			//p("axse\n");
 			for (int k = 0; k < 3; ++k)
@@ -229,7 +224,6 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 
 				XMFLOAT3 debugAxis;
 				XMStoreFloat3(&debugAxis, worldAxis);
-				//p("Axis[" + std::to_string(k) + "]: " + std::to_string(debugAxis.x) + " " + std::to_string(debugAxis.y) + " " + std::to_string(debugAxis.z) + "\n");
 
 
 				// 위치 변화 = 회전축 × effector 방향
@@ -243,27 +237,17 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 			}
 		}
 	}
-
-	// debuging
-	//p("print J!!\n");
-	//J.print();
-	//p("print dP!!\n");
-	//for (int i = 0; i < dP.size(); i++)
-	//{
-	//	p(std::to_string(dP[i]) + " ");
-	//}
-	//p("\n");
 }
 
 void IKManager::solveDLS()
 {
 	static const float lambda = 1.0f;
-	static const float thetaAlpha = 0.1f;
+	static const float thetaAlpha = 1.0f;
 	float w[12] = { 
-		0.1f, 0.1f, 0.1f,
-		0.1f, 0.1f, 0.1f,
-		0.3f, 0.1f, 0.1f,
-		1.0f, 0.1f, 0.1f
+		0.1f, 0.01f, 0.1f,
+		0.1f, 0.01f, 0.1f,
+		6.0f, 0.01f, 0.1f,
+		6.0f, 0.01f, 0.1f
 	};
 
 	// JTJ 구하기
@@ -362,30 +346,6 @@ void IKManager::updateNowRotation(Pose& pose)
 
 void IKManager::updateAngle()
 {
-
-	// TEST
-	//p("TEST\n");
-	//float a[3] = { 0.0f, 0.0f, 0.0f };
-	//XMVECTOR quat = XMQuaternionRotationRollPitchYaw(
-	//	XMConvertToRadians(35.0f),
-	//	XMConvertToRadians(-30.0f),
-	//	XMConvertToRadians(130.0f)
-	//);
-	//XMFLOAT4 q1;
-	//XMStoreFloat4(&q1, quat);
-	//quaternionToEuler(q1, a);
-	//p("before q: " + std::to_string(q1.x) + " " + std::to_string(q1.y) + " " + std::to_string(q1.z) + " " + std::to_string(q1.w) + "\n");
-	//p("before a: " + std::to_string(a[0]) + " " + std::to_string(a[1]) + " " + std::to_string(a[2]) + "\n");
-	//quat = XMQuaternionRotationRollPitchYaw(
-	//	XMConvertToRadians(a[0]),
-	//	XMConvertToRadians(a[1]),
-	//	XMConvertToRadians(a[2])
-	//);
-	//XMStoreFloat4(&q1, quat);
-	//quaternionToEuler(q1, a);
-	//p("after q: " + std::to_string(q1.x) + " " + std::to_string(q1.y) + " " + std::to_string(q1.z) + " " + std::to_string(q1.w) + "\n");
-	//p("after a: " + std::to_string(a[0]) + " " + std::to_string(a[1]) + " " + std::to_string(a[2]) + "\n");
-	
 	for (int i = 0; i < m_chainNum; ++i)
 	{
 		int idx = 0;
@@ -394,11 +354,6 @@ void IKManager::updateAngle()
 		{
 			IKBone& bone = m_chains[i].Bones[j];
 
-			float debugAngle[3] = { 0.0f, 0.0f, 0.0f };
-			quaternionToEuler(m_nowRotation[bone.idx], debugAngle);
-			p("before bone[" + std::to_string(bone.idx) + "]\n");
-			p("x: " + std::to_string(debugAngle[0]) + " " + std::to_string(debugAngle[1]) + " " + std::to_string(debugAngle[2]) + "\n");
-			
 			float angle[3] = { 0.0f, 0.0f, 0.0f };
 
 			// 기존 quaternion을 pitch yaw roll로 변환
@@ -411,13 +366,12 @@ void IKManager::updateAngle()
 					idx++;
 				}
 			}
-			p("angle: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
 
 			XMVECTOR qOld = XMLoadFloat4(&m_nowRotation[bone.idx]);
 			 //로컬 축 구하기
-			XMVECTOR localX = XMVector3Rotate(XMVectorSet(1, 0, 0, 0), qOld);
-			XMVECTOR localY = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qOld);
-			XMVECTOR localZ = XMVector3Rotate(XMVectorSet(0, 0, 1, 0), qOld);
+			XMVECTOR localX = XMVectorSet(1, 0, 0, 0);
+			XMVECTOR localY = XMVectorSet(0, 1, 0, 0);
+			XMVECTOR localZ = XMVectorSet(0, 0, 1, 0);
 
 			//// 로컬 축 기준 델타 쿼터니언
 			XMVECTOR dqX = XMQuaternionRotationAxis(localX, XMConvertToRadians(angle[0]));
@@ -429,33 +383,10 @@ void IKManager::updateAngle()
 			XMVECTOR qNew = XMQuaternionNormalize(XMQuaternionMultiply(newQuat, qOld));
 			XMStoreFloat4(&m_nowRotation[bone.idx], qNew);
 
-
-			//XMVECTOR quat = XMQuaternionNormalize(XMQuaternionRotationRollPitchYaw(
-			//	XMConvertToRadians(angle[0]),
-			//	XMConvertToRadians(angle[1]),
-			//	XMConvertToRadians(angle[2])
-			//));
-
-			//XMVECTOR nowQuat = XMLoadFloat4(&m_nowRotation[bone.idx]);
-			//XMVECTOR newQuat = XMQuaternionNormalize(XMQuaternionMultiply(quat, nowQuat));
-			//XMStoreFloat4(&m_nowRotation[bone.idx], newQuat);
-
-			quaternionToEuler(m_nowRotation[bone.idx], debugAngle);
-			p("before clamping\n");
-			p("x: " + std::to_string(debugAngle[0]) + " " + std::to_string(debugAngle[1]) + " " + std::to_string(debugAngle[2]) + "\n");
-			
 			// clamping
 			clampBoneAngle(bone, m_nowRotation[bone.idx]);
 
-			// debuging
-			quaternionToEuler(m_nowRotation[bone.idx], angle);
-			p("after bone[" + std::to_string(bone.idx) + "]\n");
-			p("x: " + std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
-
-			// no rotation
-			//m_nowRotation[bone.idx] = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 		}
-		p("\n");
 
 	}
 }
@@ -509,35 +440,6 @@ void IKManager::quaternionToEuler(const XMFLOAT4& q, float* eulerDeg)
 	eulerDeg[2] = XMConvertToDegrees(atan2f(2.0f * (q.x * q.y + q.w * q.z), (-sqx + sqy - sqz + sqw)));  // Roll
 }
 
-// X -> Y -> Z 순서 quat의 x, y, z의 부호가 반대로 나옴
-//void IKManager::quaternionToEuler(const XMFLOAT4& q, float* eulerDeg)
-//{
-//	XMVECTOR quat = XMLoadFloat4(&q);
-//	XMMATRIX m = XMMatrixRotationQuaternion(quat);
-//
-//	XMFLOAT4X4 mat;
-//	XMStoreFloat4x4(&mat, m);
-//
-//	float pitch, yaw, roll;
-//
-//	if (fabsf(mat._23) < 0.9999f)
-//	{
-//		pitch = asinf(-mat._23);              // X
-//		yaw = atan2f(mat._13, mat._33);     // Y
-//		roll = atan2f(mat._21, mat._22);     // Z
-//	}
-//	else
-//	{
-//		pitch = (mat._23 < 0.0f) ? XM_PIDIV2 : -XM_PIDIV2;
-//		yaw = atan2f(-mat._31, mat._11);
-//		roll = 0.0f;
-//	}
-//
-//	eulerDeg[0] = XMConvertToDegrees(pitch); // X
-//	eulerDeg[1] = XMConvertToDegrees(yaw);   // Y
-//	eulerDeg[2] = XMConvertToDegrees(roll);  // Z
-//}
-
 void IKManager::DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& outSwing, XMVECTOR& outTwist)
 {
 	// 1. twist 축 정규화
@@ -562,16 +464,19 @@ void IKManager::DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& ou
 	outSwing = XMQuaternionNormalize(XMQuaternionMultiply(q, XMQuaternionInverse(outTwist)));
 }
 
-
 XMVECTOR IKManager::ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float minDeg, float maxDeg)
 {
 	float qw = XMVectorGetW(twist);
 	float angle = 2.0f * acosf(std::clamp(qw, -1.0f, 1.0f));
-	if (angle > XM_PI) // wrap to [-pi, pi]
+	if (angle >= XM_2PI)
+	{
 		angle -= XM_2PI;
+	}
+	if (angle <= -XM_2PI)
+	{
+		angle += XM_2PI;
+	}
 
-	// no clamp
-	//float deg = XMConvertToDegrees(angle);
 	// clamp
 	float deg = std::clamp(XMConvertToDegrees(angle), minDeg, maxDeg);
 	float rad = XMConvertToRadians(deg);
@@ -599,24 +504,6 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
 	// 기존 quat을 Swing과 Twist quaternion으로 분리
 	DecomposeSwingTwist(qIK, twistAxis, swing, twist);
 
-	// debuging
-	XMFLOAT4 dgTA, dgSW;
-	float angle[3] = { 0.0f, 0.0f, 0.0f };
-	XMStoreFloat4(&dgTA, twist);
-	quaternionToEuler(dgTA, angle);
-	p("before twist\n");
-	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
-	XMStoreFloat4(&dgSW, swing);
-	quaternionToEuler(dgSW, angle);
-	p("before swing\n");
-	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
-
-	p("merge twist and swing\n");
-	XMVECTOR merge = XMQuaternionMultiply(swing, twist);
-	XMStoreFloat4(&dgSW, merge);
-	quaternionToEuler(dgSW, angle);
-	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
-
 
 	std::vector<XMVECTOR> polygon;
 	makePolygon(polygon, xMax, xMin, zMax, zMin);
@@ -630,19 +517,9 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
 	swingClamped = XMQuaternionNormalize(swingClamped);
 	twistClamped = XMQuaternionNormalize(twistClamped);
 
-	XMStoreFloat4(&dgTA, twistClamped);
-	quaternionToEuler(dgTA, angle);
-	p("after twist\n");
-	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
-	XMStoreFloat4(&dgSW, swingClamped);
-	quaternionToEuler(dgSW, angle);
-	p("after swing\n");
-	p(std::to_string(angle[0]) + " " + std::to_string(angle[1]) + " " + std::to_string(angle[2]) + "\n");
-
-
 	XMVECTOR qFinal = XMQuaternionMultiply(swingClamped, twistClamped);
 
-	XMStoreFloat4(&quat, qFinal);
+	XMStoreFloat4(&quat, XMQuaternionNormalize(qFinal));
 }
 
 
@@ -735,3 +612,34 @@ void IKManager::makePolygon(std::vector<XMVECTOR>& polygon, float xMax, float xM
 		polygon.push_back(XMVector3Normalize(D));
 	}
 }
+
+
+
+// X -> Y -> Z 순서 quat의 x, y, z의 부호가 반대로 나옴
+//void IKManager::quaternionToEuler(const XMFLOAT4& q, float* eulerDeg)
+//{
+//	XMVECTOR quat = XMLoadFloat4(&q);
+//	XMMATRIX m = XMMatrixRotationQuaternion(quat);
+//
+//	XMFLOAT4X4 mat;
+//	XMStoreFloat4x4(&mat, m);
+//
+//	float pitch, yaw, roll;
+//
+//	if (fabsf(mat._23) < 0.9999f)
+//	{
+//		pitch = asinf(-mat._23);              // X
+//		yaw = atan2f(mat._13, mat._33);     // Y
+//		roll = atan2f(mat._21, mat._22);     // Z
+//	}
+//	else
+//	{
+//		pitch = (mat._23 < 0.0f) ? XM_PIDIV2 : -XM_PIDIV2;
+//		yaw = atan2f(-mat._31, mat._11);
+//		roll = 0.0f;
+//	}
+//
+//	eulerDeg[0] = XMConvertToDegrees(pitch); // X
+//	eulerDeg[1] = XMConvertToDegrees(yaw);   // Y
+//	eulerDeg[2] = XMConvertToDegrees(roll);  // Z
+//}
