@@ -34,6 +34,7 @@ struct IKChain
 	XMFLOAT3 Target;
 	int EndEffectorIdx;
 	int DoFNum {0};
+	float totalDeltaAngle{ 0.0f };
 };
 
 struct JacobianMatrix

@@ -173,6 +173,9 @@ void IKManager::calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingMan
 		XMStoreFloat3(&m_chains[i].EndEffector, endEffector);
 		// target 등록
 		m_chains[i].Target = raycastingManager.m_LeftFoot.pos;
+
+		// totalDeltaAngle 초기화
+		m_chains[i].totalDeltaAngle = 0.0f;
 	}
 }
 
@@ -199,12 +202,13 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 			XMMATRIX transform = XMMatrixMultiply(pose.world[bone.idx], worldMatrix);
 			bonePos = XMVector3TransformCoord(bonePos, transform);
 
-			XMFLOAT3 debugBonePose;
-			XMStoreFloat3(&debugBonePose, bonePos);
-
 			XMVECTOR toEffector = XMVectorSubtract(effectPos, bonePos);
-			XMFLOAT3 debugToEffector;
-			XMStoreFloat3(&debugToEffector, toEffector);
+
+			//p("bone[" + std::to_string(bone.idx) + "]\n");
+			//p("bonePos: " + std::to_string(XMVectorGetX(bonePos)) + " " + std::to_string(XMVectorGetY(bonePos)) + " " + std::to_string(XMVectorGetZ(bonePos)) + "\n");
+			//p("effectPos: " + std::to_string(XMVectorGetX(effectPos)) + " " + std::to_string(XMVectorGetY(effectPos)) + " " + std::to_string(XMVectorGetZ(effectPos)) + "\n");
+			//p("targetPos: " + std::to_string(XMVectorGetX(targetPos)) + " " + std::to_string(XMVectorGetY(targetPos)) + " " + std::to_string(XMVectorGetZ(targetPos)) + "\n");
+			//p("toEffector: " + std::to_string(XMVectorGetX(toEffector)) + " " + std::to_string(XMVectorGetY(toEffector)) + " " + std::to_string(XMVectorGetZ(toEffector)) + "\n");
 
 			//p("axse\n");
 			for (int k = 0; k < 3; ++k)
@@ -242,12 +246,12 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 void IKManager::solveDLS()
 {
 	static const float lambda = 1.0f;
-	static const float thetaAlpha = 1.0f;
+	static const float thetaAlpha = 0.5f;
 	float w[12] = { 
-		0.1f, 0.01f, 0.1f,
-		0.1f, 0.01f, 0.1f,
-		6.0f, 0.01f, 0.1f,
-		6.0f, 0.01f, 0.1f
+		1.0f, 0.01f, 0.1f,
+		1.0f, 0.01f, 0.1f,
+		3.0f, 0.01f, 0.1f,
+		3.0f, 0.01f, 0.1f
 	};
 
 	// JTJ 구하기
@@ -366,6 +370,11 @@ void IKManager::updateAngle()
 					idx++;
 				}
 			}
+			
+			//p("bone[" + std::to_string(bone.idx) + "]\n");
+			//p("dthetaX: " + std::to_string(angle[0]) + "\n");
+			//p("dthetaY: " + std::to_string(angle[1]) + "\n");
+			//p("dthetaZ: " + std::to_string(angle[2]) + "\n");
 
 			XMVECTOR qOld = XMLoadFloat4(&m_nowRotation[bone.idx]);
 			 //로컬 축 구하기
@@ -386,6 +395,8 @@ void IKManager::updateAngle()
 			// clamping
 			clampBoneAngle(bone, m_nowRotation[bone.idx]);
 
+			// totalDelta 작업
+			//m_chains[i].totalDeltaAngle += 
 		}
 
 	}

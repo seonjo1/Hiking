@@ -56,8 +56,8 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	// ±¸ ¸ðµ¨ »ý¼º
 	Model* sphere1 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.525f, 0.502f, 0.329f, 1.0f));
 	sphere1->createStaticSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	sphere1->setPosition(XMFLOAT3(-10.0f, -46.0f, 30.0f));
-	sphere1->setScale(XMFLOAT3(100.0f, 100.0f, 100.0f));
+	sphere1->setPosition(XMFLOAT3(-10.0f, -498.0f, 30.0f));
+	sphere1->setScale(XMFLOAT3(1000.0f, 1000.0f, 1000.0f));
 	sphere1->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
 	m_Models.push_back(sphere1);
 
