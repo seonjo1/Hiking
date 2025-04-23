@@ -319,7 +319,7 @@ void Mesh::Shutdown()
 	return;
 }
 
-void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, float xMax, float xMin, float zMax, float zMin)
+void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, XMMATRIX& twist, float xMax, float xMin, float zMax, float zMin)
 {
 	static std::vector<JointVertex> coneVertices;
 	static const int segmentCount = 16;

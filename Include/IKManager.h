@@ -116,7 +116,7 @@ private:
 	void DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& outSwing, XMVECTOR& outTwist);
 	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
 	XMVECTOR ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon);
-	void makePolygon(std::vector<XMVECTOR>& polygon, float xMax, float xMin, float zMax, float zMin);
+	void makePolygon(FXMVECTOR twistClamped, std::vector<XMVECTOR>& polygon, float xMax, float xMin, float zMax, float zMin);
 	float SafeACos(float x);
 
 	JacobianMatrix J;

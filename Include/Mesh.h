@@ -54,7 +54,7 @@ public:
 	bool Initialize(ID3D11Device*, std::vector<ModelVertexType>&, std::vector<UINT32>&);
 	void Shutdown();
 	void Render(ID3D11DeviceContext*);
-	void UpdateMeshVertices(ID3D11DeviceContext*, float, float, float, float);
+	void UpdateMeshVertices(ID3D11DeviceContext*, XMMATRIX& , float, float, float, float);
 
 	void setTexture(Texture *);
 	ID3D11ShaderResourceView* getTexture();
