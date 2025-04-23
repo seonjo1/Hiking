@@ -492,6 +492,7 @@ XMVECTOR IKManager::ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float yMax,
 
 void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
 {
+	//p("bone " + std::to_string(bone.idx) + " start clamping!!\n");
 	// IK로 계산된 최종 회전 쿼터니언
 	XMVECTOR qIK = XMLoadFloat4(&quat);
 
@@ -593,41 +594,48 @@ XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistA
 	XMVECTOR D = XMVector3Rotate(twistAxis, swing);  // swing에 의해 이동된 방향
 	XMVECTOR D_clamped = ClampDirectionToSphericalPolygon(D, polygon);
 
-	XMVECTOR from = twistAxis;
-	XMVECTOR to = XMVector3Normalize(D_clamped);
+	float xAngle, zAngle;
+	bool sign = 1.0f;
 
-	XMVECTOR axis = XMVector3Cross(from, to);
-	float dot = XMVectorGetX(XMVector3Dot(from, to));
-	dot = std::clamp(dot, -1.0f, 1.0f);
-	float angle = acosf(dot);
+	XMVECTOR Y = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	XMVECTOR dXY = XMVector2Normalize(XMVectorSet(XMVectorGetX(D_clamped), XMVectorGetY(D_clamped), 0.0f, 0.0f));
 
-	XMVECTOR clampedSwing;
-
-	if (XMVector3LengthSq(axis).m128_f32[0] < 1e-6f)
+	if (fabs(XMVectorGetX(D_clamped)) < 1e-6f && XMVectorGetX(D_clamped) < 1e-6f)
 	{
-		if (dot > 0.9999f) {
-			clampedSwing = XMQuaternionIdentity();  // 회전 없음
-		}
-		else {
-			// 반대 방향 → 수직인 축 아무거나로 180도 회전
-			XMVECTOR arbitrary = XMVectorSet(1, 0, 0, 0);
-			if (fabsf(XMVectorGetX(from)) > 0.9f)
-				arbitrary = XMVectorSet(0, 0, 1, 0);
-			axis = XMVector3Normalize(XMVector3Cross(from, arbitrary));
-			clampedSwing = XMQuaternionRotationAxis(axis, XM_PI);
-		}
+		zAngle = 0.0f;
 	}
-	else {
-		axis = XMVector3Normalize(axis);
-		clampedSwing = XMQuaternionRotationAxis(axis, angle);
+	else
+	{
+		zAngle = acosf(std::abs(XMVectorGetX(XMVector2Dot(Y, dXY))));
+		if (XMVectorGetY(D_clamped) < 0.0f) { sign = -sign; }
+		if (XMVectorGetX(D_clamped) < 0.0f) { sign = -sign; }
 	}
+
+	XMVECTOR qzInv = XMQuaternionRotationAxis(XMVectorSet(0, 0, -1, 0), zAngle * sign);
+	XMMATRIX qzInvTransform = XMMatrixRotationQuaternion(qzInv);
+	XMVECTOR D_ZRotataed = XMVector3TransformNormal(D_clamped, qzInvTransform);
+
+	XMVECTOR dZY = XMVector2Normalize(XMVectorSet(XMVectorGetZ(D_ZRotataed), XMVectorGetY(D_ZRotataed), 0.0f, 0.0f));
+	xAngle = acosf(XMVectorGetX(XMVector2Dot(Y, dZY)));
+
+	if (XMVectorGetZ(D_ZRotataed) < 0.0f) { xAngle = -xAngle; }
+
+	XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), xAngle);
+	XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), zAngle);
+
+	XMVECTOR clampedSwing = XMQuaternionMultiply(qz, qx);  // x 먼저, z 나중
+
+	//p("D: " + std::to_string(XMVectorGetX(D)) + " " + std::to_string(XMVectorGetY(D)) + " " + std::to_string(XMVectorGetZ(D)) + "\n");
+	//p("D_clamped: " + std::to_string(XMVectorGetX(D_clamped)) + " " + std::to_string(XMVectorGetY(D_clamped)) + " " + std::to_string(XMVectorGetZ(D_clamped)) + "\n");
+	//p("xAngle: " + std::to_string(xAngle) + "\n");
+	//p("zAngle: " + std::to_string(zAngle) + "\n");
 
 	return clampedSwing;
 }
 
 void IKManager::makePolygon(FXMVECTOR twistClamped, std::vector<XMVECTOR>& polygon, float xMax, float xMin, float zMax, float zMin)
 {
-	int numSegments = 4;
+	int numSegments = 16;
 
 	for (int i = 0; i < numSegments + 1; ++i)
 	{
@@ -650,31 +658,3 @@ void IKManager::makePolygon(FXMVECTOR twistClamped, std::vector<XMVECTOR>& polyg
 	}
 }
 
-// X -> Y -> Z 순서 quat의 x, y, z의 부호가 반대로 나옴
-//void IKManager::quaternionToEuler(const XMFLOAT4& q, float* eulerDeg)
-//{
-//	XMVECTOR quat = XMLoadFloat4(&q);
-//	XMMATRIX m = XMMatrixRotationQuaternion(quat);
-//
-//	XMFLOAT4X4 mat;
-//	XMStoreFloat4x4(&mat, m);
-//
-//	float pitch, yaw, roll;
-//
-//	if (fabsf(mat._23) < 0.9999f)
-//	{
-//		pitch = asinf(-mat._23);              // X
-//		yaw = atan2f(mat._13, mat._33);     // Y
-//		roll = atan2f(mat._21, mat._22);     // Z
-//	}
-//	else
-//	{
-//		pitch = (mat._23 < 0.0f) ? XM_PIDIV2 : -XM_PIDIV2;
-//		yaw = atan2f(-mat._31, mat._11);
-//		roll = 0.0f;
-//	}
-//
-//	eulerDeg[0] = XMConvertToDegrees(pitch); // X
-//	eulerDeg[1] = XMConvertToDegrees(yaw);   // Y
-//	eulerDeg[2] = XMConvertToDegrees(roll);  // Z
-//}

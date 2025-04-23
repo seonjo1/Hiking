@@ -331,8 +331,8 @@ bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* 
 
 			//if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, boneMatrix, XMFLOAT3(1.0f, 0.0f, 0.0f), cameraFront) == false)
 			//	return false;
-			if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, boneMatrix, XMFLOAT3(0.0f, 1.0f, 0.0f), cameraFront) == false)
-				return false;
+			//if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, boneMatrix, XMFLOAT3(0.0f, 1.0f, 0.0f), cameraFront) == false)
+			//	return false;
 			//if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, boneMatrix, XMFLOAT3(0.0f, 0.0f, 1.0f), cameraFront) == false)
 			//	return false;
 		}
@@ -473,7 +473,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 
 		//static const int MAX_ITERATION = 25;
-		static const int MAX_ITERATION = 5;
+		static const int MAX_ITERATION = 50;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{
@@ -488,10 +488,10 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			// 5. worldPos 업데이트
 			m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 			// 6. 반복 or 종료
-			//if (m_IKManager.isFinish(m_pose, worldMatrix) == true)
-			//{
-			//	break;
-			//}
+			if (m_IKManager.isFinish(m_pose, worldMatrix) == true)
+			{
+				break;
+			}
 			iteration++;
 		}
 		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
