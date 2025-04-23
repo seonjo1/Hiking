@@ -299,26 +299,7 @@ bool Model::DrawRayLineShader(ID3D11DeviceContext* deviceContext, BoneShader* bo
 
 XMFLOAT3 Model::getAxis(float xDeg, float yDeg, float zDeg)
 {
-	//XMVECTOR baseDirection = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
-	//float xRad = XMConvertToRadians(xDeg);
-	//float yRad = XMConvertToRadians(yDeg);
-	//float zRad = XMConvertToRadians(zDeg);
-
-	//XMVECTOR qX = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), xRad);
-	//XMVECTOR qY = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), yRad);
-	//XMVECTOR qZ = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), zRad);
-
-	//XMVECTOR rotQ = XMQuaternionMultiply(qZ, XMQuaternionMultiply(qY, qX));
-
-	//XMVECTOR rotatedDir = XMVector3Rotate(baseDirection, rotQ);
-	//XMVector3Normalize(rotatedDir);
-
-	//XMFLOAT3 axis;
-	//XMStoreFloat3(&axis, rotatedDir);
-	//return axis;
-
-	return XMFLOAT3(0.0f, 1.0f, 0.0f);
+	return XMFLOAT3(xDeg, yDeg, zDeg);
 }
 
 void Model::initRangeAxis()
@@ -494,7 +475,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 
 		//static const int MAX_ITERATION = 25;
-		static const int MAX_ITERATION = 1;
+		static const int MAX_ITERATION = 20;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{

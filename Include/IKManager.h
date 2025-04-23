@@ -112,7 +112,7 @@ private:
 	void initRightFootChains(Skeleton& skeleton);
 	void quaternionToEuler(const XMFLOAT4& q, float* eulerDeg);
 	void clampBoneAngle(IKBone& bone, XMFLOAT4& quat);
-	XMVECTOR ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float minDeg, float maxDeg);
+	XMVECTOR ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float yMax, float yMin);
 	void DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& outSwing, XMVECTOR& outTwist);
 	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
 	XMVECTOR ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon);
