@@ -592,35 +592,35 @@ XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistA
 	twistAxis = XMVector3Normalize(twistAxis);
 	XMVECTOR D = XMVector3Rotate(twistAxis, swing);  // swing에 의해 이동된 방향
 	XMVECTOR D_clamped = ClampDirectionToSphericalPolygon(D, polygon);
-	p("D: " + std::to_string(XMVectorGetX(D)) + " " + std::to_string(XMVectorGetY(D)) + " " + std::to_string(XMVectorGetZ(D)) + "\n");
-	p("D_clampe: " + std::to_string(XMVectorGetX(D_clamped)) + " " + std::to_string(XMVectorGetY(D_clamped)) + " " + std::to_string(XMVectorGetZ(D_clamped)) + "\n");
 
-	float xAngle, zAngle;
+	XMVECTOR from = twistAxis;
+	XMVECTOR to = XMVector3Normalize(D_clamped);
 
-	XMVECTOR Y = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	XMVECTOR dXY = XMVector2Normalize(XMVectorSet(XMVectorGetX(D_clamped), XMVectorGetY(D_clamped), 0.0f, 0.0f));
-	zAngle = acosf(std::abs(XMVectorGetX(XMVector2Dot(Y, dXY))));
+	XMVECTOR axis = XMVector3Cross(from, to);
+	float dot = XMVectorGetX(XMVector3Dot(from, to));
+	dot = std::clamp(dot, -1.0f, 1.0f);
+	float angle = acosf(dot);
 
-	bool sign = 1.0f;
-	if (XMVectorGetY(D_clamped) < 0.0f) { sign = -sign; }
-	if (XMVectorGetX(D_clamped) < 0.0f) { sign = -sign; }
+	XMVECTOR clampedSwing;
 
-	XMVECTOR qzInv = XMQuaternionRotationAxis(XMVectorSet(0, 0, -1, 0), zAngle * sign);
-	XMMATRIX qzInvTransform = XMMatrixRotationQuaternion(qzInv);
-	XMVECTOR D_ZRotataed = XMVector3TransformNormal(D_clamped, qzInvTransform);
-
-	XMVECTOR dZY = XMVector2Normalize(XMVectorSet(XMVectorGetZ(D_ZRotataed), XMVectorGetY(D_ZRotataed), 0.0f, 0.0f));
-	xAngle = acosf(XMVectorGetX(XMVector2Dot(Y, dZY)));
-
-	if (XMVectorGetZ(D_ZRotataed) < 0.0f) { xAngle = -xAngle; }
-
-	p("xAngle: " + std::to_string(xAngle) + "\n");
-	p("zAngle: " + std::to_string(zAngle) + "\n");
-
-	XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), xAngle);
-	XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), zAngle);
-
-	XMVECTOR clampedSwing = XMQuaternionMultiply(qz, qx);  // x 먼저, z 나중
+	if (XMVector3LengthSq(axis).m128_f32[0] < 1e-6f)
+	{
+		if (dot > 0.9999f) {
+			clampedSwing = XMQuaternionIdentity();  // 회전 없음
+		}
+		else {
+			// 반대 방향 → 수직인 축 아무거나로 180도 회전
+			XMVECTOR arbitrary = XMVectorSet(1, 0, 0, 0);
+			if (fabsf(XMVectorGetX(from)) > 0.9f)
+				arbitrary = XMVectorSet(0, 0, 1, 0);
+			axis = XMVector3Normalize(XMVector3Cross(from, arbitrary));
+			clampedSwing = XMQuaternionRotationAxis(axis, XM_PI);
+		}
+	}
+	else {
+		axis = XMVector3Normalize(axis);
+		clampedSwing = XMQuaternionRotationAxis(axis, angle);
+	}
 
 	return clampedSwing;
 }
