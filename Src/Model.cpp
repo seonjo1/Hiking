@@ -307,7 +307,7 @@ void Model::initRangeAxis()
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 1.0f, 0.0f), -45.0f, -60.0f, 0.5f, -0.5f, 0.5f, -0.5f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 1.0f, 0.0f), -45.0f, -70.0f, 0.5f, -0.5f, 0.5f, -0.5f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 1.0f, 0.0f), 110.0f, 0.0f, 0.5f, -0.5f, 0.5f, -0.5f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 1.0f, 0.0f), 270.0f, 135.0f, 180.5f, 180.0f, 9.5f, 9.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 1.0f, 0.0f), 270.0f, 135.0f, 175.5f, 175.0f, -4.5f, -5.5f);
 }
 
 bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront)
@@ -473,7 +473,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_IKManager.resetValuesForIK();
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 
-		static const int MAX_ITERATION = 50;
+		static const int MAX_ITERATION = 2;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{

@@ -44,6 +44,7 @@ struct IKChain
 	int DoFNum {0};
 	bool angleBufferSign;
 	bool isChanged;
+	bool start;
 };
 
 struct JacobianMatrix
@@ -128,7 +129,7 @@ private:
 	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
 	XMVECTOR ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon);
 	void makePolygon(FXMVECTOR twistClamped, std::vector<XMVECTOR>& polygon, float xMax, float xMin, float zMax, float zMin);
-	void footChainBufferUpdate(IKChain& chain, bool wasChanged);
+	void footChainBufferUpdate(IKChain& chain, bool start, bool wasChanged);
 
 
 	JacobianMatrix J;

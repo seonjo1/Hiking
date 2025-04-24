@@ -349,7 +349,7 @@ void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, XMMATRIX& twis
 
 			XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
 			XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, -1, 0), XMConvertToRadians(zDeg));
-			XMVECTOR swing = XMQuaternionMultiply(qz, qx);  // x 먼저, z 나중
+			XMVECTOR swing = XMQuaternionMultiply(qx, qz);  // x 먼저, z 나중
 
 			XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), swing); // swing에 의해 이동된 Y축
 			D = XMVectorScale(D, length);
