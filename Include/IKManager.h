@@ -11,6 +11,16 @@ class RaycastingManager;
 class Skeleton;
 class Pose;
 
+struct IKAngleBuffer
+{
+	float xMax;
+	float xMin;
+	float yMax;
+	float yMin;
+	float zMax;
+	float zMin;
+};
+
 struct IKBone
 {
 	int idx;
@@ -22,9 +32,7 @@ struct IKBone
 	float yMin;
 	float zMax;
 	float zMin;
-	bool angleEnable[3];
-	float anglePlusLimits[3];
-	float angleMinusLimits[3];
+	IKAngleBuffer angleBuffer;
 };
 
 struct IKChain
@@ -34,7 +42,8 @@ struct IKChain
 	XMFLOAT3 Target;
 	int EndEffectorIdx;
 	int DoFNum {0};
-	float totalDeltaAngle{ 0.0f };
+	bool angleBufferSign;
+	bool isChanged;
 };
 
 struct JacobianMatrix
@@ -99,6 +108,7 @@ class IKManager
 {
 public:
 	void initIKChains(Skeleton& skeleton);
+	void resetValuesForIK();
 	void calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingManager& raycastingManager);
 	void calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix);
 	void solveDLS();
@@ -118,7 +128,8 @@ private:
 	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
 	XMVECTOR ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon);
 	void makePolygon(FXMVECTOR twistClamped, std::vector<XMVECTOR>& polygon, float xMax, float xMin, float zMax, float zMin);
-	float SafeACos(float x);
+	void footChainBufferUpdate(IKChain& chain, bool wasChanged);
+
 
 	JacobianMatrix J;
 	JacobianMatrix JTJ;

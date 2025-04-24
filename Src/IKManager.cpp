@@ -21,11 +21,6 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[0].zMin = skeleton.bones[boneIdx].zMin;
 	m_chains[idx].Bones[0].axis = skeleton.bones[boneIdx].axis;
 
-	// x축 default 45도
-	m_chains[idx].Bones[0].angleEnable[0] = true;
-	m_chains[idx].Bones[0].angleEnable[1] = true;
-	m_chains[idx].Bones[0].angleEnable[2] = true;
-
 	// LeftFoot
 	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftFoot");
 	m_chains[idx].Bones[1].idx = boneIdx;
@@ -36,11 +31,6 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[1].zMax = skeleton.bones[boneIdx].zMax;
 	m_chains[idx].Bones[1].zMin = skeleton.bones[boneIdx].zMin;
 	m_chains[idx].Bones[1].axis = skeleton.bones[boneIdx].axis;
-
-	// x축 default 50도
-	m_chains[idx].Bones[1].angleEnable[0] = true;
-	m_chains[idx].Bones[1].angleEnable[1] = true;
-	m_chains[idx].Bones[1].angleEnable[2] = true;
 
 	// LeftLeg
 	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftLeg");
@@ -53,10 +43,6 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[2].zMin = skeleton.bones[boneIdx].zMin;
 	m_chains[idx].Bones[2].axis = skeleton.bones[boneIdx].axis;
 
-	m_chains[idx].Bones[2].angleEnable[0] = true;
-	m_chains[idx].Bones[2].angleEnable[1] = true;
-	m_chains[idx].Bones[2].angleEnable[2] = true;
-
 	// LeftUpLeg
 	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftUpLeg");
 	m_chains[idx].Bones[3].idx = boneIdx;
@@ -67,10 +53,6 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[3].zMax = skeleton.bones[boneIdx].zMax;
 	m_chains[idx].Bones[3].zMin = skeleton.bones[boneIdx].zMin;
 	m_chains[idx].Bones[3].axis = skeleton.bones[boneIdx].axis;
-
-	m_chains[idx].Bones[3].angleEnable[0] = true;
-	m_chains[idx].Bones[3].angleEnable[1] = true;
-	m_chains[idx].Bones[3].angleEnable[2] = true;
 }
 
 void IKManager::initRightFootChains(Skeleton& skeleton)
@@ -84,54 +66,17 @@ void IKManager::initRightFootChains(Skeleton& skeleton)
 	// RightToeBase
 	m_chains[idx].Bones[0].idx = skeleton.GetBoneIndex("mixamorig:RightToeBase");
 
-	m_chains[idx].Bones[0].angleEnable[0] = true;
-	m_chains[idx].Bones[0].anglePlusLimits[0] = 0.0f;
-	m_chains[idx].Bones[0].angleMinusLimits[0] = -60.0f;
-
-	m_chains[idx].Bones[0].angleEnable[1] = false;
-
-	m_chains[idx].Bones[0].angleEnable[2] = false;
 
 	// RightFoot
 	m_chains[idx].Bones[1].idx = skeleton.GetBoneIndex("mixamorig:RightFoot");
 
-	m_chains[idx].Bones[1].angleEnable[0] = true;
-	m_chains[idx].Bones[1].anglePlusLimits[0] = 40.0f;
-	m_chains[idx].Bones[1].angleMinusLimits[0] = -30.0f;
-
-	m_chains[idx].Bones[1].angleEnable[1] = true;
-	m_chains[idx].Bones[1].anglePlusLimits[1] = 30.0f;
-	m_chains[idx].Bones[1].angleMinusLimits[1] = -30.0f;
-
-	m_chains[idx].Bones[1].angleEnable[2] = true;
-	m_chains[idx].Bones[1].anglePlusLimits[2] = 0.0f;
-	m_chains[idx].Bones[1].angleMinusLimits[2] = -10.0f;
 
 	// RightLeg
 	m_chains[idx].Bones[2].idx = skeleton.GetBoneIndex("mixamorig:RightLeg");
 
-	m_chains[idx].Bones[2].angleEnable[0] = true;
-	m_chains[idx].Bones[2].anglePlusLimits[0] = 150.0f;
-	m_chains[idx].Bones[2].angleMinusLimits[0] = 0.0f;
-
-	m_chains[idx].Bones[2].angleEnable[1] = false;
-
-	m_chains[idx].Bones[2].angleEnable[2] = false;
-
 	// RightUpLeg
 	m_chains[idx].Bones[3].idx = skeleton.GetBoneIndex("mixamorig:RightUpLeg");
 
-	m_chains[idx].Bones[3].angleEnable[0] = true;
-	m_chains[idx].Bones[3].anglePlusLimits[0] = 45.0f;
-	m_chains[idx].Bones[3].angleMinusLimits[0] = -100.0f;
-
-	m_chains[idx].Bones[3].angleEnable[1] = true;
-	m_chains[idx].Bones[3].anglePlusLimits[1] = 30.0f;
-	m_chains[idx].Bones[3].angleMinusLimits[1] = -30.0f;
-
-	m_chains[idx].Bones[3].angleEnable[2] = true;
-	m_chains[idx].Bones[3].anglePlusLimits[2] = 30.0f;
-	m_chains[idx].Bones[3].angleMinusLimits[2] = -10.0f;
 }
 
 void IKManager::initIKChains(Skeleton& skeleton)
@@ -173,9 +118,6 @@ void IKManager::calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingMan
 		XMStoreFloat3(&m_chains[i].EndEffector, endEffector);
 		// target 등록
 		m_chains[i].Target = raycastingManager.m_LeftFoot.pos;
-
-		// totalDeltaAngle 초기화
-		m_chains[i].totalDeltaAngle = 0.0f;
 	}
 }
 
@@ -215,12 +157,6 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 			{
 				const XMFLOAT3& axis = axes[k];
 
-				// 해당 axis의 자유도가 없으면 continue
-				if (bone.angleEnable[k] == false)
-				{
-					continue;
-				}
-
 				// 로컬 회전축 → 월드 회전축
 				XMVECTOR localAxis = XMLoadFloat3(&axis);
 				XMVECTOR worldAxis = XMVector3TransformNormal(localAxis, transform);
@@ -251,7 +187,7 @@ void IKManager::solveDLS()
 		1.0f, 0.01f, 0.1f,
 		1.0f, 0.01f, 0.1f,
 		3.0f, 0.01f, 0.1f,
-		3.0f, 0.01f, 0.1f
+		0.5f, 0.01f, 0.1f
 	};
 
 	// JTJ 구하기
@@ -354,6 +290,23 @@ void IKManager::updateAngle()
 	{
 		int idx = 0;
 		int count = m_chains[i].Bones.size();
+		bool wasChanged = m_chains[i].isChanged;
+		m_chains[i].isChanged = false;
+
+		switch (i)
+		{
+			case 0:
+			{
+				footChainBufferUpdate(m_chains[i], wasChanged);
+				break;
+			}
+			default:
+			{
+				break;
+			}
+		}
+
+
 		for (int j = 0; j < count; ++j)
 		{
 			IKBone& bone = m_chains[i].Bones[j];
@@ -361,23 +314,21 @@ void IKManager::updateAngle()
 			float angle[3] = { 0.0f, 0.0f, 0.0f };
 
 			// 기존 quaternion을 pitch yaw roll로 변환
-			
+
 			for (int k = 0; k < 3; ++k)
 			{
-				if (bone.angleEnable[k] == true)
-				{
-					angle[k] = XMConvertToDegrees(dTheta[idx]);
-					idx++;
-				}
+				angle[k] = XMConvertToDegrees(dTheta[idx]);
+				idx++;
 			}
-			
+
 			//p("bone[" + std::to_string(bone.idx) + "]\n");
 			//p("dthetaX: " + std::to_string(angle[0]) + "\n");
 			//p("dthetaY: " + std::to_string(angle[1]) + "\n");
 			//p("dthetaZ: " + std::to_string(angle[2]) + "\n");
 
 			XMVECTOR qOld = XMLoadFloat4(&m_nowRotation[bone.idx]);
-			 //로컬 축 구하기
+
+			//로컬 축 구하기
 			XMVECTOR localX = XMVectorSet(1, 0, 0, 0);
 			XMVECTOR localY = XMVectorSet(0, 1, 0, 0);
 			XMVECTOR localZ = XMVectorSet(0, 0, 1, 0);
@@ -395,16 +346,25 @@ void IKManager::updateAngle()
 			// clamping
 			clampBoneAngle(bone, m_nowRotation[bone.idx]);
 
-			// totalDelta 작업
-			//m_chains[i].totalDeltaAngle += 
-		}
+			// total Delta
+			XMMATRIX oldM = XMMatrixRotationQuaternion(qOld);
+			XMMATRIX newM = XMMatrixRotationQuaternion(XMLoadFloat4(&m_nowRotation[bone.idx]));
 
+			XMVECTOR oldV = XMVector3TransformNormal(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), oldM);
+			XMVECTOR newV = XMVector3TransformNormal(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), newM);
+			float deltaAngle = XMVectorGetX(XMVector3Dot(oldV, newV));
+			
+			if (deltaAngle != 1.0f)
+			{
+				m_chains[i].isChanged = true;
+			}
+		}
 	}
 }
 
 bool IKManager::isFinish(Pose& pose, XMMATRIX& worldMatrix)
 {
-	const float THRESHOLD = 0.1f;
+	const float THRESHOLD = 0.001f;
 
 	bool success = true;
 	for (int i = 0; i < m_chainNum; i++)
@@ -510,12 +470,13 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
 	// local 축 정의
 	XMVECTOR twistAxis = XMLoadFloat3(&bone.axis);
 
-	float xMax = bone.xMax;
-	float xMin = bone.xMin;
-	float yMax = bone.yMax;
-	float yMin = bone.yMin;
-	float zMax = bone.zMax;
-	float zMin = bone.zMin;
+	float xMax, xMin, yMax, yMin, zMax, zMin;
+	xMax = bone.angleBuffer.xMax;
+	xMin = bone.angleBuffer.xMin;
+	yMax = bone.angleBuffer.yMax;
+	yMin = bone.angleBuffer.yMin;
+	zMax = bone.angleBuffer.zMax;
+	zMin = bone.angleBuffer.zMin;
 
 	XMVECTOR swing, twist;
 
@@ -539,12 +500,6 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat)
 	qFinal = XMQuaternionMultiply(swingClamped, twistClamped);
 
 	XMStoreFloat4(&quat, XMQuaternionNormalize(qFinal));
-}
-
-
-float IKManager::SafeACos(float x)
-{
-	return acosf(std::clamp(x, -1.0f, 1.0f));
 }
 
 XMVECTOR IKManager::ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon)
@@ -669,3 +624,58 @@ void IKManager::makePolygon(FXMVECTOR twistClamped, std::vector<XMVECTOR>& polyg
 	}
 }
 
+void IKManager::resetValuesForIK()
+{
+	int chainCount = m_chains.size();
+	for (int i = 0; i < chainCount; ++i)
+	{
+		m_chains[i].isChanged = false;
+		m_chains[i].angleBufferSign = true;
+	}
+}
+
+void IKManager::footChainBufferUpdate(IKChain& chain, bool wasChanged)
+{
+	// angleBuffer 초기화
+	int count = chain.Bones.size();
+	for (int i = 0; i < count; ++i)
+	{
+		IKBone& bone = chain.Bones[i];
+
+		bone.angleBuffer.xMax = bone.xMax;
+		bone.angleBuffer.xMin = bone.xMin;
+		bone.angleBuffer.yMax = bone.yMax;
+		bone.angleBuffer.yMin = bone.yMin;
+		bone.angleBuffer.zMax = bone.zMax;
+		bone.angleBuffer.zMin = bone.zMin;
+	}
+
+
+	// constraint 시작
+	
+	// 1. 발각도 지면에 맞추기 (추가 예정)
+
+	// 2. wasChanged == false 경우 방향 전환
+	if (wasChanged == false)
+	{
+		IKBone& legBone = chain.Bones[2];
+		IKBone& upLegBone = chain.Bones[3];
+
+		if (chain.angleBufferSign == true)
+		{
+			upLegBone.angleBuffer.xMax = upLegBone.xMax;
+			upLegBone.angleBuffer.xMin = upLegBone.xMax;
+			legBone.angleBuffer.xMax = legBone.xMax;
+			legBone.angleBuffer.xMin = legBone.xMax;
+		}
+		else
+		{
+			upLegBone.angleBuffer.xMax = upLegBone.xMin;
+			upLegBone.angleBuffer.xMin = upLegBone.xMin;
+			legBone.angleBuffer.xMax = legBone.xMin;
+			legBone.angleBuffer.xMin = legBone.xMin;
+		}
+
+		chain.angleBufferSign = !chain.angleBufferSign;
+	}
+}
