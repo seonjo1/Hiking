@@ -617,11 +617,11 @@ XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistA
 
 	if (XMVectorGetZ(D_ZRotataed) < 0.0f) { xAngle = -xAngle; }
 
-
+	XMVECTOR qy = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), zAngle);
 	XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), xAngle);
 	XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), -zAngle);
 
-	XMVECTOR clampedSwing = XMQuaternionNormalize(XMQuaternionMultiply(qx, qz));  // x 먼저, z 나중
+	XMVECTOR clampedSwing = XMQuaternionNormalize(XMQuaternionMultiply(qy, XMQuaternionMultiply(qx, qz)));  // x 먼저, z 나중
 
 	p("D: " + std::to_string(XMVectorGetX(D)) + " " + std::to_string(XMVectorGetY(D)) + " " + std::to_string(XMVectorGetZ(D)) + "\n");
 	p("D_clamped: " + std::to_string(XMVectorGetX(D_clamped)) + " " + std::to_string(XMVectorGetY(D_clamped)) + " " + std::to_string(XMVectorGetZ(D_clamped)) + "\n");

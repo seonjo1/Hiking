@@ -473,7 +473,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_IKManager.resetValuesForIK();
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 
-		static const int MAX_ITERATION = 2;
+		static const int MAX_ITERATION = 5;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{
