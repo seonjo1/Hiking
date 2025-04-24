@@ -319,7 +319,7 @@ void Mesh::Shutdown()
 	return;
 }
 
-void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, XMMATRIX& twist, float xMax, float xMin, float zMax, float zMin)
+void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, XMVECTOR& twist, float xMax, float xMin, float zMax, float zMin)
 {
 	static std::vector<JointVertex> coneVertices;
 	static const int segmentCount = 16;
@@ -330,17 +330,13 @@ void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, XMMATRIX& twis
 		coneVertices.clear();
 		coneVertices.reserve(m_vertexCount);
 
-		XMVECTOR localX = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
-		XMVECTOR localY = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-		XMVECTOR localZ = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-
 		XMFLOAT3 point(0.0f, 0.0f, 0.0f);
 
 		JointVertex tip{};
 		tip.position = point;
 		tip.color = XMFLOAT4(1, 1, 0, 1); // yellow
 		coneVertices.push_back(tip);
-
+		//p("mesh!!\n");
 		for (int i = 0; i < segmentCount + 1; ++i)
 		{
 			float t = (float)i / segmentCount;  // 0 ~ 1
@@ -348,17 +344,23 @@ void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, XMMATRIX& twis
 			float zDeg = Lerp(zMin, zMax, (sinf(t * XM_2PI) + 1.0f) * 0.5f);
 
 			XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
-			XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, -1, 0), XMConvertToRadians(zDeg));
+			XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
 			XMVECTOR swing = XMQuaternionMultiply(qx, qz);  // x 먼저, z 나중
 
 			XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), swing); // swing에 의해 이동된 Y축
 			D = XMVectorScale(D, length);
 
+			XMVECTOR D_rotated = XMVector3Rotate(D, twist);
+
 			JointVertex v{};
-			v.position.x = XMVectorGetX(D);
-			v.position.y = XMVectorGetY(D);
-			v.position.z = XMVectorGetZ(D);
+			v.position.x = XMVectorGetX(D_rotated);
+			v.position.y = XMVectorGetY(D_rotated);
+			v.position.z = XMVectorGetZ(D_rotated);
 			v.color = XMFLOAT4(1, 0.5f, 0.2f, 1); // orange
+			//p("i : " + std::to_string(i) + "\n");
+			//p("D_rotated: " + std::to_string(XMVectorGetX(D_rotated)) + " " + std::to_string(XMVectorGetY(D_rotated)) + " " + std::to_string(XMVectorGetZ(D_rotated)) + "\n");
+			//p("twist: " + std::to_string(XMVectorGetX(twist)) + " " + std::to_string(XMVectorGetY(twist)) + " " + std::to_string(XMVectorGetZ(twist)) + "\n");
+
 
 			coneVertices.push_back(v);
 		}

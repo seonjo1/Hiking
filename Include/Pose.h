@@ -17,14 +17,15 @@ struct Pose {
     std::vector<XMMATRIX> world;
     std::vector<XMMATRIX> finalMatrix;
     std::vector<XMMATRIX> rayMatrix;
+    std::vector<XMVECTOR> twist;
     int count;
     
     void Initialize(size_t boneCount);
     XMMATRIX getLocalTranslationMatrix(int idx);
-    XMMATRIX getLocalYRotationMatrix(int idx);
     physx::PxVec3 getBonePos(XMMATRIX& worldMatrix, int boneIdx);
 	void UpdateWorldPos(const Skeleton& skeleton);
     void UpdateFinalPos(const Skeleton& skeleton);
     void UpdateIKWorldPos(const Skeleton& skeleton, std::vector<XMFLOAT4>& IKRotation);
     void IKChainBlending(IKChain& chain, std::vector<XMFLOAT4>& IKRotation, float blendAlpha);
+    XMVECTOR getTwist(int idx);
 };

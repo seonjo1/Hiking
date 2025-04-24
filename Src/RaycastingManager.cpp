@@ -94,15 +94,15 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
 		info.distance = toeDistance;
 		info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
 	}
-	else if (footRaySuccess)
-    {
-        float footDistance = getDistance(footHit.block.position - footPose, physx::PxVec3(0.0f, -1.0f, 0.0f));
-        info.pos = XMFLOAT3(footHit.block.position.x, footHit.block.position.y, footHit.block.position.z);
-        info.normal = XMFLOAT3(footHit.block.normal.x, footHit.block.normal.y, footHit.block.normal.z);
-        info.part = EIKPart::FOOT;
-        info.distance = footDistance;
-        info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-    }
+	//else if (footRaySuccess)
+ //   {
+ //       float footDistance = getDistance(footHit.block.position - footPose, physx::PxVec3(0.0f, -1.0f, 0.0f));
+ //       info.pos = XMFLOAT3(footHit.block.position.x, footHit.block.position.y, footHit.block.position.z);
+ //       info.normal = XMFLOAT3(footHit.block.normal.x, footHit.block.normal.y, footHit.block.normal.z);
+ //       info.part = EIKPart::FOOT;
+ //       info.distance = footDistance;
+ //       info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
+ //   }
 }
 
 void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toePose)

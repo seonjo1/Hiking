@@ -240,6 +240,7 @@ bool Application::Render()
 	if (m_rayDebugMode == true)
 	{
 		m_AnimationModel->DrawRayLineShader(m_Direct3D->GetDeviceContext(), m_BoneShader, matrix, m_Camera->GetFront());
+		m_AnimationModel->DrawRayPointShader(m_Direct3D->GetDeviceContext(), m_JointShader, matrix);
 	}
 
 	if (m_rangeDebugMode == true)

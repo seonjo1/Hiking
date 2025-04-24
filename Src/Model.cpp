@@ -293,7 +293,6 @@ bool Model::DrawRayLineShader(ID3D11DeviceContext* deviceContext, BoneShader* bo
 			return false;
 	}
 
-
 	return true;
 }
 
@@ -306,8 +305,8 @@ void Model::initRangeAxis()
 {
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 1.0f, 0.0f), -45.0f, -60.0f, 0.5f, -0.5f, 0.5f, -0.5f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 1.0f, 0.0f), -45.0f, -70.0f, 0.5f, -0.5f, 0.5f, -0.5f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 1.0f, 0.0f), 110.0f, 0.0f, 0.5f, -0.5f, 0.5f, -0.5f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 1.0f, 0.0f), 270.0f, 135.0f, 175.5f, 175.0f, -4.5f, -5.5f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 1.0f, 0.0f), 110.0f, 0.0f, 0.5f, -0.5f, 30.5f, -0.5f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 1.0f, 0.0f), 225.0f, 90.0f, 170.5f, 150.0f, 4.5f, -10.5f);
 }
 
 bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront)
@@ -317,7 +316,6 @@ bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* 
 	int count = m_skeleton.bones.size();
 	
 	m_rangeAxisMesh->Render(deviceContext);
-
 
 	for (int i = 0; i < count; ++i)
 	{
@@ -402,15 +400,37 @@ bool Model::DrawRangeCornShader(ID3D11DeviceContext* deviceContext, JointShader*
 		Bone& bone = m_skeleton.bones[i];
 		if (bone.hasAxis == true)
 		{
-			XMMATRIX twist = m_pose.getLocalYRotationMatrix(i);
+			XMVECTOR twist = m_pose.getTwist(i);
 			m_cornMesh->UpdateMeshVertices(deviceContext, twist, bone.xMax, bone.xMin, bone.zMax, bone.zMin);
 			m_cornMesh->Render(deviceContext);
 
 			XMMATRIX local = m_pose.getLocalTranslationMatrix(i);
-			if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixMultiply(local, m_pose.world[bone.parentIndex]) ) == false)
+			//XMMATRIX local = XMMatrixMultiply(twistMatrix, m_pose.getLocalTranslationMatrix(i));
+			if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixMultiply(local, m_pose.world[bone.parentIndex])) == false)
 				return false;
 		}
 	}
+
+	return true;
+}
+
+bool Model::DrawRayPointShader(ID3D11DeviceContext* deviceContext, JointShader* jointShader, Matrix& matrix)
+{	
+	XMMATRIX scale = XMMatrixScaling(0.02f, 0.02f, 0.02f);
+	XMMATRIX translation = XMMatrixTranslation(m_RaycastingManager.m_LeftFoot.pos.x, m_RaycastingManager.m_LeftFoot.pos.y, m_RaycastingManager.m_LeftFoot.pos.z);
+	matrix.world = scale * translation;
+	
+	m_jointMesh->Render(deviceContext);
+
+	if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
+		return false;
+
+
+	translation = XMMatrixTranslation(m_RaycastingManager.m_RightFoot.pos.x, m_RaycastingManager.m_RightFoot.pos.y, m_RaycastingManager.m_RightFoot.pos.z);
+	matrix.world = scale * translation;
+
+	if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
+		return false;
 
 	return true;
 }
@@ -470,10 +490,10 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		// 0. IKangle 업데이트
 		p("\n\n\nstart IK!!!\n");
 		m_IKManager.updateNowRotation(m_pose);
-		m_IKManager.resetValuesForIK();
+		m_IKManager.resetValuesForIK(m_RaycastingManager, m_skeleton);
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 
-		static const int MAX_ITERATION = 5;
+		static const int MAX_ITERATION = 30;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{
@@ -484,7 +504,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			// 3. DLS 적용
 			m_IKManager.solveDLS();
 			// 4. 각도 갱신
-			m_IKManager.updateAngle();
+			m_IKManager.updateAngle(m_pose);
 			// 5. worldPos 업데이트
 			m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 			// 6. 반복 or 종료

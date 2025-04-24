@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "DirectXMath.h"
+#include "RaycastingManager.h"
 #include <vector>
 #include <algorithm>
 
@@ -40,6 +41,7 @@ struct IKChain
 	std::vector<IKBone> Bones;
 	XMFLOAT3 EndEffector;
 	XMFLOAT3 Target;
+	EIKPart endPart;
 	int EndEffectorIdx;
 	int DoFNum {0};
 	bool angleBufferSign;
@@ -109,12 +111,12 @@ class IKManager
 {
 public:
 	void initIKChains(Skeleton& skeleton);
-	void resetValuesForIK();
+	void resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton);
 	void calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingManager& raycastingManager);
 	void calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix);
 	void solveDLS();
 	void updateNowRotation(Pose& pose);
-	void updateAngle();
+	void updateAngle(Pose& pose);
 	bool isFinish(Pose& pose, XMMATRIX& worldMatrix);
 	IKChain& getChain(int idx);
 	std::vector<XMFLOAT4>& getNowRotation();
@@ -123,18 +125,20 @@ private:
 	void initLeftFootChains(Skeleton& skeleton);
 	void initRightFootChains(Skeleton& skeleton);
 	void quaternionToEuler(const XMFLOAT4& q, float* eulerDeg);
-	void clampBoneAngle(IKBone& bone, XMFLOAT4& quat);
+	void clampBoneAngle(IKBone& bone, XMFLOAT4& quat, Pose& pose);
 	XMVECTOR ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float yMax, float yMin);
 	void DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& outSwing, XMVECTOR& outTwist);
 	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
 	XMVECTOR ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon);
-	void makePolygon(FXMVECTOR twistClamped, std::vector<XMVECTOR>& polygon, float xMax, float xMin, float zMax, float zMin);
+	void makePolygon(std::vector<XMVECTOR>& polygon, float xMax, float xMin, float zMax, float zMin);
 	void footChainBufferUpdate(IKChain& chain, bool start, bool wasChanged);
+	void initLeftFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton);
 
 
 	JacobianMatrix J;
 	JacobianMatrix JTJ;
 	JacobianMatrix JTJInv;
+	std::vector<float> W;
 	std::vector<float> dP;
 	std::vector<float> dTheta;
 	std::vector<float> JTx;
