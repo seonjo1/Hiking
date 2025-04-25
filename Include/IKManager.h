@@ -25,6 +25,7 @@ struct IKAngleBuffer
 struct IKBone
 {
 	int idx;
+	int parentsIdx;
 	// x, y, z ¼ø¼­ (pitch, yaw, roll)
 	XMFLOAT3 axis;
 	float xMax;

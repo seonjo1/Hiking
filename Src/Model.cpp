@@ -405,7 +405,6 @@ bool Model::DrawRangeCornShader(ID3D11DeviceContext* deviceContext, JointShader*
 			m_cornMesh->Render(deviceContext);
 
 			XMMATRIX local = m_pose.getLocalTranslationMatrix(i);
-			//XMMATRIX local = XMMatrixMultiply(twistMatrix, m_pose.getLocalTranslationMatrix(i));
 			if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixMultiply(local, m_pose.world[bone.parentIndex])) == false)
 				return false;
 		}
@@ -493,7 +492,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_IKManager.resetValuesForIK(m_RaycastingManager, m_skeleton);
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 
-		static const int MAX_ITERATION = 30;
+		static const int MAX_ITERATION = 3;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{
