@@ -129,9 +129,9 @@ private:
 	void clampBoneAngle(IKBone& bone, XMFLOAT4& quat, Pose& pose);
 	XMVECTOR ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float yMax, float yMin);
 	void DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& outSwing, XMVECTOR& outTwist);
-	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
+	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twistClamped, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
 	XMVECTOR ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon);
-	void makePolygon(std::vector<XMVECTOR>& polygon, float xMax, float xMin, float zMax, float zMin);
+	void makePolygon(std::vector<XMVECTOR>& polygon, XMVECTOR& twistClamped, float xMax, float xMin, float zMax, float zMin);
 	void footChainBufferUpdate(IKChain& chain, bool start, bool wasChanged);
 	void initLeftFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton);
 
