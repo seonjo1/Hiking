@@ -147,11 +147,11 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 
 			XMVECTOR toEffector = XMVectorSubtract(effectPos, bonePos);
 
-			p("bone[" + std::to_string(bone.idx) + "]\n");
-			p("bonePos: " + std::to_string(XMVectorGetX(bonePos)) + " " + std::to_string(XMVectorGetY(bonePos)) + " " + std::to_string(XMVectorGetZ(bonePos)) + "\n");
-			p("effectPos: " + std::to_string(XMVectorGetX(effectPos)) + " " + std::to_string(XMVectorGetY(effectPos)) + " " + std::to_string(XMVectorGetZ(effectPos)) + "\n");
-			p("targetPos: " + std::to_string(XMVectorGetX(targetPos)) + " " + std::to_string(XMVectorGetY(targetPos)) + " " + std::to_string(XMVectorGetZ(targetPos)) + "\n");
-			p("toEffector: " + std::to_string(XMVectorGetX(toEffector)) + " " + std::to_string(XMVectorGetY(toEffector)) + " " + std::to_string(XMVectorGetZ(toEffector)) + "\n");
+			//p("bone[" + std::to_string(bone.idx) + "]\n");
+			//p("bonePos: " + std::to_string(XMVectorGetX(bonePos)) + " " + std::to_string(XMVectorGetY(bonePos)) + " " + std::to_string(XMVectorGetZ(bonePos)) + "\n");
+			//p("effectPos: " + std::to_string(XMVectorGetX(effectPos)) + " " + std::to_string(XMVectorGetY(effectPos)) + " " + std::to_string(XMVectorGetZ(effectPos)) + "\n");
+			//p("targetPos: " + std::to_string(XMVectorGetX(targetPos)) + " " + std::to_string(XMVectorGetY(targetPos)) + " " + std::to_string(XMVectorGetZ(targetPos)) + "\n");
+			//p("toEffector: " + std::to_string(XMVectorGetX(toEffector)) + " " + std::to_string(XMVectorGetY(toEffector)) + " " + std::to_string(XMVectorGetZ(toEffector)) + "\n");
 
 			//p("axse\n");
 			for (int k = 0; k < 3; ++k)
@@ -169,8 +169,8 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 				// 위치 변화 = 회전축 × effector 방향
 				XMVECTOR dPdTheta = XMVector3Cross(worldAxis, toEffector);
 				
-				p("worldAxis: " + std::to_string(XMVectorGetX(worldAxis)) + " " + std::to_string(XMVectorGetY(worldAxis)) + " " + std::to_string(XMVectorGetZ(worldAxis)) + "\n");
-				p("dPdTheta: " + std::to_string(XMVectorGetX(dPdTheta)) + " " + std::to_string(XMVectorGetY(dPdTheta)) + " " + std::to_string(XMVectorGetZ(dPdTheta)) + "\n");
+				//p("worldAxis: " + std::to_string(XMVectorGetX(worldAxis)) + " " + std::to_string(XMVectorGetY(worldAxis)) + " " + std::to_string(XMVectorGetZ(worldAxis)) + "\n");
+				//p("dPdTheta: " + std::to_string(XMVectorGetX(dPdTheta)) + " " + std::to_string(XMVectorGetY(dPdTheta)) + " " + std::to_string(XMVectorGetZ(dPdTheta)) + "\n");
 
 				// Jacobian 행렬에 값 저장
 				J.Set(i * 3, colIdx, XMVectorGetX(dPdTheta)); // dx/dθ
@@ -198,7 +198,7 @@ void IKManager::solveDLS()
 			{
 				sum += J.Get(k, i) * J.Get(k, j);
 			}
-			JTJ.Set(i, j, sum * W[i]);
+			JTJ.Set(i, j, sum);
 		}
 	}
 
@@ -215,7 +215,7 @@ void IKManager::solveDLS()
 		JTx[i] = 0.0f;
 		for (int j = 0; j < m_rowNum; ++j)
 		{
-			JTx[i] += W[i] * J.Get(j, i) * dP[j];
+			JTx[i] += J.Get(j, i) * dP[j];
 		}
 	}
 
@@ -268,7 +268,7 @@ void IKManager::solveDLS()
 		{
 			dTheta[i] += JTJInv.Get(i, j) * JTx[j];
 		}
-		dTheta[i] = dTheta[i] * thetaAlpha;
+		dTheta[i] = dTheta[i] * thetaAlpha * W[i];
 		//p("dTheta[" + std::to_string(i) + "]" + std::to_string(dTheta[i]) + "\n");
 	}
 }
@@ -320,10 +320,10 @@ void IKManager::updateAngle(Pose& pose)
 				idx++;
 			}
 
-			p("bone[" + std::to_string(bone.idx) + "]\n");
-			p("dthetaX: " + std::to_string(angle[0]) + "\n");
-			p("dthetaY: " + std::to_string(angle[1]) + "\n");
-			p("dthetaZ: " + std::to_string(angle[2]) + "\n");
+			//p("bone[" + std::to_string(bone.idx) + "]\n");
+			//p("dthetaX: " + std::to_string(angle[0]) + "\n");
+			//p("dthetaY: " + std::to_string(angle[1]) + "\n");
+			//p("dthetaZ: " + std::to_string(angle[2]) + "\n");
 
 			XMVECTOR qOld = XMLoadFloat4(&m_nowRotation[bone.idx]);
 
@@ -345,7 +345,7 @@ void IKManager::updateAngle(Pose& pose)
 			XMVECTOR dqZ = XMQuaternionRotationAxis(localZ, XMConvertToRadians(angle[2]));
 	
 			// 합성 및 적용
-			XMVECTOR newQuat = XMQuaternionMultiply(XMQuaternionMultiply(dqX, dqY), dqZ);
+			XMVECTOR newQuat = XMQuaternionMultiply(XMQuaternionMultiply(dqZ, dqY), dqX);
 			XMVECTOR qNew = XMQuaternionNormalize(XMQuaternionMultiply(qOld, newQuat));
 
 			XMStoreFloat4(&m_nowRotation[bone.idx], qNew);
@@ -366,7 +366,7 @@ void IKManager::updateAngle(Pose& pose)
 			
 
 			// clamping
-			clampBoneAngle(bone, m_nowRotation[bone.idx], pose);
+			//clampBoneAngle(bone, m_nowRotation[bone.idx], pose);
 
 			// total Delta
 			XMMATRIX oldM = XMMatrixRotationQuaternion(qOld);
@@ -708,7 +708,7 @@ void IKManager::initLeftFootChainInfo(RaycastingManager& raycastingManager, Skel
 	// UpLeg x, y, z
 	if (raycastingInfo.part == EIKPart::FOOT)
 	{
-		chain.EndEffectorIdx = skeleton.GetBoneIndex(("mixamorig:LeftFoot"));
+		chain.EndEffectorIdx = skeleton.GetBoneIndex(("mixamorig:LeftToeBase"));
 		W[0] = 0.0f;
 		W[1] = 0.0f;
 		W[2] = 0.0f;

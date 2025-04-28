@@ -64,7 +64,7 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
     }
 
     // 정보 2개중 1개 탈락
-/*	if (toeRaySuccess && footRaySuccess)
+	if (toeRaySuccess && footRaySuccess)
 	{
 		float toeDistance = getDistance(toeHit.block.position - toePose, physx::PxVec3(0.0f, -1.0f, 0.0f));
 		float footDistance = getDistance(footHit.block.position - footPose, physx::PxVec3(0.0f, -1.0f, 0.0f));
@@ -85,7 +85,7 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
 			info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
 		}
 	}
-	else */if (toeRaySuccess)
+	else if (toeRaySuccess)
 	{
 		float toeDistance = getDistance(toeHit.block.position - toePose, physx::PxVec3(0.0f, -1.0f, 0.0f));
 		info.pos = XMFLOAT3(toeHit.block.position.x, toeHit.block.position.y, toeHit.block.position.z);
@@ -94,15 +94,15 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
 		info.distance = toeDistance;
 		info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
 	}
-	//else if (footRaySuccess)
- //   {
- //       float footDistance = getDistance(footHit.block.position - footPose, physx::PxVec3(0.0f, -1.0f, 0.0f));
- //       info.pos = XMFLOAT3(footHit.block.position.x, footHit.block.position.y, footHit.block.position.z);
- //       info.normal = XMFLOAT3(footHit.block.normal.x, footHit.block.normal.y, footHit.block.normal.z);
- //       info.part = EIKPart::FOOT;
- //       info.distance = footDistance;
- //       info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
- //   }
+	else if (footRaySuccess)
+    {
+        float footDistance = getDistance(footHit.block.position - footPose, physx::PxVec3(0.0f, -1.0f, 0.0f));
+        info.pos = XMFLOAT3(footHit.block.position.x, footHit.block.position.y, footHit.block.position.z);
+        info.normal = XMFLOAT3(footHit.block.normal.x, footHit.block.normal.y, footHit.block.normal.z);
+        info.part = EIKPart::FOOT;
+        info.distance = footDistance;
+        info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
+    }
 }
 
 void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toePose)
