@@ -206,7 +206,7 @@ Mesh::~Mesh()
 // 모델 초기화
 bool Mesh::Initialize(ID3D11Device* device)
 {
-	const int segmentCount = 16;
+	const int segmentCount = 4;
 
 	m_isDynamic = true;
 
@@ -322,13 +322,12 @@ void Mesh::Shutdown()
 void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, XMVECTOR& twist, float xMax, float xMin, float zMax, float zMin)
 {
 	static std::vector<JointVertex> coneVertices;
-	static const int segmentCount = 16;
+	static const int segmentCount = 6;
 	static const float length = 30.0f;
 
 	if (m_isDynamic == true)
 	{
 		coneVertices.clear();
-		coneVertices.reserve(m_vertexCount);
 
 		XMFLOAT3 point(0.0f, 0.0f, 0.0f);
 
@@ -336,37 +335,105 @@ void Mesh::UpdateMeshVertices(ID3D11DeviceContext* deviceContext, XMVECTOR& twis
 		tip.position = point;
 		tip.color = XMFLOAT4(1, 1, 0, 1); // yellow
 		coneVertices.push_back(tip);
-		//p("mesh!!\n");
-		for (int i = 0; i < segmentCount + 1; ++i)
-		{
-			float t = (float)i / segmentCount;  // 0 ~ 1
-			float xDeg = Lerp(xMin, xMax, (cosf(t * XM_2PI) + 1.0f) * 0.5f);
-			float zDeg = Lerp(zMin, zMax, (sinf(t * XM_2PI) + 1.0f) * 0.5f);
-
-			XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
-			XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
-			XMVECTOR swing = XMQuaternionMultiply(qx, qz);  // x 먼저, z 나중
-
-			XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), swing); // swing에 의해 이동된 Y축
-			D = XMVectorScale(D, length);
-
-			XMVECTOR D_rotated = XMVector3Rotate(D, twist);
-
-			JointVertex v{};
-			v.position.x = XMVectorGetX(D_rotated);
-			v.position.y = XMVectorGetY(D_rotated);
-			v.position.z = XMVectorGetZ(D_rotated);
-			v.color = XMFLOAT4(1, 0.5f, 0.2f, 1); // orange
-			//p("i : " + std::to_string(i) + "\n");
-			//p("D_rotated: " + std::to_string(XMVectorGetX(D_rotated)) + " " + std::to_string(XMVectorGetY(D_rotated)) + " " + std::to_string(XMVectorGetZ(D_rotated)) + "\n");
-			//p("twist: " + std::to_string(XMVectorGetX(twist)) + " " + std::to_string(XMVectorGetY(twist)) + " " + std::to_string(XMVectorGetZ(twist)) + "\n");
 
 
-			coneVertices.push_back(v);
-		}
+
+		float xDeg = xMax;
+		float zDeg = zMax;
+		XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
+		XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+		XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qz);
+		D = XMVector3Rotate(D, qx);
+		D = XMVectorScale(D, length);
+		XMVECTOR D_rotated = XMVector3Rotate(D, twist);
+
+		JointVertex v{};
+		v.position.x = XMVectorGetX(D_rotated);
+		v.position.y = XMVectorGetY(D_rotated);
+		v.position.z = XMVectorGetZ(D_rotated);
+		v.color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1); // orange
+		//p("twist: " + std::to_string(XMVectorGetX(twist)) + " " + std::to_string(XMVectorGetY(twist)) + " " + std::to_string(XMVectorGetZ(twist)) + "\n");
+		coneVertices.push_back(v);
+
+
+
+		xDeg = xMin;
+		qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
+		qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+		D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qz);
+		D = XMVector3Rotate(D, qx);
+		D = XMVectorScale(D, length);
+		D_rotated = XMVector3Rotate(D, twist);
+
+		v.position.x = XMVectorGetX(D_rotated);
+		v.position.y = XMVectorGetY(D_rotated);
+		v.position.z = XMVectorGetZ(D_rotated);
+		v.color = XMFLOAT4(0.0f, 1.0f, 0.0f, 1); // orange
+		coneVertices.push_back(v);
+
+
+
+		zDeg = zMin;
+		qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
+		qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+		D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qz);
+		D = XMVector3Rotate(D, qx);
+		D = XMVectorScale(D, length);
+		D_rotated = XMVector3Rotate(D, twist);
+
+		v.position.x = XMVectorGetX(D_rotated);
+		v.position.y = XMVectorGetY(D_rotated);
+		v.position.z = XMVectorGetZ(D_rotated);
+		v.color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1); // orange
+		coneVertices.push_back(v);
+
+
+
+		xDeg = xMax;
+		qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
+		qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+		D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qz);
+		D = XMVector3Rotate(D, qx);
+		D = XMVectorScale(D, length);
+		D_rotated = XMVector3Rotate(D, twist);
+
+		v.position.x = XMVectorGetX(D_rotated);
+		v.position.y = XMVectorGetY(D_rotated);
+		v.position.z = XMVectorGetZ(D_rotated);
+		v.color = XMFLOAT4(1, 0.5f, 0.2f, 1); // orange
+		coneVertices.push_back(v);
+		
+		//for (int i = 0; i < segmentCount + 1; ++i)
+		//{
+		//	float t = (float)i / segmentCount;  // 0 ~ 1
+		//	float xDeg = Lerp(xMin, xMax, (cosf(t * XM_2PI) + 1.0f) * 0.5f);
+		//	float zDeg = Lerp(zMin, zMax, (sinf(t * XM_2PI) + 1.0f) * 0.5f);
+
+		//	XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
+		//	XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+		//	XMVECTOR swing = XMQuaternionMultiply(qx, qz);  // x 먼저, z 나중
+
+		//	XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), swing); // swing에 의해 이동된 Y축yyyyyy
+		//	D = XMVectorScale(D, length);
+
+		//	XMVECTOR D_rotated = XMVector3Rotate(D, twist);
+
+		//	JointVertex v{};
+		//	v.position.x = XMVectorGetX(D_rotated);
+		//	v.position.y = XMVectorGetY(D_rotated);
+		//	v.position.z = XMVectorGetZ(D_rotated);
+		//	v.color = XMFLOAT4(1, 0.5f, 0.2f, 1); // orange
+		//	//p("i : " + std::to_string(i) + "\n");
+		//	//p("D_rotated: " + std::to_string(XMVectorGetX(D_rotated)) + " " + std::to_string(XMVectorGetY(D_rotated)) + " " + std::to_string(XMVectorGetZ(D_rotated)) + "\n");
+		//	//p("twist: " + std::to_string(XMVectorGetX(twist)) + " " + std::to_string(XMVectorGetY(twist)) + " " + std::to_string(XMVectorGetZ(twist)) + "\n");
+
+
+		//	coneVertices.push_back(v);
+		//}
+
+		coneVertices.push_back(coneVertices[1]);
 
 		m_vertexCount = coneVertices.size();
-
 		D3D11_MAPPED_SUBRESOURCE mapped;
 		deviceContext->Map(m_vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 		memcpy(mapped.pData, coneVertices.data(), sizeof(JointVertex) * coneVertices.size());

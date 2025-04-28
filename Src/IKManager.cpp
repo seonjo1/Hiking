@@ -142,7 +142,7 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 		{
 			IKBone& bone = m_chains[i].Bones[j];
 			XMVECTOR bonePos = XMVectorZero();
-			XMMATRIX transform = XMMatrixMultiply(pose.world[bone.parentsIdx], worldMatrix);
+			XMMATRIX transform = XMMatrixMultiply(pose.world[bone.idx], worldMatrix);
 			bonePos = XMVector3TransformCoord(bonePos, transform);
 
 			XMVECTOR toEffector = XMVectorSubtract(effectPos, bonePos);
@@ -163,9 +163,6 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 				XMVECTOR worldAxis = XMVector3TransformNormal(localAxis, transform);
 				worldAxis = XMVector3Normalize(worldAxis);
 
-				//XMFLOAT3 debugAxis;
-				//XMStoreFloat3(&debugAxis, worldAxis);
-
 				// 위치 변화 = 회전축 × effector 방향
 				XMVECTOR dPdTheta = XMVector3Cross(worldAxis, toEffector);
 				
@@ -185,7 +182,7 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 void IKManager::solveDLS()
 {
 	static const float lambda = 1.0f;
-	static const float thetaAlpha = 1.0f;
+	static const float thetaAlpha = 0.3f;
 
 	// JTJ 구하기
 	JTJ.SetZero();
@@ -269,7 +266,8 @@ void IKManager::solveDLS()
 			dTheta[i] += JTJInv.Get(i, j) * JTx[j];
 		}
 		dTheta[i] = dTheta[i] * thetaAlpha * W[i];
-		//p("dTheta[" + std::to_string(i) + "]" + std::to_string(dTheta[i]) + "\n");
+		p("dTheta[" + std::to_string(i) + "]" + std::to_string(dTheta[i]) + "\n");
+		p("W[" + std::to_string(i) + "]" + std::to_string(W[i]) + "\n");
 	}
 }
 
@@ -328,16 +326,9 @@ void IKManager::updateAngle(Pose& pose)
 			XMVECTOR qOld = XMLoadFloat4(&m_nowRotation[bone.idx]);
 
 			//로컬 축 구하기
-			//XMVECTOR localX = XMVector3Rotate(XMVectorSet(1, 0, 0, 0), qOld);
-			//XMVECTOR localY = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qOld);
-			//XMVECTOR localZ = XMVector3Rotate(XMVectorSet(0, 0, 1, 0), qOld);
-			XMVECTOR localX = XMVectorSet(1, 0, 0, 0);
-			XMVECTOR localY = XMVectorSet(0, 1, 0, 0);
-			XMVECTOR localZ = XMVectorSet(0, 0, 1, 0);
-
-			//p("localX: " + std::to_string(XMVectorGetX(localX)) + " " + std::to_string(XMVectorGetY(localX)) + " " + std::to_string(XMVectorGetZ(localX)) + "\n");
-			//p("localY: " + std::to_string(XMVectorGetX(localY)) + " " + std::to_string(XMVectorGetY(localY)) + " " + std::to_string(XMVectorGetZ(localY)) + "\n");
-			//p("localZ: " + std::to_string(XMVectorGetX(localZ)) + " " + std::to_string(XMVectorGetY(localZ)) + " " + std::to_string(XMVectorGetZ(localZ)) + "\n");
+			XMVECTOR localX = XMVector3Rotate(XMVectorSet(1, 0, 0, 0), qOld);
+			XMVECTOR localY = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qOld);
+			XMVECTOR localZ = XMVector3Rotate(XMVectorSet(0, 0, 1, 0), qOld);
 
 			//// 로컬 축 기준 델타 쿼터니언
 			XMVECTOR dqX = XMQuaternionRotationAxis(localX, XMConvertToRadians(angle[0]));
@@ -347,26 +338,33 @@ void IKManager::updateAngle(Pose& pose)
 			// 합성 및 적용
 			XMVECTOR newQuat = XMQuaternionMultiply(XMQuaternionMultiply(dqZ, dqY), dqX);
 			XMVECTOR qNew = XMQuaternionNormalize(XMQuaternionMultiply(qOld, newQuat));
+			//p("qOld: " + std::to_string(XMVectorGetX(qOld)) + " " + std::to_string(XMVectorGetY(qOld)) + " " + std::to_string(XMVectorGetZ(qOld)) + " " + std::to_string(XMVectorGetW(qOld)) + "\n");
+			//p("qNew: " + std::to_string(XMVectorGetX(qNew)) + " " + std::to_string(XMVectorGetY(qNew)) + " " + std::to_string(XMVectorGetZ(qNew)) + " " + std::to_string(XMVectorGetW(qNew)) + "\n");
+
+			
 
 			XMStoreFloat4(&m_nowRotation[bone.idx], qNew);
 
 			// debug
+			//XMMATRIX oldM = XMMatrixRotationQuaternion(qOld);
 			//XMMATRIX xM = XMMatrixRotationQuaternion(dqX);
 			//XMMATRIX yM = XMMatrixRotationQuaternion(dqY);
 			//XMMATRIX zM = XMMatrixRotationQuaternion(dqZ);
-			//XMMATRIX xyzM = XMMatrixRotationQuaternion(newQuat);
-			//XMVECTOR xV = XMVector3TransformNormal(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), xM);
-			//XMVECTOR yV = XMVector3TransformNormal(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), yM);
-			//XMVECTOR zV = XMVector3TransformNormal(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), zM);
-			//XMVECTOR xyzV = XMVector3TransformNormal(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), xyzM);
-			//p("xV: " + std::to_string(XMVectorGetX(xV)) + " " + std::to_string(XMVectorGetY(xV)) + " " + std::to_string(XMVectorGetZ(xV)) + "\n");
-			//p("yV: " + std::to_string(XMVectorGetX(yV)) + " " + std::to_string(XMVectorGetY(yV)) + " " + std::to_string(XMVectorGetZ(yV)) + "\n");
+			//XMMATRIX newM = XMMatrixRotationQuaternion(XMLoadFloat4(&m_nowRotation[bone.idx]));
+			//XMVECTOR oldV = XMVector3TransformNormal(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), oldM);
+			//XMVECTOR newV = XMVector3TransformNormal(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), newM);
+			//XMVECTOR zV = XMVector3TransformNormal(oldV, zM);
+			//XMVECTOR yV = XMVector3TransformNormal(zV, yM);
+			//XMVECTOR xV = XMVector3TransformNormal(yV, xM);
+			//p("oldV: " + std::to_string(XMVectorGetX(oldV)) + " " + std::to_string(XMVectorGetY(oldV)) + " " + std::to_string(XMVectorGetZ(oldV)) + "\n");
 			//p("zV: " + std::to_string(XMVectorGetX(zV)) + " " + std::to_string(XMVectorGetY(zV)) + " " + std::to_string(XMVectorGetZ(zV)) + "\n");
-			//p("xyzV: " + std::to_string(XMVectorGetX(xyzV)) + " " + std::to_string(XMVectorGetY(xyzV)) + " " + std::to_string(XMVectorGetZ(xyzV)) + "\n");
-			
+			//p("yV: " + std::to_string(XMVectorGetX(yV)) + " " + std::to_string(XMVectorGetY(yV)) + " " + std::to_string(XMVectorGetZ(yV)) + "\n");
+			//p("xV: " + std::to_string(XMVectorGetX(xV)) + " " + std::to_string(XMVectorGetY(xV)) + " " + std::to_string(XMVectorGetZ(xV)) + "\n");
+			//p("newV: " + std::to_string(XMVectorGetX(newV)) + " " + std::to_string(XMVectorGetY(newV)) + " " + std::to_string(XMVectorGetZ(newV)) + "\n");
+
 
 			// clamping
-			//clampBoneAngle(bone, m_nowRotation[bone.idx], pose);
+			clampBoneAngle(bone, m_nowRotation[bone.idx], pose);
 
 			// total Delta
 			XMMATRIX oldM = XMMatrixRotationQuaternion(qOld);
@@ -391,6 +389,8 @@ void IKManager::updateAngle(Pose& pose)
 			//	XMVECTOR test = XMQuaternionRotationAxis(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), XM_PI);
 			//	XMStoreFloat4(&m_nowRotation[bone.idx], test);
 			//}
+			//p("qFinal: " + std::to_string(m_nowRotation[bone.idx].x) + " " + std::to_string(m_nowRotation[bone.idx].y) + " " + std::to_string(m_nowRotation[bone.idx].z) + " " + std::to_string(m_nowRotation[bone.idx].w) + "\n");
+
 		}
 	}
 }
@@ -501,7 +501,7 @@ XMVECTOR IKManager::ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float yMax,
 
 void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat, Pose& pose)
 {
-	//p("bone " + std::to_string(bone.idx) + " start clamping!!\n");
+	p("bone " + std::to_string(bone.idx) + " start clamping!!\n");
 	// IK로 계산된 최종 회전 쿼터니언
 	XMVECTOR qIK = XMLoadFloat4(&quat);
 
@@ -537,12 +537,12 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat, Pose& pose)
 	XMVECTOR qFinal;
 	qFinal = XMQuaternionNormalize(XMQuaternionMultiply(swingClamped, twistClamped));
 
-	XMMATRIX qsM = XMMatrixRotationQuaternion(swingClamped);
-	XMMATRIX qtM = XMMatrixRotationQuaternion(twistClamped);
+	//XMMATRIX qsM = XMMatrixRotationQuaternion(swingClamped);
+	//XMMATRIX qtM = XMMatrixRotationQuaternion(twistClamped);
 
-	XMVECTOR qsV = XMVector3TransformNormal(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), qsM);
-	XMVECTOR qtV = XMVector3TransformNormal(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), qtM);
-	XMVECTOR qstV = XMVector3TransformNormal(qsV, qtM);
+	//XMVECTOR qsV = XMVector3TransformNormal(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), qsM);
+	//XMVECTOR qtV = XMVector3TransformNormal(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), qtM);
+	//XMVECTOR qstV = XMVector3TransformNormal(qsV, qtM);
 
 	//p("qsV: " + std::to_string(XMVectorGetX(qsV)) + " " + std::to_string(XMVectorGetY(qsV)) + " " + std::to_string(XMVectorGetZ(qsV)) + "\n");
 	//p("qtV: " + std::to_string(XMVectorGetX(qtV)) + " " + std::to_string(XMVectorGetY(qtV)) + " " + std::to_string(XMVectorGetZ(qtV)) + "\n");
@@ -563,7 +563,7 @@ XMVECTOR IKManager::ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vect
 		XMVECTOR a = polygon[i];
 		XMVECTOR b = polygon[i + 1];
 
-		XMVECTOR edgeNormal = XMVector3Normalize(XMVector3Cross(b, a));
+		XMVECTOR edgeNormal = XMVector3Normalize(XMVector3Cross(a, b));
 		float side = XMVectorGetX(XMVector3Dot(edgeNormal, D));
 
 		if (side > 0.0f) // 바깥쪽
@@ -640,8 +640,8 @@ XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistA
 
 	XMVECTOR clampedSwing = XMQuaternionNormalize(XMQuaternionMultiply(qy, XMQuaternionMultiply(qx, qz)));  // x 먼저, z 나중
 
-	p("D: " + std::to_string(XMVectorGetX(D)) + " " + std::to_string(XMVectorGetY(D)) + " " + std::to_string(XMVectorGetZ(D)) + "\n");
-	p("D_clamped: " + std::to_string(XMVectorGetX(D_clamped)) + " " + std::to_string(XMVectorGetY(D_clamped)) + " " + std::to_string(XMVectorGetZ(D_clamped)) + "\n");
+	//p("D: " + std::to_string(XMVectorGetX(D)) + " " + std::to_string(XMVectorGetY(D)) + " " + std::to_string(XMVectorGetZ(D)) + "\n");
+	//p("D_clamped: " + std::to_string(XMVectorGetX(D_clamped)) + " " + std::to_string(XMVectorGetY(D_clamped)) + " " + std::to_string(XMVectorGetZ(D_clamped)) + "\n");
 	//p("xAngle: " + std::to_string(xAngle) + "\n");
 	//p("zAngle: " + std::to_string(zAngle) + "\n");
 
@@ -665,26 +665,62 @@ XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR swing, XMVECTOR twistA
 
 void IKManager::makePolygon(std::vector<XMVECTOR>& polygon, float xMax, float xMin, float zMax, float zMin)
 {
-	int numSegments = 4;
+	//int numSegments = 16;
 
-	//p("makePolygon!!\n");
-	for (int i = 0; i < numSegments + 1; ++i)
-	{
-		float t = (float)i / numSegments;  // 0 ~ 1
-		float xDeg = Lerp(xMin, xMax, (cosf(t * XM_2PI) + 1.0f) * 0.5f);
-		float zDeg = Lerp(zMin, zMax, (sinf(t * XM_2PI) + 1.0f) * 0.5f);
+	////p("makePolygon!!\n");
+	//for (int i = 0; i < numSegments + 1; ++i)
+	//{
+	//	float t = (float)i / numSegments;  // 0 ~ 1
+	//	float xDeg = Lerp(xMin, xMax, (cosf(t * XM_2PI) + 1.0f) * 0.5f);
+	//	float zDeg = Lerp(zMin, zMax, (sinf(t * XM_2PI) + 1.0f) * 0.5f);
 
-		XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
-		XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+	//	XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
+	//	XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
 
-		XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qx);
-		D = XMVector3Rotate(D, qz);
+	//	XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qx);
+	//	D = XMVector3Rotate(D, qz);
 
-		//p("i : " + std::to_string(i) + "\n");
-		//p("D: " + std::to_string(XMVectorGetX(D)) + " " + std::to_string(XMVectorGetY(D)) + " " + std::to_string(XMVectorGetZ(D)) + "\n");
+	//	//p("i : " + std::to_string(i) + "\n");
+	//	//p("D: " + std::to_string(XMVectorGetX(D)) + " " + std::to_string(XMVectorGetY(D)) + " " + std::to_string(XMVectorGetZ(D)) + "\n");
 
-		polygon.push_back(XMVector3Normalize(D));
-	}
+	//	polygon.push_back(XMVector3Normalize(D));
+	//}
+	float xDeg = xMax;
+	float zDeg = zMax;
+	XMVECTOR qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
+	XMVECTOR qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+	XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qz);
+	D = XMVector3Rotate(D, qx);
+	polygon.push_back(XMVector3Normalize(D));
+
+	xDeg = xMin;
+	qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
+	qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+	D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qz);
+	D = XMVector3Rotate(D, qx);
+	polygon.push_back(XMVector3Normalize(D));
+
+
+	zDeg = zMin;
+	qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
+	qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+	D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qz);
+	D = XMVector3Rotate(D, qx);
+	polygon.push_back(XMVector3Normalize(D));
+
+	xDeg = xMax;
+	qx = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), XMConvertToRadians(xDeg));
+	qz = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), XMConvertToRadians(zDeg));
+	D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qz);
+	D = XMVector3Rotate(D, qx);
+	polygon.push_back(XMVector3Normalize(D));
+
+	polygon.push_back(polygon[0]);
+
+	//for (int i = 0; i < polygon.size(); i++)
+	//{
+	//	p("polygon " + std::to_string(i) + " : " + std::to_string(XMVectorGetX(polygon[i])) + " " + std::to_string(XMVectorGetY(polygon[i])) + " " + std::to_string(XMVectorGetZ(polygon[i])) + "\n");
+	//}
 }
 
 void IKManager::resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton)
@@ -705,7 +741,7 @@ void IKManager::initLeftFootChainInfo(RaycastingManager& raycastingManager, Skel
 	IKChain& chain = m_chains[0];
 	RaycastingInfo& raycastingInfo = raycastingManager.m_LeftFoot;
 
-	// UpLeg x, y, z
+	// ToeBase x, y, z
 	if (raycastingInfo.part == EIKPart::FOOT)
 	{
 		chain.EndEffectorIdx = skeleton.GetBoneIndex(("mixamorig:LeftToeBase"));
@@ -721,17 +757,17 @@ void IKManager::initLeftFootChainInfo(RaycastingManager& raycastingManager, Skel
 		W[2] = 1.0f;
 	}
 
-	// Leg x, y, z
+	// Foot x, y, z
 	W[3] = 1.0f;
 	W[4] = 1.0f;
 	W[5] = 1.0f;
 
-	// Foot x, y, z
-	W[6] = 1.0f;
-	W[7] = 1.0f;
-	W[8] = 1.0f;
+	// Leg x, y, z
+	W[6] = 0.0f;
+	W[7] = 0.0f;
+	W[8] = 0.0f;
 
-	// Toe_Base x, y, z
+	// UpLeg x, y, z
 	W[9] = 1.0f;
 	W[10] = 1.0f;
 	W[11] = 1.0f;
@@ -763,18 +799,26 @@ void IKManager::footChainBufferUpdate(IKChain& chain, bool start, bool wasChange
 		IKBone& legBone = chain.Bones[2];
 		IKBone& upLegBone = chain.Bones[3];
 
-		upLegBone.angleBuffer.xMax = upLegBone.xMin;
+		upLegBone.angleBuffer.xMax = upLegBone.xMin + 0.01f;
 		upLegBone.angleBuffer.xMin = upLegBone.xMin;
-		legBone.angleBuffer.xMax = legBone.xMax;
+		upLegBone.angleBuffer.zMax = upLegBone.zMax + 0.01f;
+		upLegBone.angleBuffer.zMin = upLegBone.zMax;
+
+		legBone.angleBuffer.xMax = legBone.xMax + 0.01f;
 		legBone.angleBuffer.xMin = legBone.xMax;
+		legBone.angleBuffer.zMax = legBone.zMax + 0.01f;
+		legBone.angleBuffer.zMin = legBone.zMax;
 	}
 
 	if (wasChanged == false)
 	{
 		IKBone& upLegBone = chain.Bones[3];
+		IKBone& legBone = chain.Bones[2];
 
-		upLegBone.angleBuffer.xMax = upLegBone.xMax;
-		upLegBone.angleBuffer.xMin = upLegBone.xMax;
+		upLegBone.angleBuffer.zMax = upLegBone.zMax + 0.01f;
+		upLegBone.angleBuffer.zMin = upLegBone.zMax;
 
+		legBone.angleBuffer.zMax = legBone.zMax + 0.01f;
+		legBone.angleBuffer.zMin = legBone.zMax;
 	}
 }
