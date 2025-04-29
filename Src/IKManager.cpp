@@ -116,6 +116,7 @@ void IKManager::calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingMan
 		XMStoreFloat3(&m_chains[i].EndEffector, endEffector);
 		// target µî·Ï
 		m_chains[i].Target = raycastingManager.m_LeftFoot.target;
+		m_chains[i].Normal = raycastingManager.m_LeftFoot.normal;
 	}
 }
 
