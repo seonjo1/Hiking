@@ -10,15 +10,14 @@ int Skeleton::GetBoneIndex(const std::string& name) const {
     return (it != nameToIndex.end()) ? it->second : -1;
 }
 
-void Skeleton::SetBoneAxisAndRange(const std::string& name, XMFLOAT3 axis, float xMax, float xMin, float yMax, float yMin, float zMax, float zMin)
+void Skeleton::SetBoneAxisAndRange(const std::string& name, XMFLOAT3 axis, float xMax, float xMin, float zMax, float zMin, float twist)
 {
     Bone& bone =  bones[GetBoneIndex(name)];
     bone.axis = axis;
     bone.xMax = xMax;
 	bone.xMin = xMin;
-	bone.yMax = yMax;
-	bone.yMin = yMin;
     bone.zMax = zMax;
     bone.zMin = zMin;
+	bone.twist = twist;
     bone.hasAxis = true;
 }

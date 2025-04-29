@@ -16,8 +16,6 @@ struct IKAngleBuffer
 {
 	float xMax;
 	float xMin;
-	float yMax;
-	float yMin;
 	float zMax;
 	float zMin;
 };
@@ -30,10 +28,9 @@ struct IKBone
 	XMFLOAT3 axis;
 	float xMax;
 	float xMin;
-	float yMax;
-	float yMin;
 	float zMax;
 	float zMin;
+	XMVECTOR twist;
 	IKAngleBuffer angleBuffer;
 };
 

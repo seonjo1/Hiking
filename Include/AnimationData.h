@@ -17,10 +17,9 @@ struct Bone {
     XMFLOAT3 axis { 0.0f, 0.0f, 0.0f };
     float xMax{ 0.0f };
     float xMin{ 0.0f };
-	float yMax{ 0.0f };
-	float yMin{ 0.0f };
     float zMax{ 0.0f };
-    float zMin { 0.0f };
+	float zMin{ 0.0f };
+	float twist{ 0.0f };
 };
     
 class Skeleton {
@@ -29,7 +28,7 @@ public:
     std::unordered_map<std::string, int> nameToIndex;
     int rootBoneIdx;
     int GetBoneIndex(const std::string& name) const;
-    void SetBoneAxisAndRange(const std::string& name, XMFLOAT3 axis, float xMax, float xMin, float yMax, float yMin, float zMax, float zMin);
+    void SetBoneAxisAndRange(const std::string& name, XMFLOAT3 axis, float xMax, float xMin, float zMax, float zMin, float twist);
 };
 
 struct PositionKeyframe {
