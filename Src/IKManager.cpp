@@ -115,8 +115,7 @@ void IKManager::calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingMan
 		endEffector = XMVector4Transform(endEffector, transform);
 		XMStoreFloat3(&m_chains[i].EndEffector, endEffector);
 		// target µî·Ï
-		m_chains[i].Target = raycastingManager.m_LeftFoot.pos;
-		m_chains[i].Normal = raycastingManager.m_LeftFoot.normal;
+		m_chains[i].Target = raycastingManager.m_LeftFoot.target;
 	}
 }
 
@@ -605,21 +604,12 @@ void IKManager::initLeftFootChainInfo(RaycastingManager& raycastingManager, Skel
 	IKChain& chain = m_chains[0];
 	RaycastingInfo& raycastingInfo = raycastingManager.m_LeftFoot;
 
+	chain.EndEffectorIdx = skeleton.GetBoneIndex("mixamorig:LeftToeBase");
+
 	// ToeBase x, y, z
-	if (raycastingInfo.part == EIKPart::FOOT)
-	{
-		chain.EndEffectorIdx = skeleton.GetBoneIndex(("mixamorig:LeftToeBase"));
-		W[0] = 0.0f;
-		W[1] = 0.0f;
-		W[2] = 0.0f;
-	}
-	else
-	{
-		chain.EndEffectorIdx = skeleton.GetBoneIndex(("mixamorig:LeftToe_End"));
-		W[0] = 1.0f;
-		W[1] = 1.0f;
-		W[2] = 1.0f;
-	}
+	W[0] = 0.0f;
+	W[1] = 0.0f;
+	W[2] = 0.0f;
 
 	// Foot x, y, z
 	W[3] = 1.0f;

@@ -241,11 +241,11 @@ bool Model::DrawRayLineShader(ID3D11DeviceContext* deviceContext, BoneShader* bo
 
 	// left foot
 	int idx = -1;
-	if (m_RaycastingManager.m_LeftFoot.part == EIKPart::FOOT)
+	if (m_RaycastingManager.m_LeftFoot.part == EIKPart::TOEBASE)
 	{
 		idx = m_skeleton.GetBoneIndex("mixamorig:LeftToeBase");
 	}
-	else if (m_RaycastingManager.m_LeftFoot.part == EIKPart::TOE)
+	else if (m_RaycastingManager.m_LeftFoot.part == EIKPart::TOEEND)
 	{
 		idx = m_skeleton.GetBoneIndex("mixamorig:LeftToe_End");
 	}
@@ -269,11 +269,11 @@ bool Model::DrawRayLineShader(ID3D11DeviceContext* deviceContext, BoneShader* bo
 
 	// right foot
 	idx = -1;
-	if (m_RaycastingManager.m_RightFoot.part == EIKPart::FOOT)
+	if (m_RaycastingManager.m_RightFoot.part == EIKPart::TOEBASE)
 	{
 		idx = m_skeleton.GetBoneIndex("mixamorig:RightToeBase");
 	}
-	else if (m_RaycastingManager.m_RightFoot.part == EIKPart::TOE)
+	else if (m_RaycastingManager.m_RightFoot.part == EIKPart::TOEEND)
 	{
 		idx = m_skeleton.GetBoneIndex("mixamorig:RightToe_End");
 	}
@@ -470,11 +470,13 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		XMMATRIX worldMatrix = getWorldMatrix();
 		m_RaycastingManager.raycastingForLeftFootIK(
 			scene,
+			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftFoot")),
 			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase")),
 			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"))
 		);
 		m_RaycastingManager.raycastingForRightFootIK(
 			scene,
+			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightFoot")),
 			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase")),
 			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"))
 		);

@@ -39,7 +39,6 @@ struct IKChain
 	std::vector<IKBone> Bones;
 	XMFLOAT3 EndEffector;
 	XMFLOAT3 Target;
-	XMFLOAT3 Normal;
 	EIKPart endPart;
 	int EndEffectorIdx;
 	int DoFNum {0};

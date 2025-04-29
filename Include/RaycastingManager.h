@@ -4,17 +4,19 @@
 #include <PxScene.h>
 #include <DirectXMath.h>
 #include "Common.h"
+#include <algorithm>
 
 using namespace DirectX;
 
 enum class EIKPart {
-	FOOT,
-	TOE,
+	TOEBASE,
+	TOEEND,
 	FAIL,
 	NONE
 };
 
 struct RaycastingInfo {
+	XMFLOAT3 target;
 	XMFLOAT3 pos;
 	XMFLOAT3 normal;
 	XMFLOAT3 dir;
@@ -24,14 +26,14 @@ struct RaycastingInfo {
 
 class RaycastingManager {
 public:
-	void raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 footPos, physx::PxVec3 toePose);
-	void raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 footPos, physx::PxVec3 toePose);
+	void raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
+	void raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
 
 	RaycastingInfo m_LeftFoot;
 	RaycastingInfo m_RightFoot;
 
 private:
-	void footRaycasting(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toePose, RaycastingInfo& info);
+	void footRaycasting(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose, RaycastingInfo& info);
 	float getDistance(physx::PxVec3& toTarget, physx::PxVec3& dir);
 
 	const static float s_RayStartOffset;
