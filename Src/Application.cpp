@@ -49,7 +49,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
 		return false;
 	}
-	m_AnimationModel->setPosition(XMFLOAT3(0.0f, -0.5f, 0.0f));
+	m_AnimationModel->setPosition(XMFLOAT3(0.0f, -0.15f, 0.0f));
 	m_AnimationModel->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
 	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
 

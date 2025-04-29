@@ -116,6 +116,7 @@ void IKManager::calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingMan
 		XMStoreFloat3(&m_chains[i].EndEffector, endEffector);
 		// target 등록
 		m_chains[i].Target = raycastingManager.m_LeftFoot.pos;
+		m_chains[i].Normal = raycastingManager.m_LeftFoot.normal;
 	}
 }
 
@@ -144,13 +145,6 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 
 			XMVECTOR toEffector = XMVectorSubtract(effectPos, bonePos);
 
-			//p("bone[" + std::to_string(bone.idx) + "]\n");
-			//p("bonePos: " + std::to_string(XMVectorGetX(bonePos)) + " " + std::to_string(XMVectorGetY(bonePos)) + " " + std::to_string(XMVectorGetZ(bonePos)) + "\n");
-			//p("effectPos: " + std::to_string(XMVectorGetX(effectPos)) + " " + std::to_string(XMVectorGetY(effectPos)) + " " + std::to_string(XMVectorGetZ(effectPos)) + "\n");
-			//p("targetPos: " + std::to_string(XMVectorGetX(targetPos)) + " " + std::to_string(XMVectorGetY(targetPos)) + " " + std::to_string(XMVectorGetZ(targetPos)) + "\n");
-			//p("toEffector: " + std::to_string(XMVectorGetX(toEffector)) + " " + std::to_string(XMVectorGetY(toEffector)) + " " + std::to_string(XMVectorGetZ(toEffector)) + "\n");
-
-			//p("axse\n");
 			for (int k = 0; k < 3; ++k)
 			{
 				const XMFLOAT3& axis = axes[k];
@@ -163,9 +157,6 @@ void IKManager::calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix)
 				// 위치 변화 = 회전축 × effector 방향
 				XMVECTOR dPdTheta = XMVector3Cross(worldAxis, toEffector);
 				
-				//p("worldAxis: " + std::to_string(XMVectorGetX(worldAxis)) + " " + std::to_string(XMVectorGetY(worldAxis)) + " " + std::to_string(XMVectorGetZ(worldAxis)) + "\n");
-				//p("dPdTheta: " + std::to_string(XMVectorGetX(dPdTheta)) + " " + std::to_string(XMVectorGetY(dPdTheta)) + " " + std::to_string(XMVectorGetZ(dPdTheta)) + "\n");
-
 				// Jacobian 행렬에 값 저장
 				J.Set(i * 3, colIdx, XMVectorGetX(dPdTheta)); // dx/dθ
 				J.Set(i * 3 + 1, colIdx, XMVectorGetY(dPdTheta)); // dy/dθ
@@ -636,14 +627,14 @@ void IKManager::initLeftFootChainInfo(RaycastingManager& raycastingManager, Skel
 	W[5] = 1.0f;
 
 	// Leg x, y, z
-	W[6] = 1.0f;
-	W[7] = 1.0f;
-	W[8] = 1.0f;
+	W[6] = 3.0f;
+	W[7] = 3.0f;
+	W[8] = 3.0f;
 
 	// UpLeg x, y, z
-	W[9] = 1.0f;
-	W[10] = 1.0f;
-	W[11] = 1.0f;
+	W[9] = 3.0f;
+	W[10] = 3.0f;
+	W[11] = 3.0f;
 }
 
 void IKManager::footChainBufferUpdate(IKChain& chain, bool start, bool wasChanged)
@@ -659,10 +650,6 @@ void IKManager::footChainBufferUpdate(IKChain& chain, bool start, bool wasChange
 		bone.angleBuffer.zMax = bone.zMax;
 		bone.angleBuffer.zMin = bone.zMin;
 	}
-
-	// constraint 시작
-
-	// 1. 발각도 지면에 맞추기 (추가 예정)
 
 	// 2. start == true인 경우 위에서 부터 발을 내림
 	if (start == true)
