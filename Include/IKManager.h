@@ -133,6 +133,7 @@ private:
 	void footChainBufferUpdate(IKChain& chain, bool start, bool wasChanged);
 	void initLeftFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton);
 	XMVECTOR divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist);
+	float safeAcosf(float dotResult);
 
 	JacobianMatrix J;
 	JacobianMatrix JTJ;

@@ -132,8 +132,8 @@ void IKManager::calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingMan
 		// X
 		XMVECTOR localNormalZY = XMVector2Normalize(XMVectorSet(XMVectorGetZ(localNormal), XMVectorGetY(localNormal), 0.0f, 0.0f));
 
-		float dot = std::clamp(XMVectorGetX(XMVector2Dot(localNormalZY, baseNormal)), -1.0f, 1.0f);  // 두 벡터 사이의 코사인
-		float angle = acosf(dot);
+		float dot = XMVectorGetX(XMVector2Dot(localNormalZY, baseNormal));  // 두 벡터 사이의 코사인
+		float angle = safeAcosf(dot);
 		if (XMVectorGetZ(localNormal) < 0.0f)
 		{
 			angle = XM_2PI - angle;
@@ -143,8 +143,8 @@ void IKManager::calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingMan
 		// Z
 		XMVECTOR localNormalXY = XMVector2Normalize(XMVectorSet(XMVectorGetX(localNormal), XMVectorGetY(localNormal), 0.0f, 0.0f));
 
-		dot = std::clamp(XMVectorGetX(XMVector2Dot(localNormalXY, baseNormal)), -1.0f, 1.0f);  // 두 벡터 사이의 코사인
-		angle = acosf(dot);
+		dot = XMVectorGetX(XMVector2Dot(localNormalXY, baseNormal));  // 두 벡터 사이의 코사인
+		angle = safeAcosf(dot);
 		if (XMVectorGetX(localNormal) < 0.0f)
 		{
 			angle = XM_2PI - angle;
@@ -501,7 +501,7 @@ XMVECTOR IKManager::divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist)
 	}
 	else
 	{
-		zAngle = acosf(std::abs(XMVectorGetY(dXY)));
+		zAngle = safeAcosf(std::abs(XMVectorGetY(dXY)));
 		if (XMVectorGetY(D) < 0.0f) { zAngle = -zAngle; }
 		if (XMVectorGetX(D) < 0.0f) { zAngle = -zAngle; }
 	}
@@ -511,7 +511,7 @@ XMVECTOR IKManager::divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist)
 	XMVECTOR D_ZRotated = XMVector3TransformNormal(D, qzInvTransform);
 
 	XMVECTOR dZY = XMVector2Normalize(XMVectorSet(XMVectorGetZ(D_ZRotated), XMVectorGetY(D_ZRotated), 0.0f, 0.0f));
-	xAngle = acosf(XMVectorGetX(XMVector2Dot(Y, dZY)));
+	xAngle = safeAcosf(XMVectorGetX(XMVector2Dot(Y, dZY)));
 
 	if (XMVectorGetZ(D_ZRotated) < 0.0f) { xAngle = -xAngle; }
 
@@ -532,7 +532,7 @@ XMVECTOR IKManager::divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist)
 	}
 	else
 	{
-		thetaY = acosf(fabs((XMVectorGetZ(D)) / sqrt(pow(XMVectorGetX(D), 2) + pow(XMVectorGetZ(D), 2))));
+		thetaY = safeAcosf(fabs((XMVectorGetZ(D)) / sqrt(pow(XMVectorGetX(D), 2) + pow(XMVectorGetZ(D), 2))));
 		if (XMVectorGetZ(D) > 0.0f) { thetaY = -thetaY; }
 		if (XMVectorGetX(D) < 0.0f) { thetaY = -thetaY; }
 	}
@@ -541,7 +541,7 @@ XMVECTOR IKManager::divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist)
 	XMVECTOR D_YRotated = XMVector3Rotate(D, qy2);
 	XMVECTOR dZY3 = XMVector2Normalize(XMVectorSet(XMVectorGetZ(D_YRotated), XMVectorGetY(D_YRotated), 0.0f, 0.0f));
 
-	thetaX = acosf(XMVectorGetX(XMVector2Dot(Y, dZY3)));
+	thetaX = safeAcosf(XMVectorGetX(XMVector2Dot(Y, dZY3)));
 	if (XMVectorGetZ(D_YRotated) < 0.0f) { thetaX = -thetaX; }
 
 	XMVECTOR qthetaX = XMQuaternionRotationAxis(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), thetaX);
@@ -555,8 +555,8 @@ XMVECTOR IKManager::divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist)
 	XMVECTOR v2 = XMVector3Rotate(front2, q2);
 
 	XMVECTOR axis = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qthetaX);
-	float dotV1V2 = std::clamp(XMVectorGetX(XMVector3Dot(v1, v2)), -1.0f, 1.0f);
-	yAngle = acosf(dotV1V2);
+	float dotV1V2 = XMVectorGetX(XMVector3Dot(v1, v2));
+	yAngle = safeAcosf(dotV1V2);
 	XMVECTOR crossVal = XMVector3Cross(v1, v2);
 	if (XMVectorGetX(XMVector3Dot(axis, crossVal)) > 0.0f) { yAngle = -yAngle; }
 
@@ -723,4 +723,9 @@ void IKManager::footChainBufferUpdate(IKChain& chain, bool start, bool wasChange
 		legBone.angleBuffer.zMax = legBone.zMax + 0.01f;
 		legBone.angleBuffer.zMin = legBone.zMax;
 	}
+}
+
+float IKManager::safeAcosf(float dotResult)
+{
+	return acosf(std::clamp(dotResult, -1.0f, 1.0f));
 }
