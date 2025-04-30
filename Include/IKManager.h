@@ -46,6 +46,8 @@ struct IKChain
 	bool angleBufferSign;
 	bool isChanged;
 	bool start;
+	float footXAngle;
+	float footZAngle;
 };
 
 struct JacobianMatrix
@@ -125,14 +127,12 @@ private:
 	void initRightFootChains(Skeleton& skeleton);
 	void quaternionToEuler(const XMFLOAT4& q, float* eulerDeg);
 	void clampBoneAngle(IKBone& bone, XMFLOAT4& quat, Pose& pose);
-	XMVECTOR ClampTwist(FXMVECTOR twist, FXMVECTOR twistAxis, float yMax, float yMin);
-	void DecomposeSwingTwist(XMVECTOR q, XMVECTOR twistAxis, XMVECTOR& outSwing, XMVECTOR& outTwist);
 	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twistClamped, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
 	XMVECTOR ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon);
 	void makePolygon(std::vector<XMVECTOR>& polygon, XMVECTOR& twistClamped, float xMax, float xMin, float zMax, float zMin);
 	void footChainBufferUpdate(IKChain& chain, bool start, bool wasChanged);
 	void initLeftFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton);
-
+	XMVECTOR divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist);
 
 	JacobianMatrix J;
 	JacobianMatrix JTJ;

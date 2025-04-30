@@ -116,7 +116,40 @@ void IKManager::calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingMan
 		XMStoreFloat3(&m_chains[i].EndEffector, endEffector);
 		// target 등록
 		m_chains[i].Target = raycastingManager.m_LeftFoot.target;
-		m_chains[i].Normal = raycastingManager.m_LeftFoot.normal;
+		
+	}
+
+	// left chain Normal 설정
+	{
+		XMVECTOR baseNormal = XMVectorSet(0, 1, 0, 0);
+		XMVECTOR normal = XMLoadFloat3(&raycastingManager.m_LeftFoot.normal);
+
+		XMVECTOR det;
+		int footParentIdx = m_chains[0].Bones[2].idx;
+		XMMATRIX footParentTransform = XMMatrixMultiply(pose.world[footParentIdx], worldMatrix);
+		XMVECTOR localNormal = XMVector3Normalize(XMVector3TransformNormal(normal, XMMatrixInverse(&det, footParentTransform)));
+		
+		// X
+		XMVECTOR localNormalZY = XMVector2Normalize(XMVectorSet(XMVectorGetZ(localNormal), XMVectorGetY(localNormal), 0.0f, 0.0f));
+
+		float dot = std::clamp(XMVectorGetX(XMVector2Dot(localNormalZY, baseNormal)), -1.0f, 1.0f);  // 두 벡터 사이의 코사인
+		float angle = acosf(dot);
+		if (XMVectorGetZ(localNormal) < 0.0f)
+		{
+			angle = XM_2PI - angle;
+		}
+		m_chains[0].footXAngle = -XMConvertToDegrees(angle);
+
+		// Z
+		XMVECTOR localNormalXY = XMVector2Normalize(XMVectorSet(XMVectorGetX(localNormal), XMVectorGetY(localNormal), 0.0f, 0.0f));
+
+		dot = std::clamp(XMVectorGetX(XMVector2Dot(localNormalXY, baseNormal)), -1.0f, 1.0f);  // 두 벡터 사이의 코사인
+		angle = acosf(dot);
+		if (XMVectorGetX(localNormal) < 0.0f)
+		{
+			angle = XM_2PI - angle;
+		}
+		m_chains[0].footZAngle = -XMConvertToDegrees(angle);
 	}
 }
 
@@ -456,30 +489,26 @@ XMVECTOR IKManager::ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vect
 	return closest;
 }
 
-XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twist, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon)
+XMVECTOR IKManager::divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist)
 {
-	twistAxis = XMVector3Normalize(twistAxis);
-	XMVECTOR D = XMVector3Rotate(twistAxis, swing);  // swing에 의해 이동된 방향
-	XMVECTOR D_clamped = ClampDirectionToSphericalPolygon(D, polygon);
-
-	float xAngle, zAngle;
+	float xAngle, yAngle, zAngle;
 
 	XMVECTOR Y = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	XMVECTOR dXY = XMVector2Normalize(XMVectorSet(XMVectorGetX(D_clamped), XMVectorGetY(D_clamped), 0.0f, 0.0f));
-	if (fabs(XMVectorGetX(D_clamped)) < 1e-6f)
+	XMVECTOR dXY = XMVector2Normalize(XMVectorSet(XMVectorGetX(D), XMVectorGetY(D), 0.0f, 0.0f));
+	if (fabs(XMVectorGetX(D)) < 1e-6f)
 	{
 		zAngle = 0.0f;
 	}
 	else
 	{
 		zAngle = acosf(std::abs(XMVectorGetY(dXY)));
-		if (XMVectorGetY(D_clamped) < 0.0f) { zAngle = -zAngle; }
-		if (XMVectorGetX(D_clamped) < 0.0f) { zAngle = -zAngle; }
+		if (XMVectorGetY(D) < 0.0f) { zAngle = -zAngle; }
+		if (XMVectorGetX(D) < 0.0f) { zAngle = -zAngle; }
 	}
 
 	XMVECTOR qzInv = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), zAngle);
 	XMMATRIX qzInvTransform = XMMatrixRotationQuaternion(qzInv);
-	XMVECTOR D_ZRotated = XMVector3TransformNormal(D_clamped, qzInvTransform);
+	XMVECTOR D_ZRotated = XMVector3TransformNormal(D, qzInvTransform);
 
 	XMVECTOR dZY = XMVector2Normalize(XMVectorSet(XMVectorGetZ(D_ZRotated), XMVectorGetY(D_ZRotated), 0.0f, 0.0f));
 	xAngle = acosf(XMVectorGetX(XMVector2Dot(Y, dZY)));
@@ -493,24 +522,26 @@ XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twis
 	qx = XMQuaternionRotationAxis(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), xAngle);
 	qz = XMQuaternionRotationAxis(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), zAngle);
 
-	// 공사중
-	float thetaY;
-	if (fabs(XMVectorGetX(D_clamped)) < 1e-6f)
+
+
+	float thetaX, thetaY;
+
+	if (fabs(XMVectorGetX(D)) < 1e-6f)
 	{
 		thetaY = 0.0f;
 	}
 	else
 	{
-		thetaY = acosf(fabs((XMVectorGetZ(D_clamped)) / sqrt(pow(XMVectorGetX(D_clamped), 2) + pow(XMVectorGetZ(D_clamped), 2))));
-		if (XMVectorGetZ(D_clamped) > 0.0f) { thetaY = -thetaY; }
-		if (XMVectorGetX(D_clamped) < 0.0f) { thetaY = -thetaY; }
+		thetaY = acosf(fabs((XMVectorGetZ(D)) / sqrt(pow(XMVectorGetX(D), 2) + pow(XMVectorGetZ(D), 2))));
+		if (XMVectorGetZ(D) > 0.0f) { thetaY = -thetaY; }
+		if (XMVectorGetX(D) < 0.0f) { thetaY = -thetaY; }
 	}
 
 	XMVECTOR qy2 = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), thetaY);
-	XMVECTOR D_YRotated = XMVector3Rotate(D_clamped, qy2);
+	XMVECTOR D_YRotated = XMVector3Rotate(D, qy2);
 	XMVECTOR dZY3 = XMVector2Normalize(XMVectorSet(XMVectorGetZ(D_YRotated), XMVectorGetY(D_YRotated), 0.0f, 0.0f));
 
-	float thetaX = acosf(XMVectorGetX(XMVector2Dot(Y, dZY3)));
+	thetaX = acosf(XMVectorGetX(XMVector2Dot(Y, dZY3)));
 	if (XMVectorGetZ(D_YRotated) < 0.0f) { thetaX = -thetaX; }
 
 	XMVECTOR qthetaX = XMQuaternionRotationAxis(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), thetaX);
@@ -519,27 +550,33 @@ XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twis
 	XMVECTOR front1 = XMVector3Rotate(XMVectorSet(0, 0, -1, 0), twist);
 	XMVECTOR front2 = XMVectorSet(0, 0, -1, 0);
 	XMVECTOR q2 = XMQuaternionNormalize(XMQuaternionMultiply(XMQuaternionMultiply(qx, qz), qthetaY));
-	
+
 	XMVECTOR v1 = XMVector3Rotate(front1, qthetaX);
 	XMVECTOR v2 = XMVector3Rotate(front2, q2);
 
 	XMVECTOR axis = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qthetaX);
 	float dotV1V2 = std::clamp(XMVectorGetX(XMVector3Dot(v1, v2)), -1.0f, 1.0f);
-	float yAngle = acosf(dotV1V2);
+	yAngle = acosf(dotV1V2);
 	XMVECTOR crossVal = XMVector3Cross(v1, v2);
 	if (XMVectorGetX(XMVector3Dot(axis, crossVal)) > 0.0f) { yAngle = -yAngle; }
 
-	qy = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), yAngle);	
-	
+	qy = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), yAngle);
+
 	//p("D: " + std::to_string(XMVectorGetX(D)) + " " + std::to_string(XMVectorGetY(D)) + " " + std::to_string(XMVectorGetZ(D)) + "\n");
 	//p("D_clamped: " + std::to_string(XMVectorGetX(D_clamped)) + " " + std::to_string(XMVectorGetY(D_clamped)) + " " + std::to_string(XMVectorGetZ(D_clamped)) + "\n");
 	//p("xAngle: " + std::to_string(xAngle) + "\n");
 	//p("yAngle: " + std::to_string(yAngle) + "\n");
 	//p("zAngle: " + std::to_string(zAngle) + "\n");
 
-	XMVECTOR clampedSwing = XMQuaternionNormalize(XMQuaternionMultiply(XMQuaternionMultiply(qy, qx), qz));  // x 먼저, z 나중
+	return XMQuaternionNormalize(XMQuaternionMultiply(XMQuaternionMultiply(qy, qx), qz));  // x 먼저, z 나중
+}
 
-	return clampedSwing;
+XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twist, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon)
+{
+	twistAxis = XMVector3Normalize(twistAxis);
+	XMVECTOR D = XMVector3Rotate(twistAxis, swing);  // swing에 의해 이동된 방향
+	XMVECTOR D_clamped = ClampDirectionToSphericalPolygon(D, polygon);
+	return divideQuaternionToYXZ(D_clamped, twist);
 }
 
 void IKManager::makePolygon(std::vector<XMVECTOR>& polygon, XMVECTOR& twistClamped, float xMax, float xMin, float zMax, float zMin)
@@ -640,6 +677,22 @@ void IKManager::footChainBufferUpdate(IKChain& chain, bool start, bool wasChange
 		bone.angleBuffer.xMin = bone.xMin;
 		bone.angleBuffer.zMax = bone.zMax;
 		bone.angleBuffer.zMin = bone.zMin;
+	}
+
+	// 1. 지면에 발목 각도 맞추기
+	{
+		float footXangle = chain.footXAngle;
+		float footZangle = chain.footZAngle;
+
+		footXangle = -240.0f - footXangle;
+		footZangle = -180.0f + footZangle;
+
+		IKBone& footBone = chain.Bones[1];
+
+		footBone.angleBuffer.xMax = footXangle + 0.01f;
+		footBone.angleBuffer.xMin = footXangle;
+		footBone.angleBuffer.zMax = footZangle + 0.01f;
+		footBone.angleBuffer.zMin = footZangle;
 	}
 
 	// 2. start == true인 경우 위에서 부터 발을 내림

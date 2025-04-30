@@ -61,12 +61,12 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	sphere1->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
 	m_Models.push_back(sphere1);
 
-	//Model* sphere2 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.525f, 0.502f, 0.329f, 1.0f));
-	//sphere2->createStaticSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	//sphere2->setPosition(XMFLOAT3(-10.0f, 0.5f, -10.0f));
-	//sphere2->setScale(XMFLOAT3(1.0f, 1.0f, 1.0f));
-	//sphere2->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
-	//m_Models.push_back(sphere2);
+	Model* sphere2 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.525f, 0.502f, 0.329f, 1.0f));
+	sphere2->createStaticSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
+	sphere2->setPosition(XMFLOAT3(10.0f, -1.5f, 10.0f));
+	sphere2->setScale(XMFLOAT3(5.0f, 5.0f, 5.0f));
+	sphere2->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
+	m_Models.push_back(sphere2);
 
 	// 박스 모델 생성
 	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.502f, 0.329f, 1.0f));
