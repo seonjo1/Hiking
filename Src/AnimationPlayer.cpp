@@ -3,16 +3,12 @@
 void AnimationPlayer::Play(AnimationClip* newClip, float walkPhase) {
 	clip = newClip;
 	currentTime = 0.0f;
-	if (clip->name == "walk")
-	{
-		currentTime = walkPhase * clip->duration;
-	}
 }
 
-void AnimationPlayer::UpdateTime(float deltaTime, float& walkPhase) {
+float AnimationPlayer::UpdateTime(float deltaTime) {
 	static const float speed = 40.0f;
 
-	if (!clip) return ;
+	if (!clip) return 0.0f;
 
 	currentTime += speed * deltaTime * clip->ticksPerSecond;
 	if (currentTime >= clip->duration)
@@ -20,14 +16,17 @@ void AnimationPlayer::UpdateTime(float deltaTime, float& walkPhase) {
 
 	if (clip->name == "walk")
 	{
-		walkPhase = currentTime / clip->duration;
+		return currentTime / clip->duration;
+	}
+	else
+	{
+		return 1.0f;
 	}
 }
 
 XMFLOAT3 AnimationPlayer::InterpolatePosition(const std::vector<PositionKeyframe>& keys, float time) {
 	if (keys.empty()) return XMFLOAT3(0, 0, 0);
 	if (keys.size() == 1) return keys[0].position;
-
 
 	for (size_t i = 0; i < keys.size() - 1; ++i) {
 		if (time < keys[i + 1].time) {

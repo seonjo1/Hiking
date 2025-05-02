@@ -104,23 +104,6 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
 		info.distance = toeBaseDistance;
 		info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
     }
-
-    // ToeBase에서 Foot으로 Target 변경
-  //  XMVECTOR toFoot = XMVectorSet(footPose.x - toeBasePose.x, footPose.y - toeBasePose.y, footPose.z - toeBasePose.z, 0.0f);
-  //  XMVECTOR yAxis = XMVectorSet(0, 1, 0, 0);
-  //  XMVECTOR normal = XMVector3Normalize(XMLoadFloat3(&info.normal));
-  //  XMVECTOR axis = XMVector3Cross(yAxis, normal);
-
-  //  if (XMVectorGetX(XMVector3LengthSq(axis)) > 1e-6f)
-  //  {
-		//float dot = std::clamp(XMVectorGetX(XMVector3Dot(yAxis, normal)), -1.0f, 1.0f);
-		//XMVECTOR q = XMQuaternionRotationAxis(axis, acosf(dot));
-		//toFoot = XMVector3Rotate(toFoot, q);
-  //  }
-
-  //  XMVECTOR pos = XMLoadFloat3(&info.pos);
-  //  XMVECTOR target = XMVectorAdd(pos, toFoot);
-  //  XMStoreFloat3(&info.target, target);
 }
 
 void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
@@ -132,4 +115,35 @@ void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::Px
 void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
 {
     footRaycasting(scene, footPose, toeBasePose, toeEndPose, m_RightFoot);
+}
+
+void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose)
+{
+    const float slopeDotThreshold = cosf(physx::PxDegToRad(10.0f));
+    static physx::PxRaycastBuffer rayHit;
+
+    // 디폴트로 Raycasting 실패 등록
+    m_Y.part = EIKPart::NONE;
+
+    // toe raycasting
+    physx::PxVec3 rayStart = hipsPose + s_GravityDir * s_RayStartOffset;
+    bool raySuccess = scene->raycast(
+        rayStart,
+        s_GravityDir,
+        s_RayDistance,
+        rayHit,
+        physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
+    );
+
+    // raycasting 성공시 경사면 각도 확인 (너무 크면 hit 안한처리
+
+    // 정보 2개중 1개 탈락
+    if (raySuccess)
+    {
+        m_Y.pos = XMFLOAT3(rayHit.block.position.x, rayHit.block.position.y, rayHit.block.position.z);
+    }
+    else
+    {
+        m_Y.part = EIKPart::FAIL;
+    }
 }

@@ -78,12 +78,13 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 
 	//// 박스 모델 생성
-	//Model* box2 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-	//box2->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	//box2->setPosition(XMFLOAT3(10.0f, 0.5f, 10.0f));
-	//box2->setScale(XMFLOAT3(1.0f, 1.0f, 1.0f));
-	//box2->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
-	//m_Models.push_back(box2);
+	Model* box2 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.0f, 0.5f, 0.5f, 1.0f));
+	box2->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
+	box2->setPosition(XMFLOAT3(10.0f, -40.5f, 40.0f));
+	box2->setScale(XMFLOAT3(100.0f, 100.0f, 100.0f));
+	box2->setRotation(XMFLOAT3(-30.0f, 0.0f, 0.0f));
+	box2->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
+	m_Models.push_back(box2);
 
 	m_modelCount = m_Models.size();
 	
@@ -330,7 +331,7 @@ void Application::ModelControl(Input* input)
 
 	if (inputState){
 		m_AnimationModel->move(dir);
-		//m_AnimationModel->setState("walk");
+		m_AnimationModel->setState("walk");
 	}
 	else {
 		if (m_AnimationModel->getSpeed() < walkSpeed)

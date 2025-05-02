@@ -12,54 +12,15 @@ void AnimationStateManager::SetState(std::string newState, std::unordered_map<st
     previous = current;
     current.Play(&(clips[newState]), walkPhase);
     currentState = newState;
-    blendAlpha = 1.0f - blendAlpha;
-
-	startPhase = walkPhase;
-    if (blendAlpha != 0.0f)
-    {
-		float targetPhase = 1.0f;
-		if (startPhase < 0.5f)
-		{
-			targetPhase = 0.5f;
-		}
-        startPhase = (walkPhase - blendAlpha * targetPhase) / (1.0f - blendAlpha);
-    }
+    blendAlpha = 0.0f;
+    walkPhase = 0.0f;
 }
 
 void AnimationStateManager::UpdateTime(float dt) {
-    float prevWalkPhase = walkPhase;
-
-    current.UpdateTime(dt, walkPhase);
-
-    if (blendAlpha < 1.0f)
-    {
-        previous.UpdateTime(dt, walkPhase);
-		if (prevWalkPhase < 0.5f)
-		{
-            if (walkPhase >= 0.5f)
-            {
-                blendAlpha = 1.0f;
-                walkPhase = 0.5f;
-            }
-            else
-            {
-				blendAlpha = (walkPhase - startPhase) / (0.5f - startPhase);
-            }
-		} 
-        else
-        {
-            if (walkPhase < 0.5f)
-            {
-                blendAlpha = 1.0f;
-                walkPhase = 0.0f;
-            }
-            else
-            {
-                blendAlpha = (walkPhase - startPhase) / (1.0f - startPhase);
-            }
-        }
-    }
-	walkPhase = fmod(walkPhase, 1.0f);
+    walkPhase = current.UpdateTime(dt);
+    previous.UpdateTime(dt);
+	blendAlpha += dt * blendSpeed;
+	if (blendAlpha > 1.0f) blendAlpha = 1.0f;
 }
 
 void AnimationStateManager::blendAnimTx(std::vector<LocalTx>& txVectorTarget, std::vector<LocalTx>& txVectorA, std::vector<LocalTx>& txVectorB, float blendAlpha)

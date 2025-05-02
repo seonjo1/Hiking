@@ -463,11 +463,19 @@ void Model::setState(std::string state)
 void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 {
 	if (m_hasAnimation == true) {
+		
+		// 골반의 위치로 y값 결정
+		XMMATRIX worldMatrix = getWorldMatrix();
+		m_RaycastingManager.raycastingForY(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips")));
+		m_position.y = m_RaycastingManager.m_Y.pos.y - 0.15f;
+
+		// animation update
 		m_animStateManager.UpdateTime(dt);
 		m_animStateManager.UpdateAnimationClip(m_pose, m_skeleton);
 		m_pose.UpdateWorldPos(m_skeleton);
+
 		// Raycasting
-		XMMATRIX worldMatrix = getWorldMatrix();
+		worldMatrix = getWorldMatrix();
 		m_RaycastingManager.raycastingForLeftFootIK(
 			scene,
 			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftFoot")),
@@ -480,6 +488,10 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase")),
 			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"))
 		);
+
+		// 두 발을 통해 y값 결정
+		//m_position.y = (m_RaycastingManager.m_LeftFoot.pos.y + m_RaycastingManager.m_RightFoot.pos.y) * 0.5f - 0.15f;
+		//worldMatrix = getWorldMatrix();
 
 		/*
 		 [Foot IK 적용]
@@ -498,7 +510,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_IKManager.resetValuesForIK(m_RaycastingManager, m_skeleton);
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 
-		static const int MAX_ITERATION = 30;
+		static const int MAX_ITERATION = 50;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{
@@ -519,11 +531,47 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			}
 			iteration++;
 		}
-		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
+		
+		if (iteration < MAX_ITERATION)
+		{
+			float IKBlendAlpha = getLeftFootBlendingAlpha();
+			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), IKBlendAlpha);
+		}
+		else
+		{
+			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 0.0f);
+		}
+
 		m_pose.UpdateFinalPos(m_skeleton);
 	}
 }
 
+float Model::getLeftFootBlendingAlpha()
+{
+	float walkPhase = m_animStateManager.walkPhase;
+
+	if (m_animStateManager.currentState == "idle")
+	{
+		return 1.0f;
+	}
+
+	if (0.4f < walkPhase && walkPhase <= 0.6f)
+	{
+		return 1.0f;
+	}
+
+	if (0.2f < walkPhase && walkPhase <= 0.4f)
+	{
+		return (walkPhase - 0.2f) / 0.2f;
+	}
+
+	if (0.55f < walkPhase && walkPhase <= 0.8f)
+	{
+		return 1.0f - ((walkPhase - 0.55f) / 0.25f);
+	}
+
+	return 0.0f;
+}
 
 void Model::ReleaseTextures()
 {

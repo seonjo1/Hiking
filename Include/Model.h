@@ -105,7 +105,7 @@ public:
 	void initRangeAxis();
 	float getSpeed();
 	XMFLOAT3 getAxis(float xDeg, float yDeg, float zDeg);
-
+	float getLeftFootBlendingAlpha();
 
 private:
 	void ReleaseTextures();
@@ -135,6 +135,6 @@ private:
 
 	// 애니메이션 여부
 	bool m_hasAnimation = false;
-	float m_speed { 0.0f };
+	float m_speed{ 0.0f };
 	UINT m_size; // mesh 개수
 };
