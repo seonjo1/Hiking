@@ -148,5 +148,5 @@ private:
 	int m_chainNum{ 0 };
 	int m_rowNum{ 0 };
 	int m_colNum{ 0 };
-	float m_LeftFootFootAngle;
+	float m_LeftFootAngle;
 };

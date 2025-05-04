@@ -6,7 +6,7 @@ void AnimationPlayer::Play(AnimationClip* newClip, float walkPhase) {
 }
 
 float AnimationPlayer::UpdateTime(float deltaTime) {
-	static const float speed = 40.0f;
+	static const float speed = 4.0f;
 
 	if (!clip) return 0.0f;
 

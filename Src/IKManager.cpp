@@ -363,7 +363,7 @@ void IKManager::updateAngle(Pose& pose)
 
 bool IKManager::isFinish(Pose& pose, XMMATRIX& worldMatrix)
 {
-	const float THRESHOLD = 0.01f;
+	const float THRESHOLD = 0.005f;
 
 	bool success = true;
 	for (int i = 0; i < m_chainNum; i++)
@@ -378,7 +378,7 @@ bool IKManager::isFinish(Pose& pose, XMMATRIX& worldMatrix)
 		
 		float length;
 		XMStoreFloat(&length, lengthVec);
-		p("length: " + std::to_string(length) + "\n");
+		//p("length: " + std::to_string(length) + "\n");
 		if (length > THRESHOLD)
 		{
 			success = false;
@@ -638,11 +638,14 @@ void IKManager::resetValuesForIK(RaycastingManager& raycastingManager, Skeleton&
 {
 	int chainCount = m_chains.size();
 
-	m_LeftFootFootAngle = 0.0f;
-
-	if (0.628f < walkPhase && walkPhase < 0.742f)
+	m_LeftFootAngle = 0.0f;
+	if (0.342f < walkPhase && walkPhase <= 0.5f)
 	{
-		m_LeftFootFootAngle = (walkPhase - 0.628f) / (0.114f);
+		m_LeftFootAngle = 1.0f - ((walkPhase - 0.342f) / 0.158f);
+	}
+	else if (0.5f < walkPhase && walkPhase < 0.742f)
+	{
+		m_LeftFootAngle = -((walkPhase - 0.5f) / (0.242f));
 	}
 
 	for (int i = 0; i < chainCount; ++i)
@@ -701,16 +704,30 @@ void IKManager::footChainBufferUpdate(IKChain& chain, bool start, bool wasChange
 	{
 		float footXangle = chain.footXAngle;
 		float footZangle = chain.footZAngle;
+		float toeBaseXangle = 0.0f;
 
-		footXangle = -240.0f - footXangle - m_LeftFootFootAngle * 30.0f;
-		footZangle = -180.0f + footZangle;
+		if (m_LeftFootAngle < 0.0f)
+		{
+			footXangle = -230.0f - footXangle - m_LeftFootAngle * 30.0f;
+			toeBaseXangle = m_LeftFootAngle * 30.0f;
+		}
+		else
+		{
+			footXangle = -230.0f - footXangle + m_LeftFootAngle * 20.0f;
+			toeBaseXangle = -m_LeftFootAngle * 20.0f;
+		}
 
 		IKBone& footBone = chain.Bones[1];
+		IKBone& toeBaseBone = chain.Bones[0];
 
 		footBone.angleBuffer.xMax = footXangle + 0.01f;
 		footBone.angleBuffer.xMin = footXangle;
-		footBone.angleBuffer.zMax = footZangle + 0.01f;
-		footBone.angleBuffer.zMin = footZangle;
+
+		toeBaseBone.angleBuffer.xMax += toeBaseXangle + 0.01f;
+		toeBaseBone.angleBuffer.xMin += toeBaseXangle;
+
+		//footBone.angleBuffer.zMax = footZangle + 0.01f;
+		//footBone.angleBuffer.zMin = footZangle;
 	}
 
 	// 2. start == true인 경우 위에서 부터 발을 내림

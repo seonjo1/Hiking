@@ -466,8 +466,15 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		
 		// 골반의 위치로 y값 결정
 		XMMATRIX worldMatrix = getWorldMatrix();
-		m_RaycastingManager.raycastingForY(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips")));
-		m_position.y = m_RaycastingManager.m_Y.pos.y - 0.15f;
+		//m_RaycastingManager.raycastingForY(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips")));
+		//if (m_animStateManager.currentState == "walk")
+		//{
+		//	m_position.y = m_RaycastingManager.m_Y.pos.y;
+		//}
+		//else
+		//{
+		//	m_position.y = m_RaycastingManager.m_Y.pos.y - 0.15f;
+		//}
 
 		// animation update
 		m_animStateManager.UpdateTime(dt);
@@ -490,8 +497,14 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		);
 
 		// 두 발을 통해 y값 결정
-		//m_position.y = (m_RaycastingManager.m_LeftFoot.pos.y + m_RaycastingManager.m_RightFoot.pos.y) * 0.5f - 0.15f;
-		//worldMatrix = getWorldMatrix();
+
+		m_position.y = (m_RaycastingManager.m_LeftFoot.pos.y + m_RaycastingManager.m_RightFoot.pos.y) * 0.5f - 0.15f;
+		//if (m_animStateManager.currentState == "idle")
+		//{
+		//	m_position.y -= 0.15f;
+		//}
+
+		worldMatrix = getWorldMatrix();
 
 		/*
 		 [Foot IK 적용]
@@ -510,8 +523,9 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_IKManager.updateNowRotation(m_pose);
 		m_IKManager.resetValuesForIK(m_RaycastingManager, m_skeleton, m_animStateManager.walkPhase);
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
+		p("walkPHase: " + std::to_string(m_animStateManager.walkPhase) + "\n");
 
-		static const int MAX_ITERATION = 30;
+		static const int MAX_ITERATION = 50;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{
@@ -533,17 +547,15 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			iteration++;
 		}
 		
-		p("walkPhase: " + std::to_string(m_animStateManager.walkPhase) + "\n");
 
 		if (iteration < MAX_ITERATION)
 		{
+			p("success\n");
 			float leftFootIKBlendAlpha = getLeftFootBlendingAlpha();
-			p("IKBlendAlpha: " + std::to_string(leftFootIKBlendAlpha) + "\n");
 			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), leftFootIKBlendAlpha);
 		}
 		else
 		{
-			p("IK fail!\n");
 			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 0.0f);
 		}
 
@@ -560,19 +572,19 @@ float Model::getLeftFootBlendingAlpha()
 		return 1.0f;
 	}
 
-	if (0.4f < walkPhase && walkPhase <= 0.6f)
+	if (0.485f < walkPhase && walkPhase <= 0.628f)
 	{
 		return 1.0f;
 	}
 
-	if (0.2f < walkPhase && walkPhase <= 0.4f)
+	if (0.342f < walkPhase && walkPhase <= 0.485f)
 	{
-		return (walkPhase - 0.2f) / 0.2f;
+		return (walkPhase - 0.342f) / 0.143f;
 	}
 
-	if (0.6f < walkPhase && walkPhase <= 0.8f)
+	if (0.628f < walkPhase && walkPhase <= 0.742f)
 	{
-		return 1.0f - ((walkPhase - 0.6f) / 0.2f);
+		return 1.0f - ((walkPhase - 0.628f) / 0.114f);
 	}
 
 	return 0.0f;
@@ -777,20 +789,35 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 
 			BoneTrack track;
 			track.boneName = boneName;
-			
-			for (unsigned int k = 0; k < channel->mNumPositionKeys; ++k) {
-				auto& kf = channel->mPositionKeys[k];
-				track.positionKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
+
+			{
+				//auto& startKf = channel->mPositionKeys[channel->mNumPositionKeys - 1];
+				//track.positionKeys.push_back({ 0.0f, {startKf.mValue.x, startKf.mValue.y, startKf.mValue.z} });
+				for (unsigned int k = 0; k < channel->mNumPositionKeys; ++k) {
+					auto& kf = channel->mPositionKeys[k];
+					track.positionKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
+				}
+				track.positionKeys[0].time = 0.0f;
 			}
 
-			for (unsigned int k = 0; k < channel->mNumRotationKeys; ++k) {
-				auto& kf = channel->mRotationKeys[k];
-				track.rotationKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z, kf.mValue.w } });
+			{
+				//auto& startKf = channel->mRotationKeys[channel->mNumRotationKeys - 1];
+				//track.rotationKeys.push_back({ 0.0f, {startKf.mValue.x, startKf.mValue.y, startKf.mValue.z, startKf.mValue.w} });
+				for (unsigned int k = 0; k < channel->mNumRotationKeys; ++k) {
+					auto& kf = channel->mRotationKeys[k];
+					track.rotationKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z, kf.mValue.w } });
+				}
+				track.rotationKeys[0].time = 0.0f;
 			}
 
-			for (unsigned int k = 0; k < channel->mNumScalingKeys; ++k) {
-				auto& kf = channel->mScalingKeys[k];
-				track.scaleKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
+			{
+				//auto& startKf = channel->mScalingKeys[channel->mNumScalingKeys - 1];
+				//track.scaleKeys.push_back({ 0.0f, {startKf.mValue.x, startKf.mValue.y, startKf.mValue.z} });
+				for (unsigned int k = 0; k < channel->mNumScalingKeys; ++k) {
+					auto& kf = channel->mScalingKeys[k];
+					track.scaleKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
+				}
+				track.rotationKeys[0].time = 0.0f;
 			}
 
 			clip.boneTracks[boneName] = track;
@@ -886,7 +913,7 @@ void Model::setToTarget(XMFLOAT3& targetDir)
 
 void Model::speedDown()
 {
-	const static float accel = 0.005f;
+	const static float accel = 0.001f;
 	const static float minSpeed = 0.0f;
 	
 	m_speed = max(minSpeed, m_speed - accel);
@@ -895,8 +922,8 @@ void Model::speedDown()
 void Model::move(XMFLOAT3& targetDir)
 {
 	const static float rotSpeed = 5.0f;
-	const static float accel = 0.005f;
-	const static float maxSpeed = 0.05f;
+	const static float accel = 0.001f;
+	const static float maxSpeed = 0.005f;
 
 	// 현재 방향 벡터
 	XMFLOAT3 nowDir = getRotatedVector(m_rotation.y);
