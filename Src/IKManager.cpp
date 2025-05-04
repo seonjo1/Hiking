@@ -641,11 +641,11 @@ void IKManager::resetValuesForIK(RaycastingManager& raycastingManager, Skeleton&
 	m_LeftFootAngle = 0.0f;
 	if (0.342f < walkPhase && walkPhase <= 0.5f)
 	{
-		m_LeftFootAngle = 1.0f - ((walkPhase - 0.342f) / 0.158f);
+		m_LeftFootAngle = cosf(((walkPhase - 0.342f) / 0.158f) * XM_PIDIV2);
 	}
 	else if (0.5f < walkPhase && walkPhase < 0.742f)
 	{
-		m_LeftFootAngle = -((walkPhase - 0.5f) / (0.242f));
+		m_LeftFootAngle = -sinf(((walkPhase - 0.5f) / (0.242f)) * XM_PIDIV2);
 	}
 
 	for (int i = 0; i < chainCount; ++i)

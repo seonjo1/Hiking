@@ -498,7 +498,12 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 
 		// 두 발을 통해 y값 결정
 
-		m_position.y = (m_RaycastingManager.m_LeftFoot.pos.y + m_RaycastingManager.m_RightFoot.pos.y) * 0.5f - 0.15f;
+		m_position.y = (m_RaycastingManager.m_LeftFoot.pos.y + m_RaycastingManager.m_RightFoot.pos.y) * 0.5f;
+		if (m_animStateManager.currentState == "idle")
+		{
+			m_position.y -= 0.15f;
+		}
+		//m_position.y = std::fmaxf(m_RaycastingManager.m_LeftFoot.pos.y, m_RaycastingManager.m_RightFoot.pos.y);
 		//if (m_animStateManager.currentState == "idle")
 		//{
 		//	m_position.y -= 0.15f;
@@ -579,12 +584,12 @@ float Model::getLeftFootBlendingAlpha()
 
 	if (0.342f < walkPhase && walkPhase <= 0.485f)
 	{
-		return (walkPhase - 0.342f) / 0.143f;
+		return sinf(((walkPhase - 0.342f) / 0.143f) * XM_PIDIV2);
 	}
 
 	if (0.628f < walkPhase && walkPhase <= 0.742f)
 	{
-		return 1.0f - ((walkPhase - 0.628f) / 0.114f);
+		return cosf(((walkPhase - 0.628f) / 0.114f) * XM_PIDIV2);
 	}
 
 	return 0.0f;
