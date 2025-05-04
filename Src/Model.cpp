@@ -466,15 +466,15 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		
 		// 골반의 위치로 y값 결정
 		XMMATRIX worldMatrix = getWorldMatrix();
-		//m_RaycastingManager.raycastingForY(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips")));
-		//if (m_animStateManager.currentState == "walk")
-		//{
-		//	m_position.y = m_RaycastingManager.m_Y.pos.y;
-		//}
-		//else
-		//{
-		//	m_position.y = m_RaycastingManager.m_Y.pos.y - 0.15f;
-		//}
+		m_RaycastingManager.raycastingForY(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips")));
+		if (m_animStateManager.currentState == "walk")
+		{
+			m_position.y = m_RaycastingManager.m_Y.pos.y;
+		}
+		else
+		{
+			m_position.y = m_RaycastingManager.m_Y.pos.y - 0.15f;
+		}
 
 		// animation update
 		m_animStateManager.UpdateTime(dt);
@@ -498,16 +498,13 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 
 		// 두 발을 통해 y값 결정
 
-		m_position.y = (m_RaycastingManager.m_LeftFoot.pos.y + m_RaycastingManager.m_RightFoot.pos.y) * 0.5f;
-		if (m_animStateManager.currentState == "idle")
-		{
-			m_position.y -= 0.15f;
-		}
-		//m_position.y = std::fmaxf(m_RaycastingManager.m_LeftFoot.pos.y, m_RaycastingManager.m_RightFoot.pos.y);
+		m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.5f);
+		//m_position.y = (m_RaycastingManager.m_LeftFoot.pos.y + m_RaycastingManager.m_RightFoot.pos.y) * 0.5f;
 		//if (m_animStateManager.currentState == "idle")
 		//{
 		//	m_position.y -= 0.15f;
 		//}
+
 
 		worldMatrix = getWorldMatrix();
 
