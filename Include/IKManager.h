@@ -112,7 +112,7 @@ class IKManager
 {
 public:
 	void initIKChains(Skeleton& skeleton);
-	void resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton);
+	void resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton, float walkPhase);
 	void calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingManager& raycastingManager);
 	void calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix);
 	void solveDLS();
@@ -148,4 +148,5 @@ private:
 	int m_chainNum{ 0 };
 	int m_rowNum{ 0 };
 	int m_colNum{ 0 };
+	float m_LeftFootFootAngle;
 };

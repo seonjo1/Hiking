@@ -363,7 +363,7 @@ void IKManager::updateAngle(Pose& pose)
 
 bool IKManager::isFinish(Pose& pose, XMMATRIX& worldMatrix)
 {
-	const float THRESHOLD = 0.001f;
+	const float THRESHOLD = 0.01f;
 
 	bool success = true;
 	for (int i = 0; i < m_chainNum; i++)
@@ -378,6 +378,7 @@ bool IKManager::isFinish(Pose& pose, XMMATRIX& worldMatrix)
 		
 		float length;
 		XMStoreFloat(&length, lengthVec);
+		p("length: " + std::to_string(length) + "\n");
 		if (length > THRESHOLD)
 		{
 			success = false;
@@ -547,12 +548,18 @@ XMVECTOR IKManager::divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist)
 	XMVECTOR qthetaX = XMQuaternionRotationAxis(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), thetaX);
 	XMVECTOR qthetaY = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), thetaY);
 
-	XMVECTOR front1 = XMVector3Rotate(XMVectorSet(0, 0, -1, 0), twist);
-	XMVECTOR front2 = XMVectorSet(0, 0, -1, 0);
-	XMVECTOR q2 = XMQuaternionNormalize(XMQuaternionMultiply(XMQuaternionMultiply(qx, qz), qthetaY));
+	XMVECTOR front = XMVector3Rotate(XMVectorSet(0, 0, -1, 0), twist);
+	XMVECTOR q2 = XMQuaternionNormalize(XMQuaternionMultiply(qx, qz));
 
-	XMVECTOR v1 = XMVector3Rotate(front1, qthetaX);
-	XMVECTOR v2 = XMVector3Rotate(front2, q2);
+	//p("thetaX: " + std::to_string(thetaX) + "\n");
+	//p("thetaY: " + std::to_string(thetaY) + "\n");
+	//p("front: " + std::to_string(XMVectorGetX(front)) + " " + std::to_string(XMVectorGetY(front)) + " " + std::to_string(XMVectorGetZ(front)) + "\n");
+
+	XMVECTOR v1 = XMVector3Rotate(front, qx);
+	XMVECTOR v2 = XMVector3Rotate(front, q2);
+
+	//p("v1: " + std::to_string(XMVectorGetX(v1)) + " " + std::to_string(XMVectorGetY(v1)) + " " + std::to_string(XMVectorGetZ(v1)) + "\n");
+	//p("v2: " + std::to_string(XMVectorGetX(v2)) + " " + std::to_string(XMVectorGetY(v2)) + " " + std::to_string(XMVectorGetZ(v2)) + "\n");
 
 	XMVECTOR axis = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qthetaX);
 	float dotV1V2 = XMVectorGetX(XMVector3Dot(v1, v2));
@@ -560,15 +567,16 @@ XMVECTOR IKManager::divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist)
 	XMVECTOR crossVal = XMVector3Cross(v1, v2);
 	if (XMVectorGetX(XMVector3Dot(axis, crossVal)) > 0.0f) { yAngle = -yAngle; }
 
+
 	qy = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), yAngle);
 
-	//p("D: " + std::to_string(XMVectorGetX(D)) + " " + std::to_string(XMVectorGetY(D)) + " " + std::to_string(XMVectorGetZ(D)) + "\n");
-	//p("D_clamped: " + std::to_string(XMVectorGetX(D_clamped)) + " " + std::to_string(XMVectorGetY(D_clamped)) + " " + std::to_string(XMVectorGetZ(D_clamped)) + "\n");
 	//p("xAngle: " + std::to_string(xAngle) + "\n");
 	//p("yAngle: " + std::to_string(yAngle) + "\n");
 	//p("zAngle: " + std::to_string(zAngle) + "\n");
 
-	return XMQuaternionNormalize(XMQuaternionMultiply(XMQuaternionMultiply(qy, qx), qz));  // x 먼저, z 나중
+	XMVECTOR qFinal =  XMQuaternionNormalize(XMQuaternionMultiply(XMQuaternionMultiply(XMQuaternionMultiply(twist, qy), qx), qz));
+
+	return qFinal;  // x 먼저, z 나중
 }
 
 XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twist, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon)
@@ -576,6 +584,8 @@ XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twis
 	twistAxis = XMVector3Normalize(twistAxis);
 	XMVECTOR D = XMVector3Rotate(twistAxis, swing);  // swing에 의해 이동된 방향
 	XMVECTOR D_clamped = ClampDirectionToSphericalPolygon(D, polygon);
+	//p("D: " + std::to_string(XMVectorGetX(D)) + " " + std::to_string(XMVectorGetY(D)) + " " + std::to_string(XMVectorGetZ(D)) + "\n");
+	//p("D_clamped: " + std::to_string(XMVectorGetX(D_clamped)) + " " + std::to_string(XMVectorGetY(D_clamped)) + " " + std::to_string(XMVectorGetZ(D_clamped)) + "\n");
 	return divideQuaternionToYXZ(D_clamped, twist);
 }
 
@@ -624,9 +634,17 @@ void IKManager::makePolygon(std::vector<XMVECTOR>& polygon, XMVECTOR& twistClamp
 	//}
 }
 
-void IKManager::resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton)
+void IKManager::resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton, float walkPhase)
 {
 	int chainCount = m_chains.size();
+
+	m_LeftFootFootAngle = 0.0f;
+
+	if (0.628f < walkPhase && walkPhase < 0.742f)
+	{
+		m_LeftFootFootAngle = (walkPhase - 0.628f) / (0.114f);
+	}
+
 	for (int i = 0; i < chainCount; ++i)
 	{
 		m_chains[i].isChanged = true;
@@ -684,7 +702,7 @@ void IKManager::footChainBufferUpdate(IKChain& chain, bool start, bool wasChange
 		float footXangle = chain.footXAngle;
 		float footZangle = chain.footZAngle;
 
-		footXangle = -240.0f - footXangle;
+		footXangle = -240.0f - footXangle - m_LeftFootFootAngle * 30.0f;
 		footZangle = -180.0f + footZangle;
 
 		IKBone& footBone = chain.Bones[1];

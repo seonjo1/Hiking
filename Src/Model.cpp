@@ -506,11 +506,12 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		*/
 		// 0. IKangle 업데이트
 		p("\n\n\nstart IK!!!\n");
+
 		m_IKManager.updateNowRotation(m_pose);
-		m_IKManager.resetValuesForIK(m_RaycastingManager, m_skeleton);
+		m_IKManager.resetValuesForIK(m_RaycastingManager, m_skeleton, m_animStateManager.walkPhase);
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 
-		static const int MAX_ITERATION = 50;
+		static const int MAX_ITERATION = 30;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{
@@ -532,13 +533,17 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			iteration++;
 		}
 		
+		p("walkPhase: " + std::to_string(m_animStateManager.walkPhase) + "\n");
+
 		if (iteration < MAX_ITERATION)
 		{
-			float IKBlendAlpha = getLeftFootBlendingAlpha();
-			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), IKBlendAlpha);
+			float leftFootIKBlendAlpha = getLeftFootBlendingAlpha();
+			p("IKBlendAlpha: " + std::to_string(leftFootIKBlendAlpha) + "\n");
+			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), leftFootIKBlendAlpha);
 		}
 		else
 		{
+			p("IK fail!\n");
 			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 0.0f);
 		}
 
@@ -565,9 +570,9 @@ float Model::getLeftFootBlendingAlpha()
 		return (walkPhase - 0.2f) / 0.2f;
 	}
 
-	if (0.55f < walkPhase && walkPhase <= 0.8f)
+	if (0.6f < walkPhase && walkPhase <= 0.8f)
 	{
-		return 1.0f - ((walkPhase - 0.55f) / 0.25f);
+		return 1.0f - ((walkPhase - 0.6f) / 0.2f);
 	}
 
 	return 0.0f;
@@ -881,7 +886,7 @@ void Model::setToTarget(XMFLOAT3& targetDir)
 
 void Model::speedDown()
 {
-	const static float accel = 0.015f;
+	const static float accel = 0.005f;
 	const static float minSpeed = 0.0f;
 	
 	m_speed = max(minSpeed, m_speed - accel);
@@ -890,8 +895,8 @@ void Model::speedDown()
 void Model::move(XMFLOAT3& targetDir)
 {
 	const static float rotSpeed = 5.0f;
-	const static float accel = 0.015f;
-	const static float maxSpeed = 0.15f;
+	const static float accel = 0.005f;
+	const static float maxSpeed = 0.05f;
 
 	// 현재 방향 벡터
 	XMFLOAT3 nowDir = getRotatedVector(m_rotation.y);
