@@ -376,13 +376,30 @@ void IKManager::updateAngle(Pose& pose, XMMATRIX& worldMatrix, Skeleton& skeleto
 			XMStoreFloat3(&dest, localBoneVector);
 
 			// 0, 1, 0에서 local 로 변환하는 거 찾기
-			XMVECTOR D = getQuatFromTo(y, dest);
+			XMVECTOR toDestQuat = getQuatFromTo(y, dest);
+			p("bone " + std::to_string(bone.idx) + " start clamping!!\n");
 
 			// 해당 quat으로 이동된 D를 통해 최종 변환 구하기
-			XMStoreFloat4(&m_nowRotation[bone.idx], D);
-			//m_nowRotation[bone.idx] = recreateD(bone, D, pose);
+			XMVECTOR D = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), toDestQuat);  // swing에 의해 이동된 방향
+			m_nowRotation[bone.idx] = recreateD(bone, D, pose);
 		}
 	}
+}
+
+XMFLOAT4 IKManager::recreateD(IKBone& bone, XMVECTOR& D, Pose& pose)
+{
+	// local 축 정의
+	XMVECTOR twistAxis = XMLoadFloat3(&bone.axis);
+	XMVECTOR& twist = bone.twist;
+
+	XMVECTOR qFinal = divideQuaternionToYXZ(D, twist);
+	qFinal = XMQuaternionNormalize(qFinal);
+
+	pose.twist[bone.idx] = twist;
+
+	XMFLOAT4 quat;
+	XMStoreFloat4(&quat, qFinal);
+	return quat;
 }
 
 bool IKManager::isFinish(Pose& pose, XMMATRIX& worldMatrix)
@@ -460,23 +477,6 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat, Pose& pose)
 	pose.twist[bone.idx] = twist;
 
 	XMStoreFloat4(&quat, XMQuaternionNormalize(qFinal));
-}
-
-
-XMFLOAT4 IKManager::recreateD(IKBone& bone, XMVECTOR& D, Pose& pose)
-{
-	// local 축 정의
-	XMVECTOR twistAxis = XMLoadFloat3(&bone.axis);
-	XMVECTOR& twist = bone.twist;
-	
-	XMVECTOR qFinal = divideQuaternionToYXZ(D, twist);
-	qFinal = XMQuaternionNormalize(qFinal);
-
-	pose.twist[bone.idx] = twist;
-
-	XMFLOAT4 quat;
-	XMStoreFloat4(&quat, XMQuaternionNormalize(qFinal));
-	return quat;
 }
 
 XMVECTOR IKManager::ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon)
@@ -611,9 +611,9 @@ XMVECTOR IKManager::divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist)
 
 	qy = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), yAngle);
 
-	//p("xAngle: " + std::to_string(xAngle) + "\n");
-	//p("yAngle: " + std::to_string(yAngle) + "\n");
-	//p("zAngle: " + std::to_string(zAngle) + "\n");
+	p("xAngle: " + std::to_string(xAngle) + "\n");
+	p("yAngle: " + std::to_string(yAngle) + "\n");
+	p("zAngle: " + std::to_string(zAngle) + "\n");
 
 	XMVECTOR qFinal =  XMQuaternionNormalize(XMQuaternionMultiply(XMQuaternionMultiply(XMQuaternionMultiply(twist, qy), qx), qz));
 
