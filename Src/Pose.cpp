@@ -90,6 +90,15 @@ XMVECTOR Pose::getTwist(int idx)
     return twist[idx];
 }
 
+XMMATRIX Pose::getLocalMatrix(int idx)
+{
+    XMMATRIX T = XMMatrixTranslation(local[idx].position.x, local[idx].position.y, local[idx].position.z);
+    XMMATRIX R = XMMatrixRotationQuaternion(XMLoadFloat4(&(local[idx].rotation)));
+    XMMATRIX S = XMMatrixScaling(local[idx].scale.x, local[idx].scale.y, local[idx].scale.z);
+    XMMATRIX local = XMMatrixMultiply(XMMatrixMultiply(S, R), T);
+    return local;
+}
+
 XMMATRIX Pose::getLocalTranslationMatrix(int idx)
 {
     XMMATRIX translation = XMMatrixTranslation(local[idx].position.x, local[idx].position.y, local[idx].position.z);

@@ -28,4 +28,6 @@ struct Pose {
     void UpdateIKWorldPos(const Skeleton& skeleton, std::vector<XMFLOAT4>& IKRotation);
     void IKChainBlending(IKChain& chain, std::vector<XMFLOAT4>& IKRotation, float blendAlpha);
     XMVECTOR getTwist(int idx);
+    XMMATRIX getLocalMatrix(int idx);
+
 };

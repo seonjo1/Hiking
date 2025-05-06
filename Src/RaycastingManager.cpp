@@ -16,7 +16,7 @@ float RaycastingManager::getDistance(physx::PxVec3& toTarget, physx::PxVec3& dir
     }
 }
 
-void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose, RaycastingInfo& info)
+void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeBasePose, RaycastingInfo& info)
 {
     const float slopeDotThreshold = cosf(physx::PxDegToRad(50.0f));
     static physx::PxRaycastBuffer toeEndHit;
@@ -24,16 +24,6 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
 
     // 디폴트로 Raycasting 실패 등록
     info.part = EIKPart::NONE;
-
-    // toe raycasting
-    physx::PxVec3 toeEndRayStart = toeEndPose + s_GravityDir * s_RayStartOffset;
-    bool toeEndRaySuccess = scene->raycast(
-        toeEndRayStart,
-        s_GravityDir,
-        s_RayDistance,
-        toeEndHit,
-        physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
-    );
 
     // foot raycasting
     physx::PxVec3 toeBaseRayStart = toeBasePose + s_GravityDir * s_RayStartOffset;
@@ -45,16 +35,6 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
         physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
     );
 
-    // raycasting 성공시 경사면 각도 확인 (너무 크면 hit 안한처리
-    if (toeEndRaySuccess)
-    {
-        toeEndRaySuccess = toeEndHit.block.normal.dot(physx::PxVec3(0.0f, 1.0f, 0.0f)) > slopeDotThreshold;
-    }
-    else
-    {
-        info.part = EIKPart::FAIL;
-    }
-
     if (toeBaseRaySuccess) {
         toeBaseRaySuccess = toeBaseHit.block.normal.dot(physx::PxVec3(0.0f, 1.0f, 0.0f)) > slopeDotThreshold;
     }
@@ -63,38 +43,7 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
         info.part = EIKPart::FAIL;
     }
 
-    // 정보 2개중 1개 탈락
-	/*if (toeEndRaySuccess && toeBaseRaySuccess)
-	{
-		float toeEndDistance = getDistance(toeEndHit.block.position - toeEndPose, physx::PxVec3(0.0f, -1.0f, 0.0f));
-		float toeBaseDistance = getDistance(toeBaseHit.block.position - toeBasePose, physx::PxVec3(0.0f, -1.0f, 0.0f));
-		if (toeEndDistance < toeBaseDistance)
-		{
-			info.pos = XMFLOAT3(toeEndHit.block.position.x, toeEndHit.block.position.y, toeEndHit.block.position.z);
-			info.normal = XMFLOAT3(toeEndHit.block.normal.x, toeEndHit.block.normal.y, toeEndHit.block.normal.z);
-			info.part = EIKPart::TOEEND;
-			info.distance = toeEndDistance;
-			info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-		}
-		else
-		{
-			info.pos = XMFLOAT3(toeBaseHit.block.position.x, toeBaseHit.block.position.y, toeBaseHit.block.position.z);
-			info.normal = XMFLOAT3(toeBaseHit.block.normal.x, toeBaseHit.block.normal.y, toeBaseHit.block.normal.z);
-			info.part = EIKPart::TOEBASE;
-			info.distance = toeBaseDistance;
-			info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-		}
-	}
-	else if (toeEndRaySuccess)
-	{
-		float toeEndDistance = getDistance(toeEndHit.block.position - toeEndPose, physx::PxVec3(0.0f, -1.0f, 0.0f));
-		info.pos = XMFLOAT3(toeEndHit.block.position.x, toeEndHit.block.position.y, toeEndHit.block.position.z);
-		info.normal = XMFLOAT3(toeEndHit.block.normal.x, toeEndHit.block.normal.y, toeEndHit.block.normal.z);
-		info.part = EIKPart::TOEEND;
-		info.distance = toeEndDistance;
-		info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-	}
-	else */if (toeBaseRaySuccess)
+    if (toeBaseRaySuccess)
     {
 		float toeBaseDistance = getDistance(toeBaseHit.block.position - toeBasePose, physx::PxVec3(0.0f, -1.0f, 0.0f));
 		info.pos = XMFLOAT3(toeBaseHit.block.position.x, toeBaseHit.block.position.y, toeBaseHit.block.position.z);
@@ -106,15 +55,15 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 foot
     }
 }
 
-void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
+void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose)
 {
-    footRaycasting(scene, footPose, toeBasePose, toeEndPose, m_LeftFoot);
+    footRaycasting(scene, toeBasePose, m_LeftFoot);
 }
 
 
-void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
+void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose)
 {
-    footRaycasting(scene, footPose, toeBasePose, toeEndPose, m_RightFoot);
+    footRaycasting(scene, toeBasePose, m_RightFoot);
 }
 
 void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose)

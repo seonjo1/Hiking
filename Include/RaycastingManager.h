@@ -26,8 +26,8 @@ struct RaycastingInfo {
 
 class RaycastingManager {
 public:
-	void raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
-	void raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
+	void raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose);
+	void raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose);
 	void raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose);
 
 	RaycastingInfo m_LeftFoot;
@@ -35,7 +35,7 @@ public:
 	RaycastingInfo m_Y;
 
 private:
-	void footRaycasting(physx::PxScene* scene, physx::PxVec3 footPose, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose, RaycastingInfo& info);
+	void footRaycasting(physx::PxScene* scene, physx::PxVec3 toeBasePose, RaycastingInfo& info);
 	float getDistance(physx::PxVec3& toTarget, physx::PxVec3& dir);
 
 	const static float s_RayStartOffset;

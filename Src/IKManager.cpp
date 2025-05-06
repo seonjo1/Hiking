@@ -8,8 +8,12 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones.resize(4);
 	m_chains[idx].DoFNum = 12;
 
-	// LeftToeBase
-	int boneIdx = skeleton.GetBoneIndex("mixamorig:LeftToeBase");
+	m_chains[idx].clampingIdx = 2;
+
+	// LeftUpLeg
+	int boneIdx = skeleton.GetBoneIndex("mixamorig:LeftUpLeg");
+	p("LeftUpLegboneIdx: " + std::to_string(boneIdx) + "\n");
+
 	m_chains[idx].Bones[0].idx = boneIdx;
 	m_chains[idx].Bones[0].parentsIdx = skeleton.bones[boneIdx].parentIndex;
 	m_chains[idx].Bones[0].xMax = skeleton.bones[boneIdx].xMax;
@@ -19,8 +23,10 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[0].axis = skeleton.bones[boneIdx].axis;
 	m_chains[idx].Bones[0].twist = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), XMConvertToRadians(skeleton.bones[boneIdx].twist));
 
-	// LeftFoot
-	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftFoot");
+	// LeftLeg
+	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftLeg");
+	p("LeftLegboneIdx: " + std::to_string(boneIdx) + "\n");
+
 	m_chains[idx].Bones[1].idx = boneIdx;
 	m_chains[idx].Bones[1].parentsIdx = skeleton.bones[boneIdx].parentIndex;
 	m_chains[idx].Bones[1].xMax = skeleton.bones[boneIdx].xMax;
@@ -30,10 +36,13 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[1].axis = skeleton.bones[boneIdx].axis;
 	m_chains[idx].Bones[1].twist = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), XMConvertToRadians(skeleton.bones[boneIdx].twist));
 
-	// LeftLeg
-	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftLeg");
+	// LeftFoot
+	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftFoot");
+	p("LeftFoot boneIdx: " + std::to_string(boneIdx) + "\n");
+
 	m_chains[idx].Bones[2].idx = boneIdx;
 	m_chains[idx].Bones[2].parentsIdx = skeleton.bones[boneIdx].parentIndex;
+	m_chains[idx].Bones[2].childIdx = skeleton.GetBoneIndex("mixamorig:LeftToeBase");
 	m_chains[idx].Bones[2].xMax = skeleton.bones[boneIdx].xMax;
 	m_chains[idx].Bones[2].xMin = skeleton.bones[boneIdx].xMin;
 	m_chains[idx].Bones[2].zMax = skeleton.bones[boneIdx].zMax;
@@ -42,10 +51,13 @@ void IKManager::initLeftFootChains(Skeleton& skeleton)
 	m_chains[idx].Bones[2].twist = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), XMConvertToRadians(skeleton.bones[boneIdx].twist));
 
 
-	// LeftUpLeg
-	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftUpLeg");
+	// LeftToeBase
+	boneIdx = skeleton.GetBoneIndex("mixamorig:LeftToeBase");
+	p("leftToeBase boneIdx: " + std::to_string(boneIdx) + "\n");
+
 	m_chains[idx].Bones[3].idx = boneIdx;
 	m_chains[idx].Bones[3].parentsIdx = skeleton.bones[boneIdx].parentIndex;
+	m_chains[idx].Bones[3].childIdx = skeleton.GetBoneIndex("mixamorig:LeftToe_End");
 	m_chains[idx].Bones[3].xMax = skeleton.bones[boneIdx].xMax;
 	m_chains[idx].Bones[3].xMin = skeleton.bones[boneIdx].xMin;
 	m_chains[idx].Bones[3].zMax = skeleton.bones[boneIdx].zMax;
@@ -114,42 +126,6 @@ void IKManager::calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingMan
 		XMMATRIX transform = XMMatrixMultiply(pose.world[boneIdx], worldMatrix);
 		endEffector = XMVector4Transform(endEffector, transform);
 		XMStoreFloat3(&m_chains[i].EndEffector, endEffector);
-		// target 등록
-		m_chains[i].Target = raycastingManager.m_LeftFoot.target;
-		
-	}
-
-	// left chain Normal 설정
-	{
-		XMVECTOR baseNormal = XMVectorSet(0, 1, 0, 0);
-		XMVECTOR normal = XMLoadFloat3(&raycastingManager.m_LeftFoot.normal);
-
-		XMVECTOR det;
-		int footParentIdx = m_chains[0].Bones[2].idx;
-		XMMATRIX footParentTransform = XMMatrixMultiply(pose.world[footParentIdx], worldMatrix);
-		XMVECTOR localNormal = XMVector3Normalize(XMVector3TransformNormal(normal, XMMatrixInverse(&det, footParentTransform)));
-		
-		// X
-		XMVECTOR localNormalZY = XMVector2Normalize(XMVectorSet(XMVectorGetZ(localNormal), XMVectorGetY(localNormal), 0.0f, 0.0f));
-
-		float dot = XMVectorGetX(XMVector2Dot(localNormalZY, baseNormal));  // 두 벡터 사이의 코사인
-		float angle = safeAcosf(dot);
-		if (XMVectorGetZ(localNormal) < 0.0f)
-		{
-			angle = XM_2PI - angle;
-		}
-		m_chains[0].footXAngle = -XMConvertToDegrees(angle);
-
-		// Z
-		XMVECTOR localNormalXY = XMVector2Normalize(XMVectorSet(XMVectorGetX(localNormal), XMVectorGetY(localNormal), 0.0f, 0.0f));
-
-		dot = XMVectorGetX(XMVector2Dot(localNormalXY, baseNormal));  // 두 벡터 사이의 코사인
-		angle = safeAcosf(dot);
-		if (XMVectorGetX(localNormal) < 0.0f)
-		{
-			angle = XM_2PI - angle;
-		}
-		m_chains[0].footZAngle = -XMConvertToDegrees(angle);
 	}
 }
 
@@ -298,22 +274,20 @@ void IKManager::updateNowRotation(Pose& pose)
 	}
 }
 
-void IKManager::updateAngle(Pose& pose)
+void IKManager::updateAngle(Pose& pose, XMMATRIX& worldMatrix, Skeleton& skeleton)
 {
 	for (int i = 0; i < m_chainNum; ++i)
 	{
 		int idx = 0;
 		int count = m_chains[i].Bones.size();
-		bool wasChanged = m_chains[i].isChanged;
 		bool start = m_chains[i].start;
-		m_chains[i].isChanged = false;
 		m_chains[i].start = false;
 
 		switch (i)
 		{
 			case 0:
 			{
-				footChainBufferUpdate(m_chains[i], start, wasChanged);
+				footChainBufferUpdate(m_chains[i], start);
 				break;
 			}
 			default:
@@ -322,8 +296,9 @@ void IKManager::updateAngle(Pose& pose)
 			}
 		}
 
+		int clampingIdx = m_chains[i].clampingIdx;
 
-		for (int j = 0; j < count; ++j)
+		for (int j = 0; j < clampingIdx; ++j)
 		{
 			IKBone& bone = m_chains[i].Bones[j];
 
@@ -355,8 +330,57 @@ void IKManager::updateAngle(Pose& pose)
 
 			// clamping
 			clampBoneAngle(bone, m_nowRotation[bone.idx], pose);
+		}
 
-			m_chains[i].isChanged = true;
+		for (int j = clampingIdx; j < count; ++j)
+		{
+			IKBone& bone = m_chains[i].Bones[j];
+
+			// world 좌표계에서의 bone 벡터
+			XMFLOAT3 worldDest = bone.worldDest;
+			XMFLOAT3 worldChildDest = bone.worldChildDest;
+
+			// local로 변환 (부모의 변환은 현재 변경된 quat으로 계산)
+			int boneIdx = bone.idx;
+			XMMATRIX transform = XMMatrixIdentity();
+
+			{
+				XMMATRIX local = pose.getLocalTranslationMatrix(boneIdx);
+				transform = XMMatrixMultiply(transform, local);
+				boneIdx = skeleton.bones[boneIdx].parentIndex;
+			}
+
+			XMMATRIX parent = XMMatrixIdentity();
+			while (boneIdx != -1)
+			{
+				XMMATRIX T = XMMatrixTranslation(pose.local[boneIdx].position.x, pose.local[boneIdx].position.y, pose.local[boneIdx].position.z);
+				XMVECTOR quat = XMLoadFloat4(&m_nowRotation[boneIdx]);
+				XMMATRIX R = XMMatrixRotationQuaternion(quat);
+				XMMATRIX S = XMMatrixScaling(pose.local[boneIdx].scale.x, pose.local[boneIdx].scale.y, pose.local[boneIdx].scale.z);
+				XMMATRIX local = XMMatrixMultiply(XMMatrixMultiply(S, R), T);
+
+				parent = XMMatrixMultiply(parent, local);
+				boneIdx = skeleton.bones[boneIdx].parentIndex;
+			}
+			transform = XMMatrixMultiply(transform, parent);
+			transform = XMMatrixMultiply(transform, worldMatrix);
+
+			XMVECTOR det;
+			transform = XMMatrixInverse(&det, transform);
+			XMVECTOR localDest = XMVector3TransformNormal(XMLoadFloat3(&worldDest), transform);
+			XMVECTOR localChildDest = XMVector3TransformNormal(XMLoadFloat3(&worldChildDest), transform);
+			XMVECTOR localBoneVector = XMVector3Normalize(XMVectorSubtract(localChildDest, localDest));
+
+			XMFLOAT3 y = { 0.0f, 1.0f, 0.0f };
+			XMFLOAT3 dest;
+			XMStoreFloat3(&dest, localBoneVector);
+
+			// 0, 1, 0에서 local 로 변환하는 거 찾기
+			XMVECTOR D = getQuatFromTo(y, dest);
+
+			// 해당 quat으로 이동된 D를 통해 최종 변환 구하기
+			XMStoreFloat4(&m_nowRotation[bone.idx], D);
+			//m_nowRotation[bone.idx] = recreateD(bone, D, pose);
 		}
 	}
 }
@@ -436,6 +460,23 @@ void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat, Pose& pose)
 	pose.twist[bone.idx] = twist;
 
 	XMStoreFloat4(&quat, XMQuaternionNormalize(qFinal));
+}
+
+
+XMFLOAT4 IKManager::recreateD(IKBone& bone, XMVECTOR& D, Pose& pose)
+{
+	// local 축 정의
+	XMVECTOR twistAxis = XMLoadFloat3(&bone.axis);
+	XMVECTOR& twist = bone.twist;
+	
+	XMVECTOR qFinal = divideQuaternionToYXZ(D, twist);
+	qFinal = XMQuaternionNormalize(qFinal);
+
+	pose.twist[bone.idx] = twist;
+
+	XMFLOAT4 quat;
+	XMStoreFloat4(&quat, XMQuaternionNormalize(qFinal));
+	return quat;
 }
 
 XMVECTOR IKManager::ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon)
@@ -634,7 +675,7 @@ void IKManager::makePolygon(std::vector<XMVECTOR>& polygon, XMVECTOR& twistClamp
 	//}
 }
 
-void IKManager::resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton, float walkPhase)
+void IKManager::resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton, float walkPhase, Pose& pose, XMMATRIX& worldMatrix)
 {
 	int chainCount = m_chains.size();
 
@@ -650,43 +691,94 @@ void IKManager::resetValuesForIK(RaycastingManager& raycastingManager, Skeleton&
 
 	for (int i = 0; i < chainCount; ++i)
 	{
-		m_chains[i].isChanged = true;
 		m_chains[i].start = true;
-		m_chains[i].angleBufferSign = true;
 	}
 	
-	initLeftFootChainInfo(raycastingManager, skeleton);
+	initLeftFootChainInfo(raycastingManager, skeleton, pose, worldMatrix);
 }
 
-void IKManager::initLeftFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton)
+XMVECTOR IKManager::getQuatFromTo(XMFLOAT3 from, XMFLOAT3 to)
+{
+	XMVECTOR vFrom = XMVector3Normalize(XMLoadFloat3(&from)); // 예: (0, 1, 0)
+	XMVECTOR vTo = XMVector3Normalize(XMLoadFloat3(&to)); // 예: (0, 1, 0)
+
+	float dot = XMVectorGetX(XMVector3Dot(vFrom, vTo));
+
+	XMVECTOR quat;
+
+	if (dot > 0.9999f)
+	{
+		return XMQuaternionIdentity(); // 동일 방향
+	}
+	else
+	{
+		XMVECTOR axis = XMVector3Normalize(XMVector3Cross(vFrom, vTo));
+		float angle = safeAcosf(dot);
+		return XMQuaternionRotationAxis(axis, angle);
+	}
+}
+
+void IKManager::initLeftFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton, Pose& pose, XMMATRIX& worldMatrix)
 {
 	IKChain& chain = m_chains[0];
 	RaycastingInfo& raycastingInfo = raycastingManager.m_LeftFoot;
 
+	// 타겟 설정
+	chain.Target = raycastingInfo.target;
+
+	XMVECTOR normalQuat = getQuatFromTo(XMFLOAT3(0, 1, 0), raycastingInfo.normal);
+	XMVECTOR local = XMVectorSet(0, 0, 0, 1);
+
+	{
+		// 기존 애니메이션의 Foot 방향벡터 계산 (Normal 차이 적용)
+		XMMATRIX transform = XMMatrixMultiply(pose.world[chain.Bones[2].idx], worldMatrix);
+		XMVECTOR worldFoot = XMVector3TransformCoord(local, transform);
+		worldFoot = XMVector3Rotate(worldFoot, normalQuat);
+		XMStoreFloat3(&chain.Bones[2].worldDest, worldFoot);
+
+		XMMATRIX transformChild = XMMatrixMultiply(pose.world[chain.Bones[2].childIdx], worldMatrix);
+		XMVECTOR worldToeBase = XMVector3TransformCoord(local, transformChild);
+		worldToeBase = XMVector3Rotate(worldToeBase, normalQuat);
+		XMStoreFloat3(&chain.Bones[2].worldChildDest, worldToeBase);
+	}
+
+	{
+		// 기존 애니메이션의 ToeBase 방향벡터 계산 (Normal 차이 적용)
+		XMMATRIX transform = XMMatrixMultiply(pose.world[chain.Bones[3].idx], worldMatrix);
+		XMVECTOR worldToeBase = XMVector3TransformCoord(local, transform);
+		worldToeBase = XMVector3Rotate(worldToeBase, normalQuat);
+		XMStoreFloat3(&chain.Bones[3].worldDest, worldToeBase);
+
+		XMMATRIX transformChild = XMMatrixMultiply(pose.world[chain.Bones[3].childIdx], worldMatrix);
+		XMVECTOR worldToeEnd = XMVector3TransformCoord(local, transformChild);
+		worldToeEnd = XMVector3Rotate(worldToeEnd, normalQuat);
+		XMStoreFloat3(&chain.Bones[3].worldChildDest, worldToeEnd);
+	}
+
 	chain.EndEffectorIdx = skeleton.GetBoneIndex("mixamorig:LeftToeBase");
 
-	// ToeBase x, y, z
-	W[0] = 0.0f;
-	W[1] = 0.0f;
-	W[2] = 0.0f;
+	// UPLEG x, y, z
+	W[0] = 3.0f;
+	W[1] = 3.0f;
+	W[2] = 3.0f;
 
-	// Foot x, y, z
-	W[3] = 1.0f;
-	W[4] = 1.0f;
-	W[5] = 1.0f;
+	// LEG x, y, z
+	W[3] = 3.0f;
+	W[4] = 3.0f;
+	W[5] = 3.0f;
 
-	// Leg x, y, z
-	W[6] = 3.0f;
-	W[7] = 3.0f;
-	W[8] = 3.0f;
+	// FOOT x, y, z
+	W[6] = 0.0f;
+	W[7] = 0.0f;
+	W[8] = 0.0f;
 
-	// UpLeg x, y, z
-	W[9] = 3.0f;
-	W[10] = 3.0f;
-	W[11] = 3.0f;
+	// TOEBASE x, y, z
+	W[9] = 0.0f;
+	W[10] = 0.0f;
+	W[11] = 0.0f;
 }
 
-void IKManager::footChainBufferUpdate(IKChain& chain, bool start, bool wasChanged)
+void IKManager::footChainBufferUpdate(IKChain& chain, bool start)
 {
 	// angleBuffer 초기화
 	int count = chain.Bones.size();
@@ -700,41 +792,11 @@ void IKManager::footChainBufferUpdate(IKChain& chain, bool start, bool wasChange
 		bone.angleBuffer.zMin = bone.zMin;
 	}
 
-	// 1. 지면에 발목 각도 맞추기
-	{
-		float footXangle = chain.footXAngle;
-		float footZangle = chain.footZAngle;
-		float toeBaseXangle = 0.0f;
-
-		if (m_LeftFootAngle < 0.0f)
-		{
-			footXangle = -230.0f - footXangle - m_LeftFootAngle * 30.0f;
-			toeBaseXangle = m_LeftFootAngle * 30.0f;
-		}
-		else
-		{
-			footXangle = -230.0f - footXangle + m_LeftFootAngle * 20.0f;
-			toeBaseXangle = -m_LeftFootAngle * 20.0f;
-		}
-
-		IKBone& footBone = chain.Bones[1];
-		IKBone& toeBaseBone = chain.Bones[0];
-
-		footBone.angleBuffer.xMax = footXangle + 0.01f;
-		footBone.angleBuffer.xMin = footXangle;
-
-		toeBaseBone.angleBuffer.xMax += toeBaseXangle + 0.01f;
-		toeBaseBone.angleBuffer.xMin += toeBaseXangle;
-
-		//footBone.angleBuffer.zMax = footZangle + 0.01f;
-		//footBone.angleBuffer.zMin = footZangle;
-	}
-
 	// 2. start == true인 경우 위에서 부터 발을 내림
 	if (start == true)
 	{
-		IKBone& legBone = chain.Bones[2];
-		IKBone& upLegBone = chain.Bones[3];
+		IKBone& upLegBone = chain.Bones[0];
+		IKBone& legBone = chain.Bones[1];
 
 		upLegBone.angleBuffer.xMax = upLegBone.xMin + 0.01f;
 		upLegBone.angleBuffer.xMin = upLegBone.xMin;
@@ -743,18 +805,6 @@ void IKManager::footChainBufferUpdate(IKChain& chain, bool start, bool wasChange
 
 		legBone.angleBuffer.xMax = legBone.xMax + 0.01f;
 		legBone.angleBuffer.xMin = legBone.xMax;
-		legBone.angleBuffer.zMax = legBone.zMax + 0.01f;
-		legBone.angleBuffer.zMin = legBone.zMax;
-	}
-
-	if (wasChanged == false)
-	{
-		IKBone& upLegBone = chain.Bones[3];
-		IKBone& legBone = chain.Bones[2];
-
-		upLegBone.angleBuffer.zMax = upLegBone.zMax + 0.01f;
-		upLegBone.angleBuffer.zMin = upLegBone.zMax;
-
 		legBone.angleBuffer.zMax = legBone.zMax + 0.01f;
 		legBone.angleBuffer.zMin = legBone.zMax;
 	}

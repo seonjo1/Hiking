@@ -333,8 +333,8 @@ bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* 
 
 			//if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, boneMatrix, XMFLOAT3(1.0f, 0.0f, 0.0f), cameraFront) == false)
 			//	return false;
-			//if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, boneMatrix, XMFLOAT3(0.0f, 1.0f, 0.0f), cameraFront) == false)
-			//	return false;
+			if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, boneMatrix, XMFLOAT3(0.0f, 1.0f, 0.0f), cameraFront) == false)
+				return false;
 			//if (boneShader->RenderRangeAxis(deviceContext, m_rangeAxisMesh->GetIndexCount(), matrix, boneMatrix, XMFLOAT3(0.0f, 0.0f, 1.0f), cameraFront) == false)
 			//	return false;
 		}
@@ -483,22 +483,12 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 
 		// Raycasting
 		worldMatrix = getWorldMatrix();
-		m_RaycastingManager.raycastingForLeftFootIK(
-			scene,
-			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftFoot")),
-			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase")),
-			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"))
-		);
-		m_RaycastingManager.raycastingForRightFootIK(
-			scene,
-			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightFoot")),
-			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase")),
-			m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"))
-		);
+		m_RaycastingManager.raycastingForLeftFootIK(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase")));
+		m_RaycastingManager.raycastingForRightFootIK(scene,	m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase")));
 
 		// 두 발을 통해 y값 결정
 
-		m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.5f);
+		m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.5f) - 0.4f;
 		//m_position.y = (m_RaycastingManager.m_LeftFoot.pos.y + m_RaycastingManager.m_RightFoot.pos.y) * 0.5f;
 		//if (m_animStateManager.currentState == "idle")
 		//{
@@ -523,10 +513,8 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		p("\n\n\nstart IK!!!\n");
 
 		m_IKManager.updateNowRotation(m_pose);
-		m_IKManager.resetValuesForIK(m_RaycastingManager, m_skeleton, m_animStateManager.walkPhase);
+		m_IKManager.resetValuesForIK(m_RaycastingManager, m_skeleton, m_animStateManager.walkPhase, m_pose, worldMatrix);
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
-		p("walkPHase: " + std::to_string(m_animStateManager.walkPhase) + "\n");
-
 		static const int MAX_ITERATION = 50;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
@@ -538,7 +526,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			// 3. DLS 적용
 			m_IKManager.solveDLS();
 			// 4. 각도 갱신
-			m_IKManager.updateAngle(m_pose);
+			m_IKManager.updateAngle(m_pose, worldMatrix, m_skeleton);
 			// 5. worldPos 업데이트
 			m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
 			// 6. 반복 or 종료
@@ -549,17 +537,18 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			iteration++;
 		}
 		
+		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
 
-		if (iteration < MAX_ITERATION)
-		{
-			p("success\n");
-			float leftFootIKBlendAlpha = getLeftFootBlendingAlpha();
-			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), leftFootIKBlendAlpha);
-		}
-		else
-		{
-			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 0.0f);
-		}
+		//if (iteration < MAX_ITERATION)
+		//{
+		//	float leftFootIKBlendAlpha = getLeftFootBlendingAlpha();
+		//	m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), leftFootIKBlendAlpha);
+		//}
+		//else
+		//{
+		//	p("fail!!\n");
+		//	m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 0.0f);
+		//}
 
 		m_pose.UpdateFinalPos(m_skeleton);
 	}
@@ -579,14 +568,14 @@ float Model::getLeftFootBlendingAlpha()
 		return 1.0f;
 	}
 
-	if (0.342f < walkPhase && walkPhase <= 0.485f)
+	if (0.0f < walkPhase && walkPhase <= 0.485f)
 	{
-		return sinf(((walkPhase - 0.342f) / 0.143f) * XM_PIDIV2);
+		return std::fmaxf(0.2f, sinf((walkPhase / 0.485f) * XM_PIDIV2));
 	}
 
-	if (0.628f < walkPhase && walkPhase <= 0.742f)
+	if (0.628f < walkPhase && walkPhase <= 1.0f)
 	{
-		return cosf(((walkPhase - 0.628f) / 0.114f) * XM_PIDIV2);
+		return std::fmaxf(0.2f, cosf(((walkPhase - 0.628f) / 0.372f) * XM_PIDIV2));
 	}
 
 	return 0.0f;

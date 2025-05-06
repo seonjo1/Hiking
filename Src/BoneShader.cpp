@@ -532,7 +532,6 @@ bool BoneShader::SetShaderParametersRangeAxis(ID3D11DeviceContext* deviceContext
 	worldMatrixDataPtr->world[3] = childWorldMatrix;
 
 	deviceContext->Unmap(m_worldMatrixBuffer, 0);
-
 	deviceContext->VSSetConstantBuffers(bufferNumber++, 1, &m_worldMatrixBuffer);
 
 	// moveVector buffer (상수버퍼)

@@ -49,8 +49,8 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
 		return false;
 	}
-	//m_AnimationModel->setPosition(XMFLOAT3(0.0f, -0.15f, 0.0f));
-	m_AnimationModel->setPosition(XMFLOAT3(0.0f, 10.0f, 0.0f));
+	m_AnimationModel->setPosition(XMFLOAT3(0.0f, -0.15f, 0.0f));
+	//m_AnimationModel->setPosition(XMFLOAT3(0.0f, 10.0f, 0.0f));
 	m_AnimationModel->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
 	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
 
@@ -81,8 +81,8 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	//// 박스 모델 생성
 	Model* box2 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.0f, 0.5f, 0.5f, 1.0f));
 	box2->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	box2->setPosition(XMFLOAT3(0.0f, -40.5f, 5.0f));
-	//box2->setPosition(XMFLOAT3(0.0f, -40.5f, 50.0f));
+	//box2->setPosition(XMFLOAT3(0.0f, -40.5f, 5.0f));
+	box2->setPosition(XMFLOAT3(0.0f, -40.5f, 50.0f));
 	box2->setScale(XMFLOAT3(100.0f, 100.0f, 100.0f));
 	box2->setRotation(XMFLOAT3(-20.0f, 0.0f, 0.0f));
 	box2->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
@@ -204,7 +204,6 @@ bool Application::Frame()
 		m_PhysicsManager->stepSimulation(dt);
 		m_AnimationModel->UpdateAnimation(m_PhysicsManager->m_Scene, dt);
 	}
-
 
 	// Render the graphics scene.
 	bool result = Render();

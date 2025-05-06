@@ -24,6 +24,7 @@ struct IKBone
 {
 	int idx;
 	int parentsIdx;
+	int childIdx;
 	// x, y, z ¼ø¼­ (pitch, yaw, roll)
 	XMFLOAT3 axis;
 	float xMax;
@@ -32,6 +33,8 @@ struct IKBone
 	float zMin;
 	XMVECTOR twist;
 	IKAngleBuffer angleBuffer;
+	XMFLOAT3 worldDest;
+	XMFLOAT3 worldChildDest;
 };
 
 struct IKChain
@@ -40,14 +43,10 @@ struct IKChain
 	XMFLOAT3 EndEffector;
 	XMFLOAT3 Target;
 	XMFLOAT3 Normal;
-	EIKPart endPart;
 	int EndEffectorIdx;
 	int DoFNum {0};
-	bool angleBufferSign;
-	bool isChanged;
+	int clampingIdx;
 	bool start;
-	float footXAngle;
-	float footZAngle;
 };
 
 struct JacobianMatrix
@@ -112,12 +111,12 @@ class IKManager
 {
 public:
 	void initIKChains(Skeleton& skeleton);
-	void resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton, float walkPhase);
+	void resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton, float walkPhase, Pose& pose, XMMATRIX& worldMatrix);
 	void calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingManager& raycastingManager);
 	void calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix);
 	void solveDLS();
 	void updateNowRotation(Pose& pose);
-	void updateAngle(Pose& pose);
+	void updateAngle(Pose& pose, XMMATRIX& worldMatrix, Skeleton& skeleton);
 	bool isFinish(Pose& pose, XMMATRIX& worldMatrix);
 	IKChain& getChain(int idx);
 	std::vector<XMFLOAT4>& getNowRotation();
@@ -130,10 +129,12 @@ private:
 	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twistClamped, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
 	XMVECTOR ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon);
 	void makePolygon(std::vector<XMVECTOR>& polygon, XMVECTOR& twistClamped, float xMax, float xMin, float zMax, float zMin);
-	void footChainBufferUpdate(IKChain& chain, bool start, bool wasChanged);
-	void initLeftFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton);
+	void footChainBufferUpdate(IKChain& chain, bool start);
+	void initLeftFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton, Pose& pose, XMMATRIX& worldMatrix);
 	XMVECTOR divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist);
 	float safeAcosf(float dotResult);
+	XMVECTOR getQuatFromTo(XMFLOAT3 from, XMFLOAT3 to);
+	XMFLOAT4 recreateD(IKBone& bone, XMVECTOR& D, Pose& pose);
 
 	JacobianMatrix J;
 	JacobianMatrix JTJ;
