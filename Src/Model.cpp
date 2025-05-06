@@ -303,14 +303,15 @@ XMFLOAT3 Model::getAxis(float xDeg, float yDeg, float zDeg)
 
 void Model::initRangeAxis()
 {
-	//m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 1.0f, 0.0f), -45.0f, -60.0f, 0.5f, -0.5f, 0.0f);
-	//m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 1.0f, 0.0f), -45.0f, -70.0f, 0.5f, -0.5f, 0.0f);
-	//m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 1.0f, 0.0f), 150.0f, 0.0f,20.0f, -20.0f, 0.0f);
-	//m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 1.0f, 0.0f), 240.0f, 90.0f, 15.0f, -15.0f, 180.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 1.0f, 0.0f), -40.0f, -40.5f, 0.5f, -0.5f, 0.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 1.0f, 0.0f), -60.0f, -60.5f, 0.5f, -0.5f, 0.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 1.0f, 0.0f), 150.0f, 0.0f, 20.0f, -20.0f, 0.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 1.0f, 0.0f), 240.0f, 90.0f, 15.0f, -15.0f, 180.0f);
+
+	m_skeleton.SetBoneAxisAndRange("mixamorig:RightToeBase", getAxis(0.0f, 1.0f, 0.0f), -40.0f, -40.5f, 0.5f, -0.5f, 0.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:RightFoot", getAxis(0.0f, 1.0f, 0.0f), -60.0f, -60.5f, 0.5f, -0.5f, 0.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:RightLeg", getAxis(0.0f, 1.0f, 0.0f), 150.0f, 0.0f, 20.0f, -20.0f, 0.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:RightUpLeg", getAxis(0.0f, 1.0f, 0.0f), 240.0f, 90.0f, 15.0f, -15.0f, 180.0f);
 }
 
 bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront)
@@ -488,13 +489,13 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 
 		// 두 발을 통해 y값 결정
 
-		m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.5f) - 0.4f;
+		//m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.5f) - 0.4f;
+		m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.5f - 0.2f);
 		//m_position.y = (m_RaycastingManager.m_LeftFoot.pos.y + m_RaycastingManager.m_RightFoot.pos.y) * 0.5f;
 		//if (m_animStateManager.currentState == "idle")
 		//{
 		//	m_position.y -= 0.15f;
 		//}
-
 
 		worldMatrix = getWorldMatrix();
 
@@ -515,7 +516,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_IKManager.updateNowRotation(m_pose);
 		m_IKManager.resetValuesForIK(m_RaycastingManager, m_skeleton, m_animStateManager.walkPhase, m_pose, worldMatrix);
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
-		static const int MAX_ITERATION = 50;
+		static const int MAX_ITERATION = 20;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{
@@ -536,19 +537,19 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			}
 			iteration++;
 		}
-		
 		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
+		m_pose.IKChainBlending(m_IKManager.getChain(1), m_IKManager.getNowRotation(), 1.0f);
 
-		//if (iteration < MAX_ITERATION)
-		//{
-		//	float leftFootIKBlendAlpha = getLeftFootBlendingAlpha();
-		//	m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), leftFootIKBlendAlpha);
-		//}
-		//else
-		//{
-		//	p("fail!!\n");
-		//	m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 0.0f);
-		//}
+	/*	if (iteration < MAX_ITERATION)
+		{
+			float leftFootIKBlendAlpha = getLeftFootBlendingAlpha();
+			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), leftFootIKBlendAlpha);
+		}
+		else
+		{
+			p("fail!!\n");
+			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 0.0f);
+		}*/
 
 		m_pose.UpdateFinalPos(m_skeleton);
 	}
@@ -570,12 +571,12 @@ float Model::getLeftFootBlendingAlpha()
 
 	if (0.0f < walkPhase && walkPhase <= 0.485f)
 	{
-		return std::fmaxf(0.2f, sinf((walkPhase / 0.485f) * XM_PIDIV2));
+		return sinf((walkPhase / 0.485f) * XM_PIDIV2);
 	}
 
 	if (0.628f < walkPhase && walkPhase <= 1.0f)
 	{
-		return std::fmaxf(0.2f, cosf(((walkPhase - 0.628f) / 0.372f) * XM_PIDIV2));
+		return cosf(((walkPhase - 0.628f) / 0.372f) * XM_PIDIV2);
 	}
 
 	return 0.0f;

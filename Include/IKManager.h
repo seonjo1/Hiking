@@ -129,12 +129,15 @@ private:
 	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twistClamped, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
 	XMVECTOR ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon);
 	void makePolygon(std::vector<XMVECTOR>& polygon, XMVECTOR& twistClamped, float xMax, float xMin, float zMax, float zMin);
-	void footChainBufferUpdate(IKChain& chain, bool start);
+	void leftFootChainBufferUpdate(IKChain& chain, bool start);
+	void rightFootChainBufferUpdate(IKChain& chain, bool start);
 	void initLeftFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton, Pose& pose, XMMATRIX& worldMatrix);
 	XMVECTOR divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist);
 	float safeAcosf(float dotResult);
 	XMVECTOR getQuatFromTo(XMFLOAT3 from, XMFLOAT3 to);
 	XMFLOAT4 recreateD(IKBone& bone, XMVECTOR& D, Pose& pose);
+	void initRightFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton, Pose& pose, XMMATRIX& worldMatrix);
+
 
 	JacobianMatrix J;
 	JacobianMatrix JTJ;
@@ -149,5 +152,4 @@ private:
 	int m_chainNum{ 0 };
 	int m_rowNum{ 0 };
 	int m_colNum{ 0 };
-	float m_LeftFootAngle;
 };
