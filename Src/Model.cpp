@@ -464,12 +464,34 @@ void Model::setState(std::string state)
 void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase)
 {
 	static const float hipsSpeed = 0.5f;
+	static const float defaultY = 4.07f;
 
 	// hips 위치 변경
 	physx::PxVec3 hips = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips"));
 	float hipsWorldX = (leftToeBase.x + rightToeBase.x) * 0.5f;
 	float hipsWorldZ = (leftToeBase.z + rightToeBase.z) * 0.5f;
 	float hipsWorldY = hips.y;
+
+	float minY;
+	if (m_animStateManager.currentState == "idle")
+	{
+		minY = std::fminf(leftToeBase.y, rightToeBase.y);
+	}
+	else
+	{
+		if (m_animStateManager.walkPhase < 0.5f)
+		{
+			minY = leftToeBase.y;
+		}
+		else
+		{
+			minY = rightToeBase.y;
+		}
+	}
+
+	float hipsY = hips.y - defaultY;
+	float diff = minY - hipsY;
+	hipsWorldY += diff;
 
 	XMVECTOR hipsDest = XMVectorSet(hipsWorldX, hipsWorldY, hipsWorldZ, 1.0f);
 	XMVECTOR det;
@@ -478,17 +500,7 @@ void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, phy
 
 	XMVECTOR nowHipsPos = XMLoadFloat3(&m_pose.local[m_skeleton.GetBoneIndex("mixamorig:Hips")].position);
 
-	hipsDest = XMVectorLerp(nowHipsPos, hipsDest, 0.2f);
-
-	//XMVECTOR toHipsDest = XMVectorSubtract(hipsDest, nowHipsPos);
-
-	//float length = XMVectorGetX(XMVector3Length(toHipsDest));
-
-	//if (length > 0.5f)
-	//{
-
-	//}
-
+	hipsDest = XMVectorLerp(nowHipsPos, hipsDest, 0.1f);
 
 	XMStoreFloat3(&m_pose.local[m_skeleton.GetBoneIndex("mixamorig:Hips")].position, hipsDest);
 }
@@ -566,6 +578,8 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		XMMATRIX worldMatrix = getWorldMatrix();
 		m_RaycastingManager.raycastingForY(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips")));
 		
+		m_RaycastingManager.m_Y.pos.y -= 0.15f;
+
 		if (m_position.y > m_RaycastingManager.m_Y.pos.y)
 		{
 			m_position.y = std::fmaxf(m_RaycastingManager.m_Y.pos.y, m_position.y - ySpeed);
