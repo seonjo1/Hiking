@@ -306,7 +306,7 @@ void Model::initRangeAxis()
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 1.0f, 0.0f), -40.0f, -40.5f, 0.5f, -0.5f, 0.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 1.0f, 0.0f), -60.0f, -60.5f, 0.5f, -0.5f, 0.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 1.0f, 0.0f), 150.0f, 0.0f, 20.0f, -20.0f, 0.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 1.0f, 0.0f), 240.0f, 90.0f, 10.0f, 0.0f, 180.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 1.0f, 0.0f), 240.0f, 90.0f, 10.0f, -0.0f, 180.0f);
 
 	m_skeleton.SetBoneAxisAndRange("mixamorig:RightToeBase", getAxis(0.0f, 1.0f, 0.0f), -40.0f, -40.5f, 0.5f, -0.5f, 0.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:RightFoot", getAxis(0.0f, 1.0f, 0.0f), -60.0f, -60.5f, 0.5f, -0.5f, 0.0f);
@@ -465,11 +465,10 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 {
 	if (m_hasAnimation == true) {
 
-		// 골반의 위치로 y값 결정
+		// world Y값 결정
 		XMMATRIX worldMatrix = getWorldMatrix();
 		m_RaycastingManager.raycastingForY(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips")));
-
-		m_position.y = m_RaycastingManager.m_Y.pos.y;
+		m_position.y = (m_RaycastingManager.m_Y.pos.y + m_prevPosition.y) * 0.5f;
 
 		// animation update
 		m_animStateManager.UpdateTime(dt);
@@ -485,20 +484,6 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 
 		if (m_animStateManager.currentState == "walk")
 		{
-			//XMVECTOR point = { 0, 0, 0, 1 };
-			//XMFLOAT3 nowPosition = m_position;
-			//m_position = { 0, 0, 0 };
-			//XMMATRIX tmpWorld = getWorldMatrix();
-			//m_position = nowPosition;
-			//XMMATRIX leftMatrix = m_pose.world[m_skeleton.GetBoneIndex("mixamorig:LeftToeBase")];
-			//XMMATRIX rightMatrix = m_pose.world[m_skeleton.GetBoneIndex("mixamorig:RightToeBase")];
-			//leftMatrix = XMMatrixMultiply(leftMatrix, tmpWorld);
-			//rightMatrix = XMMatrixMultiply(rightMatrix, tmpWorld);
-			//XMVECTOR leftToeBasePos = XMVector3TransformCoord(point, leftMatrix);
-			//XMVECTOR rightToeBasePos = XMVector3TransformCoord(point, rightMatrix);
-			//float leftToeBaseY = XMVectorGetY(leftToeBasePos);
-			//float rightToeBaseY = XMVectorGetY(rightToeBasePos);
-
 			float leftToeBaseY = leftToeBase.y - m_position.y;
 			float rightToeBaseY = rightToeBase.y - m_position.y;
 
@@ -525,21 +510,6 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 
 
 		// 두 발을 통해 y값 결정
-		//m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.5f) - 0.4f;
-		if (m_animStateManager.currentState == "walk")
-		{
-			m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.7f - 0.15f);
-		}
-		else
-		{
-			m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.7f - 0.15f);
-		}
-		//m_position.y = (m_RaycastingManager.m_LeftFoot.pos.y + m_RaycastingManager.m_RightFoot.pos.y) * 0.5f;
-		//if (m_animStateManager.currentState == "idle")
-		//{
-		//	m_position.y -= 0.15f;
-		//}
-
 		worldMatrix = getWorldMatrix();
 
 		/*
@@ -559,7 +529,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_IKManager.updateNowRotation(m_pose);
 		m_IKManager.resetValuesForIK(m_RaycastingManager, m_skeleton, m_animStateManager.walkPhase, m_pose, worldMatrix);
 		m_pose.UpdateIKWorldPos(m_skeleton, m_IKManager.getNowRotation());
-		static const int MAX_ITERATION = 20;
+		static const int MAX_ITERATION = 30;
 		int iteration = 0;
 		while (iteration < MAX_ITERATION)
 		{
@@ -583,18 +553,8 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
 		m_pose.IKChainBlending(m_IKManager.getChain(1), m_IKManager.getNowRotation(), 1.0f);
 
-	/*	if (iteration < MAX_ITERATION)
-		{
-			float leftFootIKBlendAlpha = getLeftFootBlendingAlpha();
-			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), leftFootIKBlendAlpha);
-		}
-		else
-		{
-			p("fail!!\n");
-			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 0.0f);
-		}*/
-
 		m_pose.UpdateFinalPos(m_skeleton);
+		m_prevPosition = m_position;
 	}
 }
 
@@ -713,6 +673,7 @@ XMMATRIX Model::getWorldMatrixNotIncludeScale()
 void Model::setPosition(XMFLOAT3 position)
 {
 	m_position = position;
+	m_prevPosition = position;
 }
 
 void Model::setRotation(XMFLOAT3 rotation)
