@@ -17,5 +17,5 @@ public:
 	void UpdateAnimationClip(Pose& pose, Skeleton& skeleton);
 	void UpdateTime(float dt);
 	void SetState(std::string newState, std::unordered_map<std::string, AnimationClip>& clips);
-
+	void getMinYoffset(Pose& pose, Skeleton& skeleton, XMMATRIX& worldMatrix, AnimationClip& clip, std::string leftPart, std::string rightPart);
 };

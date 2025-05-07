@@ -790,12 +790,12 @@ void IKManager::initLeftFootChainInfo(RaycastingManager& raycastingManager, Skel
 	// UPLEG x, y, z
 	W[0] = 3.0f;
 	W[1] = 3.0f;
-	W[2] = 3.0f;
+	W[2] = 0.3f;
 
 	// LEG x, y, z
 	W[3] = 3.0f;
 	W[4] = 3.0f;
-	W[5] = 3.0f;
+	W[5] = 1.0f;
 
 	// FOOT x, y, z
 	W[6] = 0.0f;
@@ -850,12 +850,12 @@ void IKManager::initRightFootChainInfo(RaycastingManager& raycastingManager, Ske
 	// UPLEG x, y, z
 	W[12] = 3.0f;
 	W[13] = 3.0f;
-	W[14] = 3.0f;
+	W[14] = 0.3f;
 
 	// LEG x, y, z
 	W[15] = 3.0f;
 	W[16] = 3.0f;
-	W[17] = 3.0f;
+	W[17] = 1.0f;
 
 	// FOOT x, y, z
 	W[18] = 0.0f;

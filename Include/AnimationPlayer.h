@@ -8,8 +8,9 @@ public:
 	float currentTime = 0.0f;
 	float speed = 1.0f;
 
-	void Play(AnimationClip* clip, float walkPhase);
+	void Play(AnimationClip* clip);
 	float UpdateTime(float deltaTime);
+	void UpdateTimeForYoffset(float time);
 	void SamplePose(std::vector<LocalTx>& tx, const Skeleton& skeleton);
 	XMFLOAT3 InterpolatePosition(const std::vector<PositionKeyframe>& keys, float time);
 	XMFLOAT4 InterpolateRotation(const std::vector<RotationKeyframe>& keys, float time);

@@ -106,6 +106,7 @@ public:
 	float getSpeed();
 	XMFLOAT3 getAxis(float xDeg, float yDeg, float zDeg);
 	float getLeftFootBlendingAlpha();
+	void setYoffset();
 
 private:
 	void ReleaseTextures();

@@ -1,12 +1,12 @@
 #include "AnimationPlayer.h"
 
-void AnimationPlayer::Play(AnimationClip* newClip, float walkPhase) {
+void AnimationPlayer::Play(AnimationClip* newClip) {
 	clip = newClip;
 	currentTime = 0.0f;
 }
 
 float AnimationPlayer::UpdateTime(float deltaTime) {
-	static const float speed = 4.0f;
+	static const float speed = 40.0f;
 
 	if (!clip) return 0.0f;
 
@@ -90,4 +90,8 @@ void AnimationPlayer::SamplePose(std::vector<LocalTx>& txVector, const Skeleton&
 			txVector[i].scale = InterpolateScale(track->scaleKeys, currentTime);
 		}
 	}
+}
+
+void AnimationPlayer::UpdateTimeForYoffset(float time) {
+	currentTime = time;
 }

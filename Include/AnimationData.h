@@ -58,6 +58,8 @@ struct AnimationClip {
     double duration;        // 총 Tick 수
     double ticksPerSecond;  // 1초당 몇 Tick인지 
     std::unordered_map<std::string, BoneTrack> boneTracks;
+	float minLeftFootOffset;
+	float minRightFootOffset;
 
     BoneTrack* GetTrack(const std::string& boneName);
 };

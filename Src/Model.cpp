@@ -306,12 +306,12 @@ void Model::initRangeAxis()
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftToeBase", getAxis(0.0f, 1.0f, 0.0f), -40.0f, -40.5f, 0.5f, -0.5f, 0.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftFoot", getAxis(0.0f, 1.0f, 0.0f), -60.0f, -60.5f, 0.5f, -0.5f, 0.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftLeg", getAxis(0.0f, 1.0f, 0.0f), 150.0f, 0.0f, 20.0f, -20.0f, 0.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 1.0f, 0.0f), 240.0f, 90.0f, 15.0f, -15.0f, 180.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:LeftUpLeg", getAxis(0.0f, 1.0f, 0.0f), 240.0f, 90.0f, 10.0f, 0.0f, 180.0f);
 
 	m_skeleton.SetBoneAxisAndRange("mixamorig:RightToeBase", getAxis(0.0f, 1.0f, 0.0f), -40.0f, -40.5f, 0.5f, -0.5f, 0.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:RightFoot", getAxis(0.0f, 1.0f, 0.0f), -60.0f, -60.5f, 0.5f, -0.5f, 0.0f);
 	m_skeleton.SetBoneAxisAndRange("mixamorig:RightLeg", getAxis(0.0f, 1.0f, 0.0f), 150.0f, 0.0f, 20.0f, -20.0f, 0.0f);
-	m_skeleton.SetBoneAxisAndRange("mixamorig:RightUpLeg", getAxis(0.0f, 1.0f, 0.0f), 240.0f, 90.0f, 15.0f, -15.0f, 180.0f);
+	m_skeleton.SetBoneAxisAndRange("mixamorig:RightUpLeg", getAxis(0.0f, 1.0f, 0.0f), 240.0f, 90.0f, 0.0f, -10.0f, 180.0f);
 }
 
 bool Model::DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront)
@@ -421,7 +421,7 @@ bool Model::DrawRangeCornShader(ID3D11DeviceContext* deviceContext, JointShader*
 bool Model::DrawRayPointShader(ID3D11DeviceContext* deviceContext, JointShader* jointShader, Matrix& matrix)
 {	
 	XMMATRIX scale = XMMatrixScaling(0.02f, 0.02f, 0.02f);
-	XMMATRIX translation = XMMatrixTranslation(m_RaycastingManager.m_LeftFoot.pos.x, m_RaycastingManager.m_LeftFoot.pos.y, m_RaycastingManager.m_LeftFoot.pos.z);
+	XMMATRIX translation = XMMatrixTranslation(m_RaycastingManager.m_LeftFoot.target.x, m_RaycastingManager.m_LeftFoot.target.y, m_RaycastingManager.m_LeftFoot.target.z);
 	matrix.world = scale * translation;
 	
 	m_jointMesh->Render(deviceContext);
@@ -430,7 +430,7 @@ bool Model::DrawRayPointShader(ID3D11DeviceContext* deviceContext, JointShader* 
 		return false;
 
 
-	translation = XMMatrixTranslation(m_RaycastingManager.m_RightFoot.pos.x, m_RaycastingManager.m_RightFoot.pos.y, m_RaycastingManager.m_RightFoot.pos.z);
+	translation = XMMatrixTranslation(m_RaycastingManager.m_RightFoot.target.x, m_RaycastingManager.m_RightFoot.target.y, m_RaycastingManager.m_RightFoot.target.z);
 	matrix.world = scale * translation;
 
 	if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
@@ -464,18 +464,12 @@ void Model::setState(std::string state)
 void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 {
 	if (m_hasAnimation == true) {
-		
+
 		// 골반의 위치로 y값 결정
 		XMMATRIX worldMatrix = getWorldMatrix();
 		m_RaycastingManager.raycastingForY(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips")));
-		if (m_animStateManager.currentState == "walk")
-		{
-			m_position.y = m_RaycastingManager.m_Y.pos.y;
-		}
-		else
-		{
-			m_position.y = m_RaycastingManager.m_Y.pos.y - 0.15f;
-		}
+
+		m_position.y = m_RaycastingManager.m_Y.pos.y;
 
 		// animation update
 		m_animStateManager.UpdateTime(dt);
@@ -484,13 +478,62 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 
 		// Raycasting
 		worldMatrix = getWorldMatrix();
-		m_RaycastingManager.raycastingForLeftFootIK(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase")));
-		m_RaycastingManager.raycastingForRightFootIK(scene,	m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase")));
+		physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
+		physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
+		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase);
+		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase);
+
+		if (m_animStateManager.currentState == "walk")
+		{
+			//XMVECTOR point = { 0, 0, 0, 1 };
+			//XMFLOAT3 nowPosition = m_position;
+			//m_position = { 0, 0, 0 };
+			//XMMATRIX tmpWorld = getWorldMatrix();
+			//m_position = nowPosition;
+			//XMMATRIX leftMatrix = m_pose.world[m_skeleton.GetBoneIndex("mixamorig:LeftToeBase")];
+			//XMMATRIX rightMatrix = m_pose.world[m_skeleton.GetBoneIndex("mixamorig:RightToeBase")];
+			//leftMatrix = XMMatrixMultiply(leftMatrix, tmpWorld);
+			//rightMatrix = XMMatrixMultiply(rightMatrix, tmpWorld);
+			//XMVECTOR leftToeBasePos = XMVector3TransformCoord(point, leftMatrix);
+			//XMVECTOR rightToeBasePos = XMVector3TransformCoord(point, rightMatrix);
+			//float leftToeBaseY = XMVectorGetY(leftToeBasePos);
+			//float rightToeBaseY = XMVectorGetY(rightToeBasePos);
+
+			float leftToeBaseY = leftToeBase.y - m_position.y;
+			float rightToeBaseY = rightToeBase.y - m_position.y;
+
+			float leftToeBaseOffset = leftToeBaseY - m_animationClips["walk"].minLeftFootOffset;
+			float rightToeBaseOffset = rightToeBaseY - m_animationClips["walk"].minRightFootOffset;
+
+			XMFLOAT3 leftNormal = m_RaycastingManager.m_LeftFoot.normal;
+			XMFLOAT3 rightNormal = m_RaycastingManager.m_RightFoot.normal;
+
+			XMVECTOR leftOffset = XMVector3Normalize(XMLoadFloat3(&leftNormal));
+			XMVECTOR rightOffset = XMVector3Normalize(XMLoadFloat3(&rightNormal));
+
+			leftOffset = XMVectorScale(leftOffset, leftToeBaseOffset);
+			rightOffset = XMVectorScale(rightOffset, rightToeBaseOffset);
+
+			XMVECTOR leftTarget = XMLoadFloat3(&m_RaycastingManager.m_LeftFoot.target);
+			XMVECTOR rightTarget = XMLoadFloat3(&m_RaycastingManager.m_RightFoot.target);
+			leftTarget = XMVectorAdd(leftTarget, leftOffset);
+			rightTarget = XMVectorAdd(rightTarget, rightOffset);
+
+			XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.target, leftTarget);
+			XMStoreFloat3(&m_RaycastingManager.m_RightFoot.target, rightTarget);
+		}
+
 
 		// 두 발을 통해 y값 결정
-
 		//m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.5f) - 0.4f;
-		m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.5f - 0.2f);
+		if (m_animStateManager.currentState == "walk")
+		{
+			m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.7f - 0.15f);
+		}
+		else
+		{
+			m_position.y = m_position.y - fabs((m_RaycastingManager.m_LeftFoot.pos.y - m_RaycastingManager.m_RightFoot.pos.y) * 0.7f - 0.15f);
+		}
 		//m_position.y = (m_RaycastingManager.m_LeftFoot.pos.y + m_RaycastingManager.m_RightFoot.pos.y) * 0.5f;
 		//if (m_animStateManager.currentState == "idle")
 		//{
@@ -770,9 +813,6 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 		clip.duration = aiAnim->mDuration;	// 총 Tick 수
 		clip.ticksPerSecond = aiAnim->mTicksPerSecond != 0 ? aiAnim->mTicksPerSecond : 25.0; // 1초당 tick 수
 
-		//std::string s = "animation clip name: " + clip.name + "\n";
-		//p(s);
-
 		// 애니메이션 Bone Track 생성 (Bone 별로 애니메이션 keyframe 정보 저장)
 		for (unsigned int j = 0; j < aiAnim->mNumChannels; ++j) {
 			// Bone 선택 (channel == bone 1개의 애니메이션 트랙)
@@ -781,20 +821,16 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 
 			BoneTrack track;
 			track.boneName = boneName;
-
 			{
-				//auto& startKf = channel->mPositionKeys[channel->mNumPositionKeys - 1];
-				//track.positionKeys.push_back({ 0.0f, {startKf.mValue.x, startKf.mValue.y, startKf.mValue.z} });
 				for (unsigned int k = 0; k < channel->mNumPositionKeys; ++k) {
 					auto& kf = channel->mPositionKeys[k];
 					track.positionKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
 				}
 				track.positionKeys[0].time = 0.0f;
+				
 			}
 
 			{
-				//auto& startKf = channel->mRotationKeys[channel->mNumRotationKeys - 1];
-				//track.rotationKeys.push_back({ 0.0f, {startKf.mValue.x, startKf.mValue.y, startKf.mValue.z, startKf.mValue.w} });
 				for (unsigned int k = 0; k < channel->mNumRotationKeys; ++k) {
 					auto& kf = channel->mRotationKeys[k];
 					track.rotationKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z, kf.mValue.w } });
@@ -803,8 +839,6 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 			}
 
 			{
-				//auto& startKf = channel->mScalingKeys[channel->mNumScalingKeys - 1];
-				//track.scaleKeys.push_back({ 0.0f, {startKf.mValue.x, startKf.mValue.y, startKf.mValue.z} });
 				for (unsigned int k = 0; k < channel->mNumScalingKeys; ++k) {
 					auto& kf = channel->mScalingKeys[k];
 					track.scaleKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
@@ -814,7 +848,6 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 
 			clip.boneTracks[boneName] = track;
 		}
-
 		m_animationClips[clip.name] = clip;
 	}
 
@@ -905,7 +938,7 @@ void Model::setToTarget(XMFLOAT3& targetDir)
 
 void Model::speedDown()
 {
-	const static float accel = 0.001f;
+	const static float accel = 0.01f;
 	const static float minSpeed = 0.0f;
 	
 	m_speed = max(minSpeed, m_speed - accel);
@@ -914,8 +947,8 @@ void Model::speedDown()
 void Model::move(XMFLOAT3& targetDir)
 {
 	const static float rotSpeed = 5.0f;
-	const static float accel = 0.001f;
-	const static float maxSpeed = 0.005f;
+	const static float accel = 0.01f;
+	const static float maxSpeed = 0.1f;
 
 	// 현재 방향 벡터
 	XMFLOAT3 nowDir = getRotatedVector(m_rotation.y);
@@ -1016,4 +1049,13 @@ void Model::syncModelWithRigidbody(physx::PxPhysics* physics)
 		m_physicsObject->updateRotation(quatRotation);
 		m_physicsObject->updateScale(physics, m_scale);
 	}
+}
+
+void Model::setYoffset()
+{
+	XMFLOAT3 nowPosition = m_position;
+	m_position = { 0.0f, 0.0f, 0.0f };
+	XMMATRIX worldMatrix = getWorldMatrix();
+	m_animStateManager.getMinYoffset(m_pose, m_skeleton, worldMatrix, m_animationClips["walk"], "mixamorig:LeftToeBase", "mixamorig:RightToeBase");
+	m_position = nowPosition;
 }

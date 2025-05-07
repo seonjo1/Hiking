@@ -4,7 +4,7 @@
 physx::PxVec3 Pose::getBonePos(XMMATRIX& worldMatrix, int boneIdx)
 {
     XMMATRIX boneWorld = XMMatrixMultiply(world[boneIdx], worldMatrix);
-    XMVECTOR pos = XMVector3TransformCoord(XMVectorZero(), boneWorld);
+    XMVECTOR pos = XMVector3TransformCoord(XMVectorSet(0, 0, 0, 1), boneWorld);
 
     XMFLOAT3 out;
     XMStoreFloat3(&out, pos);

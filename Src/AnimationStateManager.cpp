@@ -10,7 +10,7 @@ void AnimationStateManager::SetState(std::string newState, std::unordered_map<st
     }
 
     previous = current;
-    current.Play(&(clips[newState]), walkPhase);
+    current.Play(&(clips[newState]));
     currentState = newState;
     blendAlpha = 0.0f;
     walkPhase = 0.0f;
@@ -62,3 +62,31 @@ void AnimationStateManager::UpdateAnimationClip(Pose& pose, Skeleton& skeleton) 
     }
 }
 
+void AnimationStateManager::getMinYoffset(Pose& pose, Skeleton& skeleton, XMMATRIX& worldMatrix, AnimationClip& clip, std::string leftPart, std::string rightPart)
+{
+    AnimationPlayer tmpPlayer;
+    tmpPlayer.Play(&clip);
+    BoneTrack& leftFootBoneTrack = clip.boneTracks[leftPart];
+    std::vector<RotationKeyframe>& v = leftFootBoneTrack.rotationKeys;
+
+	clip.minLeftFootOffset = FLT_MAX;
+	clip.minRightFootOffset = FLT_MAX;
+
+    for (int i = 0; i < v.size(); ++i)
+    {
+        float time = v[i].time;
+        tmpPlayer.UpdateTimeForYoffset(time);
+        tmpPlayer.SamplePose(pose.local, skeleton);
+		pose.UpdateWorldPos(skeleton);
+        
+        XMVECTOR point = XMVectorSet(0, 0, 0, 1);
+		XMMATRIX toLeft = XMMatrixMultiply(pose.world[skeleton.GetBoneIndex(leftPart)], worldMatrix);
+		XMMATRIX toRight = XMMatrixMultiply(pose.world[skeleton.GetBoneIndex(rightPart)], worldMatrix);
+
+        XMVECTOR left = XMVector3TransformCoord(point, toLeft);
+        XMVECTOR right = XMVector3TransformCoord(point, toRight);
+
+		clip.minLeftFootOffset = std::fminf(XMVectorGetY(left), clip.minLeftFootOffset);
+		clip.minRightFootOffset = std::fminf(XMVectorGetY(right), clip.minRightFootOffset);
+    }
+}
