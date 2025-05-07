@@ -463,12 +463,23 @@ void Model::setState(std::string state)
 
 void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 {
+	const static float ySpeed = 0.1f;
+	const static float targetSpeed = 0.5f;
+
 	if (m_hasAnimation == true) {
 
 		// world Y값 결정
 		XMMATRIX worldMatrix = getWorldMatrix();
 		m_RaycastingManager.raycastingForY(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips")));
-		m_position.y = (m_RaycastingManager.m_Y.pos.y + m_prevPosition.y) * 0.5f;
+		
+		if (m_position.y > m_RaycastingManager.m_Y.pos.y)
+		{
+			m_position.y = std::fmaxf(m_RaycastingManager.m_Y.pos.y, m_position.y - ySpeed);
+		}
+		else
+		{
+			m_position.y = std::fminf(m_RaycastingManager.m_Y.pos.y, m_position.y + ySpeed);
+		}
 
 		// animation update
 		m_animStateManager.UpdateTime(dt);
@@ -482,6 +493,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase);
 		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase);
 
+		// animation을 반영한 target 보정
 		if (m_animStateManager.currentState == "walk")
 		{
 			float leftToeBaseY = leftToeBase.y - m_position.y;
@@ -504,10 +516,43 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			leftTarget = XMVectorAdd(leftTarget, leftOffset);
 			rightTarget = XMVectorAdd(rightTarget, rightOffset);
 
-			XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.target, leftTarget);
-			XMStoreFloat3(&m_RaycastingManager.m_RightFoot.target, rightTarget);
+			XMVECTOR nowLeftTarget = XMLoadFloat3(&m_leftTarget);
+			XMVECTOR nowRightTarget = XMLoadFloat3(&m_rightTarget);
+
+			XMVECTOR toLeftTarget = XMVectorSubtract(leftTarget, nowLeftTarget);
+			XMVECTOR toRightTarget = XMVectorSubtract(rightTarget, nowRightTarget);
+
+			float toLeftTargetLength = XMVectorGetX(XMVector3Length(toLeftTarget));
+			if (toLeftTargetLength > targetSpeed)
+			{
+				float speed = std::fmaxf(targetSpeed, toLeftTargetLength * 0.5f);
+				toLeftTarget = XMVector3Normalize(toLeftTarget);
+				toLeftTarget = XMVectorScale(toLeftTarget, speed);
+				nowLeftTarget = XMVectorAdd(nowLeftTarget, toLeftTarget);
+				XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.target, nowLeftTarget);
+			}
+			else
+			{
+				XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.target, leftTarget);
+			}
+
+			float toRightTargetLength = XMVectorGetX(XMVector3Length(toRightTarget));
+			if (toRightTargetLength > targetSpeed)
+			{
+				float speed = std::fmaxf(targetSpeed, toRightTargetLength * 0.2f);
+				toRightTarget = XMVector3Normalize(toRightTarget);
+				toRightTarget = XMVectorScale(toRightTarget, speed);
+				nowRightTarget = XMVectorAdd(nowRightTarget, toRightTarget);
+				XMStoreFloat3(&m_RaycastingManager.m_RightFoot.target, nowRightTarget);
+			}
+			else
+			{
+				XMStoreFloat3(&m_RaycastingManager.m_RightFoot.target, rightTarget);
+			}
 		}
 
+		m_leftTarget = m_RaycastingManager.m_LeftFoot.target;
+		m_rightTarget = m_RaycastingManager.m_RightFoot.target;
 
 		// 두 발을 통해 y값 결정
 		worldMatrix = getWorldMatrix();
@@ -550,11 +595,21 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			}
 			iteration++;
 		}
-		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
-		m_pose.IKChainBlending(m_IKManager.getChain(1), m_IKManager.getNowRotation(), 1.0f);
+
+		//if (m_animStateManager.currentState == "idle")
+		{
+			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
+			m_pose.IKChainBlending(m_IKManager.getChain(1), m_IKManager.getNowRotation(), 1.0f);
+		}
+		//else
+		//{
+		//	float leftFootBlendAlpha = getLeftFootBlendingAlpha();
+		//	float rightFootBlendAlpha = getRightFootBlendingAlpha();
+		//	m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), leftFootBlendAlpha);
+		//	m_pose.IKChainBlending(m_IKManager.getChain(1), m_IKManager.getNowRotation(), 1.0f);
+		//}
 
 		m_pose.UpdateFinalPos(m_skeleton);
-		m_prevPosition = m_position;
 	}
 }
 
@@ -562,27 +617,26 @@ float Model::getLeftFootBlendingAlpha()
 {
 	float walkPhase = m_animStateManager.walkPhase;
 
-	if (m_animStateManager.currentState == "idle")
+
+	// 14 ~ 26
+	if (0.4f < walkPhase && walkPhase <= 0.743f)
 	{
 		return 1.0f;
 	}
 
-	if (0.485f < walkPhase && walkPhase <= 0.628f)
+	// 6 ~ 14
+	if (0.1714f < walkPhase && walkPhase <= 0.4f)
 	{
-		return 1.0f;
+		return std::fminf(0.5f, (walkPhase - 0.1714f) / 0.3286f);
 	}
 
-	if (0.0f < walkPhase && walkPhase <= 0.485f)
+	// 26 ~ 30
+	if (0.743f < walkPhase && walkPhase <= 0.857f)
 	{
-		return sinf((walkPhase / 0.485f) * XM_PIDIV2);
+		return std::fminf(0.5f, 1.0f - ((walkPhase - 0.743f) / 0.114f));
 	}
 
-	if (0.628f < walkPhase && walkPhase <= 1.0f)
-	{
-		return cosf(((walkPhase - 0.628f) / 0.372f) * XM_PIDIV2);
-	}
-
-	return 0.0f;
+	return 0.5f;
 }
 
 void Model::ReleaseTextures()
@@ -673,7 +727,6 @@ XMMATRIX Model::getWorldMatrixNotIncludeScale()
 void Model::setPosition(XMFLOAT3 position)
 {
 	m_position = position;
-	m_prevPosition = position;
 }
 
 void Model::setRotation(XMFLOAT3 rotation)

@@ -113,9 +113,10 @@ private:
 	void ReleaseMeshes();
 	
 	XMFLOAT3 m_position;
-	XMFLOAT3 m_prevPosition;
 	XMFLOAT3 m_rotation;
 	XMFLOAT3 m_scale;
+	XMFLOAT3 m_leftTarget;
+	XMFLOAT3 m_rightTarget;
 
 	Mesh* m_rangeAxisMesh;
 	Mesh* m_jointMesh;
