@@ -1,7 +1,8 @@
 #include "RaycastingManager.h"
+#include "IKManager.h"
 
 const float RaycastingManager::s_RayStartOffset = -5.0f;
-const float RaycastingManager::s_RayDistance = 50.0f;
+const float RaycastingManager::s_RayDistance = 9.0f;
 const physx::PxVec3 RaycastingManager::s_GravityDir = { 0.0f, -1.0f, 0.0f };
 
 float RaycastingManager::getDistance(physx::PxVec3& toTarget, physx::PxVec3& dir)
@@ -16,16 +17,15 @@ float RaycastingManager::getDistance(physx::PxVec3& toTarget, physx::PxVec3& dir
     }
 }
 
-void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeBasePose, RaycastingInfo& info)
+void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toToeEnd, physx::PxVec3 toFoot, RaycastingInfo& info)
 {
     const float slopeDotThreshold = cosf(physx::PxDegToRad(50.0f));
-    static physx::PxRaycastBuffer toeEndHit;
-    static physx::PxRaycastBuffer toeBaseHit;
+    static physx::PxRaycastBuffer toeEndHit, toeBaseHit, footHit;
 
-    // 디폴트로 Raycasting 실패 등록
-    info.part = EIKPart::NONE;
+	physx::PxVec3 toeEndPose = toeBasePose + toToeEnd;
+	physx::PxVec3 footPose = toeBasePose + toFoot;
 
-    // foot raycasting
+    // toeBase Raycasting
     physx::PxVec3 toeBaseRayStart = toeBasePose + s_GravityDir * s_RayStartOffset;
     bool toeBaseRaySuccess = scene->raycast(
         toeBaseRayStart,
@@ -38,32 +38,179 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
     if (toeBaseRaySuccess) {
         toeBaseRaySuccess = toeBaseHit.block.normal.dot(physx::PxVec3(0.0f, 1.0f, 0.0f)) > slopeDotThreshold;
     }
+
+	// toeEnd Raycasting
+	physx::PxVec3 toeEndRayStart = toeEndPose + s_GravityDir * s_RayStartOffset;
+	bool toeEndRaySuccess = scene->raycast(
+		toeEndRayStart,
+		s_GravityDir,
+		s_RayDistance,
+		toeEndHit,
+		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
+	);
+
+	if (toeEndRaySuccess) {
+		toeEndRaySuccess = toeEndHit.block.normal.dot(physx::PxVec3(0.0f, 1.0f, 0.0f)) > slopeDotThreshold;
+	}
+
+	// foot Raycasting
+	physx::PxVec3 footRayStart = footPose + s_GravityDir * s_RayStartOffset;
+	bool footRaySuccess = scene->raycast(
+		footRayStart,
+		s_GravityDir,
+		s_RayDistance,
+		footHit,
+		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
+	);
+
+	if (footRaySuccess) {
+        footRaySuccess = toeEndHit.block.normal.dot(physx::PxVec3(0.0f, 1.0f, 0.0f)) > slopeDotThreshold;
+	}
+
+    // info 채우기
+	if (!toeEndRaySuccess && !toeBaseRaySuccess && !footRaySuccess)
+	{
+		info.part = EIKPart::FAIL;
+        return;
+	}
     else
     {
-        info.part = EIKPart::FAIL;
+        info.part = EIKPart::TOEBASE;
     }
 
+	XMVECTOR toeBaseRayStartPose = XMVectorSet(toeBaseRayStart.x, toeBaseRayStart.y, toeBaseRayStart.z, 1.0f);
+
+    p("foot Info!!\n");
+    // foot info 채우기
+    RaycastingInfo footInfo;
+    if (footRaySuccess)
+    {
+        XMFLOAT3 footNormal = XMFLOAT3(footHit.block.normal.x, footHit.block.normal.y, footHit.block.normal.z);
+        XMFLOAT3 N = XMFLOAT3(0.0f, 1.0f, 0.0f);
+        XMVECTOR quat = IKManager::getQuatFromTo(N, footNormal);
+        XMVECTOR toToeBase = XMVectorSet(-toFoot.x, -toFoot.y, -toFoot.z, 0.0f);
+        XMVECTOR toTarget = XMVector3Rotate(toToeBase, quat);
+        XMVECTOR foot = XMVectorSet(footHit.block.position.x, footHit.block.position.y, footHit.block.position.z, 1.0f);
+        XMVECTOR target = XMVectorAdd(foot, toTarget);
+        float footDistance = XMVectorGetX(XMVector3Length(XMVectorSubtract(toeBaseRayStartPose, target)));
+
+        footInfo.pos = XMFLOAT3(footHit.block.position.x, footHit.block.position.y, footHit.block.position.z);
+        XMStoreFloat3(&footInfo.target, target);
+        footInfo.normal = footNormal;
+        footInfo.distance = footDistance;
+        footInfo.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
+
+		p("normal: " + std::to_string(footNormal.x) + " " + std::to_string(footNormal.y) + " " + std::to_string(footNormal.z) + "\n");
+		p("pos: " + std::to_string(footInfo.pos.x) + " " + std::to_string(footInfo.pos.y) + " " + std::to_string(footInfo.pos.z) + "\n");
+		p("toeEndInfo.target: " + std::to_string(footInfo.target.x) + " " + std::to_string(footInfo.target.y) + " " + std::to_string(footInfo.target.z) + "\n");
+		p("distance: " + std::to_string(footDistance) + "\n");
+    }
+
+	p("toeEnd Info!!\n");
+    // toeEnd info 채우기
+	RaycastingInfo toeEndInfo;
+    if (toeEndRaySuccess)
+    {
+		XMFLOAT3 toeEndNormal = XMFLOAT3(toeEndHit.block.normal.x, toeEndHit.block.normal.y, toeEndHit.block.normal.z);
+		XMFLOAT3 N = XMFLOAT3(0.0f, 1.0f, 0.0f);
+		XMVECTOR quat = IKManager::getQuatFromTo(N, toeEndNormal);
+		XMVECTOR toToeBase = XMVectorSet(-toToeEnd.x, -toToeEnd.y, -toToeEnd.z, 0.0f);
+		XMVECTOR toTarget = XMVector3Rotate(toToeBase, quat);
+		XMVECTOR toeEnd = XMVectorSet(toeEndHit.block.position.x, toeEndHit.block.position.y, toeEndHit.block.position.z, 1.0f);
+		XMVECTOR target = XMVectorAdd(toeEnd, toTarget);
+		float toeEndDistance = XMVectorGetX(XMVector3Length(XMVectorSubtract(toeBaseRayStartPose, target)));
+
+        toeEndInfo.pos = XMFLOAT3(toeEndHit.block.position.x, toeEndHit.block.position.y, toeEndHit.block.position.z);
+		XMStoreFloat3(&toeEndInfo.target, target);
+        toeEndInfo.normal = toeEndNormal;
+        toeEndInfo.distance = toeEndDistance;
+        toeEndInfo.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
+		p("normal: " + std::to_string(toeEndNormal.x) + " " + std::to_string(toeEndNormal.y) + " " + std::to_string(toeEndNormal.z) + "\n");
+		p("pos: " + std::to_string(toeEndInfo.pos.x) + " " + std::to_string(toeEndInfo.pos.y) + " " + std::to_string(toeEndInfo.pos.z) + "\n");
+		p("toeEndInfo.target: " + std::to_string(toeEndInfo.target.x) + " " + std::to_string(toeEndInfo.target.y) + " " + std::to_string(toeEndInfo.target.z) + "\n");
+        p("distance: " + std::to_string(toeEndDistance) + "\n");
+    }
+
+    p("toeBase Info!!\n");
+    // toeBase info 채우기
+	RaycastingInfo toeBaseInfo;
     if (toeBaseRaySuccess)
     {
-		float toeBaseDistance = getDistance(toeBaseHit.block.position - toeBasePose, physx::PxVec3(0.0f, -1.0f, 0.0f));
-		info.pos = XMFLOAT3(toeBaseHit.block.position.x, toeBaseHit.block.position.y, toeBaseHit.block.position.z);
-        info.target = info.pos;
-		info.normal = XMFLOAT3(toeBaseHit.block.normal.x, toeBaseHit.block.normal.y, toeBaseHit.block.normal.z);
-		info.part = EIKPart::TOEBASE;
-		info.distance = toeBaseDistance;
-		info.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
+        toeBaseInfo.pos = XMFLOAT3(toeBaseHit.block.position.x, toeBaseHit.block.position.y, toeBaseHit.block.position.z);
+        toeBaseInfo.target = toeBaseInfo.pos;
+        toeBaseInfo.normal = XMFLOAT3(toeBaseHit.block.normal.x, toeBaseHit.block.normal.y, toeBaseHit.block.normal.z);
+        toeBaseInfo.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
+		XMVECTOR target = XMLoadFloat3(&toeBaseInfo.target);
+		float toeBaseDistance = XMVectorGetX(XMVector3Length(XMVectorSubtract(toeBaseRayStartPose, target)));
+        toeBaseInfo.distance = toeBaseDistance;
+
+		p("normal: " + std::to_string(toeBaseInfo.normal.x) + " " + std::to_string(toeBaseInfo.normal.y) + " " + std::to_string(toeBaseInfo.normal.z) + "\n");
+		p("pos: " + std::to_string(toeBaseInfo.pos.x) + " " + std::to_string(toeBaseInfo.pos.y) + " " + std::to_string(toeBaseInfo.pos.z) + "\n");
+		p("toeEndInfo.target: " + std::to_string(toeBaseInfo.target.x) + " " + std::to_string(toeBaseInfo.target.y) + " " + std::to_string(toeBaseInfo.target.z) + "\n");
+		p("distance: " + std::to_string(toeBaseDistance) + "\n");
+    }
+
+    if (footRaySuccess)
+    {
+        p("foot!! fill!!\n");
+        fillInfo(info, footInfo);
+    }
+    else
+    {
+        info.distance = FLT_MAX;
+    }
+
+    if (toeEndRaySuccess && (info.distance > toeEndInfo.distance))
+    {
+		p("toeEnd!! fill!!\n");
+        fillInfo(info, toeEndInfo);
+    }
+
+    if (toeBaseRaySuccess && (info.distance > toeBaseInfo.distance))
+	{
+        p("toeBase!! fill!!\n");
+		fillInfo(info, toeBaseInfo);
     }
 }
 
-void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose)
+void RaycastingManager::fillInfo(RaycastingInfo& dest, RaycastingInfo& src)
 {
-    footRaycasting(scene, toeBasePose, m_LeftFoot);
+    dest.distance = src.distance;
+    dest.normal = src.normal;
+    dest.pos = src.pos;
+    dest.target = src.target;
+    dest.dir = src.dir;
+}
+
+void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
+{
+	static const float toToeEndScale = 0.4f;
+	static const float toFootScale = 0.55f;
+
+    physx::PxVec3 toToeEnd = physx::PxVec3(toeEndPose.x - toeBasePose.x, 0.0f, toeEndPose.z - toeBasePose.z);
+    toToeEnd = toToeEnd.getNormalized();
+    physx::PxVec3 toFoot = -toToeEnd;
+
+    toToeEnd = toToeEnd * toToeEndScale;
+    toFoot = toFoot * toFootScale;
+
+    footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_LeftFoot);
 }
 
 
-void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose)
+void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
 {
-    footRaycasting(scene, toeBasePose, m_RightFoot);
+	static const float toToeEndScale = 0.4f;
+	static const float toFootScale = 0.55f;
+
+	physx::PxVec3 toToeEnd = physx::PxVec3(toeEndPose.x - toeBasePose.x, 0.0f, toeEndPose.z - toeBasePose.z);
+	toToeEnd = toToeEnd.getNormalized();
+	physx::PxVec3 toFoot = -toToeEnd;
+
+	toToeEnd = toToeEnd * toToeEndScale;
+	toFoot = toFoot * toFootScale;
+
+    footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_RightFoot);
 }
 
 void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose)

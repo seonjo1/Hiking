@@ -110,6 +110,9 @@ enum class EChainPart
 class IKManager
 {
 public:
+	static XMVECTOR getQuatFromTo(XMFLOAT3 from, XMFLOAT3 to);
+	static float safeAcosf(float dotResult);
+
 	void initIKChains(Skeleton& skeleton);
 	void resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton, float walkPhase, Pose& pose, XMMATRIX& worldMatrix);
 	void calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingManager& raycastingManager);
@@ -133,8 +136,6 @@ private:
 	void rightFootChainBufferUpdate(IKChain& chain, bool start);
 	void initLeftFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton, Pose& pose, XMMATRIX& worldMatrix);
 	XMVECTOR divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist);
-	float safeAcosf(float dotResult);
-	XMVECTOR getQuatFromTo(XMFLOAT3 from, XMFLOAT3 to);
 	XMFLOAT4 recreateD(IKBone& bone, XMVECTOR& D, Pose& pose);
 	void initRightFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton, Pose& pose, XMMATRIX& worldMatrix);
 

@@ -577,7 +577,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		// world Y값 결정
 		XMMATRIX worldMatrix = getWorldMatrix();
 		m_RaycastingManager.raycastingForY(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips")));
-		
+
 		m_RaycastingManager.m_Y.pos.y -= 0.15f;
 
 		if (m_position.y > m_RaycastingManager.m_Y.pos.y)
@@ -597,19 +597,20 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		// Raycasting
 		worldMatrix = getWorldMatrix();
 		physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
+		physx::PxVec3 leftToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"));
 		physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
-		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase);
-		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase);
+		physx::PxVec3 rightToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"));
 
+		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd);
+		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd);
+
+		// bone 위치 보정
 		modifyTarget(leftToeBase, rightToeBase);
-
-		m_leftTarget = m_RaycastingManager.m_LeftFoot.target;
-		m_rightTarget = m_RaycastingManager.m_RightFoot.target;
-
 		modifyHipsPos(worldMatrix, leftToeBase, rightToeBase);
 
-		// 두 발을 통해 y값 결정
-		worldMatrix = getWorldMatrix();
+		// target 위치 저장
+		m_leftTarget = m_RaycastingManager.m_LeftFoot.target;
+		m_rightTarget = m_RaycastingManager.m_RightFoot.target;
 
 		/*
 		 [Foot IK 적용]
@@ -650,18 +651,8 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			iteration++;
 		}
 
-		//if (m_animStateManager.currentState == "idle")
-		{
-			m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
-			m_pose.IKChainBlending(m_IKManager.getChain(1), m_IKManager.getNowRotation(), 1.0f);
-		}
-		//else
-		//{
-		//	float leftFootBlendAlpha = getLeftFootBlendingAlpha();
-		//	float rightFootBlendAlpha = getRightFootBlendingAlpha();
-		//	m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), leftFootBlendAlpha);
-		//	m_pose.IKChainBlending(m_IKManager.getChain(1), m_IKManager.getNowRotation(), 1.0f);
-		//}
+		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
+		m_pose.IKChainBlending(m_IKManager.getChain(1), m_IKManager.getNowRotation(), 1.0f);
 
 		m_pose.UpdateFinalPos(m_skeleton);
 	}
