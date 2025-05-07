@@ -461,10 +461,104 @@ void Model::setState(std::string state)
 	}
 }
 
+void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase)
+{
+	static const float hipsSpeed = 0.5f;
+
+	// hips 위치 변경
+	physx::PxVec3 hips = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips"));
+	float hipsWorldX = (leftToeBase.x + rightToeBase.x) * 0.5f;
+	float hipsWorldZ = (leftToeBase.z + rightToeBase.z) * 0.5f;
+	float hipsWorldY = hips.y;
+
+	XMVECTOR hipsDest = XMVectorSet(hipsWorldX, hipsWorldY, hipsWorldZ, 1.0f);
+	XMVECTOR det;
+	XMMATRIX inverseWorld = XMMatrixInverse(&det, worldMatrix);
+	hipsDest = XMVector3TransformCoord(hipsDest, inverseWorld);
+
+	XMVECTOR nowHipsPos = XMLoadFloat3(&m_pose.local[m_skeleton.GetBoneIndex("mixamorig:Hips")].position);
+
+	hipsDest = XMVectorLerp(nowHipsPos, hipsDest, 0.2f);
+
+	//XMVECTOR toHipsDest = XMVectorSubtract(hipsDest, nowHipsPos);
+
+	//float length = XMVectorGetX(XMVector3Length(toHipsDest));
+
+	//if (length > 0.5f)
+	//{
+
+	//}
+
+
+	XMStoreFloat3(&m_pose.local[m_skeleton.GetBoneIndex("mixamorig:Hips")].position, hipsDest);
+}
+
+void Model::modifyTarget(physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase)
+{
+	const static float targetSpeed = 0.5f;
+
+	// animation을 반영한 target 보정
+	if (m_animStateManager.currentState == "walk")
+	{
+		float leftToeBaseY = leftToeBase.y - m_position.y;
+		float rightToeBaseY = rightToeBase.y - m_position.y;
+
+		float leftToeBaseOffset = leftToeBaseY - m_animationClips["walk"].minLeftFootOffset;
+		float rightToeBaseOffset = rightToeBaseY - m_animationClips["walk"].minRightFootOffset;
+
+		XMFLOAT3 leftNormal = m_RaycastingManager.m_LeftFoot.normal;
+		XMFLOAT3 rightNormal = m_RaycastingManager.m_RightFoot.normal;
+
+		XMVECTOR leftOffset = XMVector3Normalize(XMLoadFloat3(&leftNormal));
+		XMVECTOR rightOffset = XMVector3Normalize(XMLoadFloat3(&rightNormal));
+
+		leftOffset = XMVectorScale(leftOffset, leftToeBaseOffset);
+		rightOffset = XMVectorScale(rightOffset, rightToeBaseOffset);
+
+		XMVECTOR leftTarget = XMLoadFloat3(&m_RaycastingManager.m_LeftFoot.target);
+		XMVECTOR rightTarget = XMLoadFloat3(&m_RaycastingManager.m_RightFoot.target);
+		leftTarget = XMVectorAdd(leftTarget, leftOffset);
+		rightTarget = XMVectorAdd(rightTarget, rightOffset);
+
+		XMVECTOR nowLeftTarget = XMLoadFloat3(&m_leftTarget);
+		XMVECTOR nowRightTarget = XMLoadFloat3(&m_rightTarget);
+
+		XMVECTOR toLeftTarget = XMVectorSubtract(leftTarget, nowLeftTarget);
+		XMVECTOR toRightTarget = XMVectorSubtract(rightTarget, nowRightTarget);
+
+		float toLeftTargetLength = XMVectorGetX(XMVector3Length(toLeftTarget));
+		if (toLeftTargetLength > targetSpeed)
+		{
+			float speed = std::fmaxf(targetSpeed, toLeftTargetLength * 0.5f);
+			toLeftTarget = XMVector3Normalize(toLeftTarget);
+			toLeftTarget = XMVectorScale(toLeftTarget, speed);
+			nowLeftTarget = XMVectorAdd(nowLeftTarget, toLeftTarget);
+			XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.target, nowLeftTarget);
+		}
+		else
+		{
+			XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.target, leftTarget);
+		}
+
+		float toRightTargetLength = XMVectorGetX(XMVector3Length(toRightTarget));
+		if (toRightTargetLength > targetSpeed)
+		{
+			float speed = std::fmaxf(targetSpeed, toRightTargetLength * 0.2f);
+			toRightTarget = XMVector3Normalize(toRightTarget);
+			toRightTarget = XMVectorScale(toRightTarget, speed);
+			nowRightTarget = XMVectorAdd(nowRightTarget, toRightTarget);
+			XMStoreFloat3(&m_RaycastingManager.m_RightFoot.target, nowRightTarget);
+		}
+		else
+		{
+			XMStoreFloat3(&m_RaycastingManager.m_RightFoot.target, rightTarget);
+		}
+	}
+}
+
 void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 {
 	const static float ySpeed = 0.1f;
-	const static float targetSpeed = 0.5f;
 
 	if (m_hasAnimation == true) {
 
@@ -493,66 +587,12 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase);
 		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase);
 
-		// animation을 반영한 target 보정
-		if (m_animStateManager.currentState == "walk")
-		{
-			float leftToeBaseY = leftToeBase.y - m_position.y;
-			float rightToeBaseY = rightToeBase.y - m_position.y;
-
-			float leftToeBaseOffset = leftToeBaseY - m_animationClips["walk"].minLeftFootOffset;
-			float rightToeBaseOffset = rightToeBaseY - m_animationClips["walk"].minRightFootOffset;
-
-			XMFLOAT3 leftNormal = m_RaycastingManager.m_LeftFoot.normal;
-			XMFLOAT3 rightNormal = m_RaycastingManager.m_RightFoot.normal;
-
-			XMVECTOR leftOffset = XMVector3Normalize(XMLoadFloat3(&leftNormal));
-			XMVECTOR rightOffset = XMVector3Normalize(XMLoadFloat3(&rightNormal));
-
-			leftOffset = XMVectorScale(leftOffset, leftToeBaseOffset);
-			rightOffset = XMVectorScale(rightOffset, rightToeBaseOffset);
-
-			XMVECTOR leftTarget = XMLoadFloat3(&m_RaycastingManager.m_LeftFoot.target);
-			XMVECTOR rightTarget = XMLoadFloat3(&m_RaycastingManager.m_RightFoot.target);
-			leftTarget = XMVectorAdd(leftTarget, leftOffset);
-			rightTarget = XMVectorAdd(rightTarget, rightOffset);
-
-			XMVECTOR nowLeftTarget = XMLoadFloat3(&m_leftTarget);
-			XMVECTOR nowRightTarget = XMLoadFloat3(&m_rightTarget);
-
-			XMVECTOR toLeftTarget = XMVectorSubtract(leftTarget, nowLeftTarget);
-			XMVECTOR toRightTarget = XMVectorSubtract(rightTarget, nowRightTarget);
-
-			float toLeftTargetLength = XMVectorGetX(XMVector3Length(toLeftTarget));
-			if (toLeftTargetLength > targetSpeed)
-			{
-				float speed = std::fmaxf(targetSpeed, toLeftTargetLength * 0.5f);
-				toLeftTarget = XMVector3Normalize(toLeftTarget);
-				toLeftTarget = XMVectorScale(toLeftTarget, speed);
-				nowLeftTarget = XMVectorAdd(nowLeftTarget, toLeftTarget);
-				XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.target, nowLeftTarget);
-			}
-			else
-			{
-				XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.target, leftTarget);
-			}
-
-			float toRightTargetLength = XMVectorGetX(XMVector3Length(toRightTarget));
-			if (toRightTargetLength > targetSpeed)
-			{
-				float speed = std::fmaxf(targetSpeed, toRightTargetLength * 0.2f);
-				toRightTarget = XMVector3Normalize(toRightTarget);
-				toRightTarget = XMVectorScale(toRightTarget, speed);
-				nowRightTarget = XMVectorAdd(nowRightTarget, toRightTarget);
-				XMStoreFloat3(&m_RaycastingManager.m_RightFoot.target, nowRightTarget);
-			}
-			else
-			{
-				XMStoreFloat3(&m_RaycastingManager.m_RightFoot.target, rightTarget);
-			}
-		}
+		modifyTarget(leftToeBase, rightToeBase);
 
 		m_leftTarget = m_RaycastingManager.m_LeftFoot.target;
 		m_rightTarget = m_RaycastingManager.m_RightFoot.target;
+
+		modifyHipsPos(worldMatrix, leftToeBase, rightToeBase);
 
 		// 두 발을 통해 y값 결정
 		worldMatrix = getWorldMatrix();

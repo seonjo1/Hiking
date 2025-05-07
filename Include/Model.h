@@ -107,6 +107,8 @@ public:
 	XMFLOAT3 getAxis(float xDeg, float yDeg, float zDeg);
 	float getLeftFootBlendingAlpha();
 	void setYoffset();
+	void modifyTarget(physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase);
+	void modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase);
 
 private:
 	void ReleaseTextures();
