@@ -1,8 +1,8 @@
 #include "RaycastingManager.h"
 #include "IKManager.h"
 
-const float RaycastingManager::s_RayStartOffset = -5.0f;
-const float RaycastingManager::s_RayDistance = 9.0f;
+const float RaycastingManager::s_RayStartOffset = -3.5f;
+const float RaycastingManager::s_RayDistance = 7.0f;
 const physx::PxVec3 RaycastingManager::s_GravityDir = { 0.0f, -1.0f, 0.0f };
 
 float RaycastingManager::getDistance(physx::PxVec3& toTarget, physx::PxVec3& dir)

@@ -91,14 +91,14 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_Models.push_back(box2);
 
 	//// 계단 생성
-	float stairHeight = 1.5f;
+	float stairHeight = 0.7f;
 	float stairXWidth = 2.0f;
 	float stairZWidth = 10.0f;
 	for (int i = 0; i < 20; i++)
 	{
 		Model* stair = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.929f, 0.639f, 0.161f, 1.0f));
 		stair->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-		stair->setPosition(XMFLOAT3(6.0f + stairXWidth * i, 0.0f, 0.0f));
+		stair->setPosition(XMFLOAT3(8.0f + stairXWidth * i, 0.5f * (stairHeight + stairHeight * i), 0.0f));
 		stair->setScale(XMFLOAT3(stairXWidth, stairHeight + stairHeight * i, stairZWidth));
 		stair->setRotation(XMFLOAT3(0.0f, 0.0f, 0.0f));
 		stair->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
@@ -107,7 +107,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// 모델 개수 저장
 	m_modelCount = m_Models.size();
-	
+
 	// 셰이더 객체 생성 및 초기화
 	m_TextureShader = new TextureShader;
 	result = m_TextureShader->Initialize(m_Direct3D->GetDevice(), hwnd);

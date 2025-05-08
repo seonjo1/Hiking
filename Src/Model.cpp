@@ -648,6 +648,13 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd);
 		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd);
 
+		// Raycasting 실패시 IK 적용 x
+		if (m_RaycastingManager.m_LeftFoot.part == EIKPart::FAIL || m_RaycastingManager.m_RightFoot.part == EIKPart::FAIL)
+		{
+			m_pose.UpdateFinalPos(m_skeleton);
+			return;
+		}
+
 		// world Y값 결정
 		modifyWorldY(scene, worldMatrix);
 		// bone 위치 보정
@@ -658,7 +665,6 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		// target 위치 저장
 		m_leftTarget = m_RaycastingManager.m_LeftFoot.target;
 		m_rightTarget = m_RaycastingManager.m_RightFoot.target;
-
 
 		worldMatrix = getWorldMatrix();
 		/*
