@@ -122,6 +122,7 @@ public:
 	void updateAngle(Pose& pose, XMMATRIX& worldMatrix, Skeleton& skeleton);
 	bool isFinish(Pose& pose, XMMATRIX& worldMatrix);
 	IKChain& getChain(int idx);
+	void blendingIKRotation();
 	std::vector<XMFLOAT4>& getNowRotation();
 
 private:
@@ -149,6 +150,7 @@ private:
 	std::vector<float> JTx;
 	std::vector<IKChain> m_chains;
 	std::vector<XMFLOAT4> m_nowRotation;
+	std::vector<XMFLOAT4> m_prevRotation;
 
 	int m_chainNum{ 0 };
 	int m_rowNum{ 0 };

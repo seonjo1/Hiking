@@ -518,7 +518,7 @@ void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, phy
 
 void Model::modifyTarget(physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase)
 {
-	const static float targetSpeed = 0.5f;
+	const static float targetSpeed = 0.4f;
 
 	// animation을 반영한 target 보정
 	if (m_animStateManager.currentState == "walk")
@@ -543,11 +543,11 @@ void Model::modifyTarget(physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase
 		leftTarget = XMVectorAdd(leftTarget, leftOffset);
 		rightTarget = XMVectorAdd(rightTarget, rightOffset);
 
-		XMVECTOR nowLeftTarget = XMLoadFloat3(&m_leftTarget);
-		XMVECTOR nowRightTarget = XMLoadFloat3(&m_rightTarget);
+		XMVECTOR prevLeftTarget = XMLoadFloat3(&m_leftTarget);
+		XMVECTOR prevRightTarget = XMLoadFloat3(&m_rightTarget);
 
-		XMVECTOR toLeftTarget = XMVectorSubtract(leftTarget, nowLeftTarget);
-		XMVECTOR toRightTarget = XMVectorSubtract(rightTarget, nowRightTarget);
+		XMVECTOR toLeftTarget = XMVectorSubtract(leftTarget, prevLeftTarget);
+		XMVECTOR toRightTarget = XMVectorSubtract(rightTarget, prevRightTarget);
 
 		float toLeftTargetLength = XMVectorGetX(XMVector3Length(toLeftTarget));
 		if (toLeftTargetLength > targetSpeed)
@@ -555,8 +555,8 @@ void Model::modifyTarget(physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase
 			float speed = std::fmaxf(targetSpeed, toLeftTargetLength * 0.5f);
 			toLeftTarget = XMVector3Normalize(toLeftTarget);
 			toLeftTarget = XMVectorScale(toLeftTarget, speed);
-			nowLeftTarget = XMVectorAdd(nowLeftTarget, toLeftTarget);
-			XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.target, nowLeftTarget);
+			prevLeftTarget = XMVectorAdd(prevLeftTarget, toLeftTarget);
+			XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.target, prevLeftTarget);
 		}
 		else
 		{
@@ -569,8 +569,8 @@ void Model::modifyTarget(physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase
 			float speed = std::fmaxf(targetSpeed, toRightTargetLength * 0.2f);
 			toRightTarget = XMVector3Normalize(toRightTarget);
 			toRightTarget = XMVectorScale(toRightTarget, speed);
-			nowRightTarget = XMVectorAdd(nowRightTarget, toRightTarget);
-			XMStoreFloat3(&m_RaycastingManager.m_RightFoot.target, nowRightTarget);
+			prevRightTarget = XMVectorAdd(prevRightTarget, toRightTarget);
+			XMStoreFloat3(&m_RaycastingManager.m_RightFoot.target, prevRightTarget);
 		}
 		else
 		{
@@ -582,26 +582,35 @@ void Model::modifyTarget(physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase
 void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 {
 	const static float ySpeed = 0.1f;
-	const static float dirOffset = 0.6f;
-	const static float angleOffsetScale = 2.0f;
+	//const static float dirOffset = 0.5f;
+	const static float angleOffsetScale = 0.5f;
 
-	physx::PxVec3 hips = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips"));
+	//// raycasting을 통한 기본 y값 계산
+	//physx::PxVec3 hips = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips"));
+	//XMFLOAT3 dir = getRotatedVector(m_rotation.y);
 
-	XMFLOAT3 dir = getRotatedVector(m_rotation.y);
+	//physx::PxVec3 hipsFront;
+	//hipsFront.x = hips.x + dir.x * dirOffset;
+	//hipsFront.y = hips.y + dir.y * dirOffset;
+	//hipsFront.z = hips.z + dir.z * dirOffset;
 
-	physx::PxVec3 hipsFront;
-	hipsFront.x = hips.x + dir.x * dirOffset;
-	hipsFront.y = hips.y + dir.y * dirOffset;
-	hipsFront.z = hips.z + dir.z * dirOffset;
+	//m_RaycastingManager.raycastingForY(scene, hips, hipsFront);
 
-	m_RaycastingManager.raycastingForY(scene, hips, hipsFront);
+	// 가장 낮은 발에 몸 위치 맞추기
+	float minY = fminf(m_RaycastingManager.m_LeftFoot.target.y, m_RaycastingManager.m_RightFoot.target.y);
+	//m_RaycastingManager.m_Y.pos.y = fminf(m_RaycastingManager.m_Y.pos.y, minY);
+	m_RaycastingManager.m_Y.pos.y = minY;
 
-	XMVECTOR yNormal = XMLoadFloat3(&m_RaycastingManager.m_Y.normal);
+	// raycasting 결과 normal
+	XMVECTOR yLeftNormal = XMLoadFloat3(&m_RaycastingManager.m_LeftFoot.normal);
+	XMVECTOR yRightNormal = XMLoadFloat3(&m_RaycastingManager.m_RightFoot.normal);
+	XMVECTOR yNormal = XMVectorScale(XMVectorAdd(yLeftNormal, yRightNormal), 0.5f);
 	XMVECTOR normal = XMVectorSet(0, 1, 0, 0);
 	float dot = XMVectorGetX(XMVector3Dot(normal, yNormal));
 	float angleOffset = 1.0f - fabs(dot);
 	m_RaycastingManager.m_Y.pos.y -= angleOffset * angleOffsetScale;
 
+	// 한 번에 이동하지 않고 조금씩 이동
 	if (m_position.y > m_RaycastingManager.m_Y.pos.y)
 	{
 		m_position.y = std::fmaxf(m_RaycastingManager.m_Y.pos.y, m_position.y - ySpeed);
@@ -623,11 +632,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 
 		XMMATRIX worldMatrix = getWorldMatrix();
 
-		// world Y값 결정
-		modifyWorldY(scene, worldMatrix);
-
 		// Raycasting
-		worldMatrix = getWorldMatrix();
 		physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
 		physx::PxVec3 leftToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"));
 		physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
@@ -636,14 +641,20 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd);
 		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd);
 
+		// world Y값 결정
+		modifyWorldY(scene, worldMatrix);
 		// bone 위치 보정
 		modifyTarget(leftToeBase, rightToeBase);
+
+		
 		//modifyHipsPos(worldMatrix, leftToeBase, rightToeBase);
 
 		// target 위치 저장
 		m_leftTarget = m_RaycastingManager.m_LeftFoot.target;
 		m_rightTarget = m_RaycastingManager.m_RightFoot.target;
 
+
+		worldMatrix = getWorldMatrix();
 		/*
 		 [Foot IK 적용]
 		 0. IKangle Update
@@ -682,6 +693,8 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			}
 			iteration++;
 		}
+
+		m_IKManager.blendingIKRotation();
 
 		m_pose.IKChainBlending(m_IKManager.getChain(0), m_IKManager.getNowRotation(), 1.0f);
 		m_pose.IKChainBlending(m_IKManager.getChain(1), m_IKManager.getNowRotation(), 1.0f);

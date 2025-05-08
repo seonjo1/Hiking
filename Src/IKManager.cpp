@@ -129,6 +129,7 @@ void IKManager::initIKChains(Skeleton& skeleton)
 	m_rowNum = m_chainNum * 3;
 	m_chains.resize(m_chainNum);
 	m_nowRotation.resize(skeleton.bones.size(), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+	m_prevRotation.resize(skeleton.bones.size(), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 
 	initLeftFootChains(skeleton);
 	initRightFootChains(skeleton);
@@ -477,6 +478,45 @@ std::vector<XMFLOAT4>& IKManager::getNowRotation()
 {
 	return m_nowRotation;
 }
+
+void IKManager::blendingIKRotation()
+{
+	static bool init = false;
+	static float alpha = 0.5f;
+	
+	if (init == false)
+	{
+		init = true;
+		for (int i = 0; i < m_chainNum; ++i)
+		{
+			IKChain& chain = m_chains[i];
+			for (int j = 0; j < chain.Bones.size(); ++j)
+			{
+				IKBone& bone = chain.Bones[j];
+				int idx = bone.idx;
+				m_prevRotation[idx] = m_nowRotation[idx];
+			}
+		}
+		return;
+	}
+	
+	for (int i = 0; i < m_chainNum; ++i)
+	{
+		IKChain& chain = m_chains[i];
+		for (int j = 0; j < chain.Bones.size(); ++j)
+		{
+			IKBone& bone = chain.Bones[j];
+			int idx = bone.idx;
+
+			XMVECTOR prevRotation = XMLoadFloat4(&m_prevRotation[idx]);
+			XMVECTOR nowRotation = XMLoadFloat4(&m_nowRotation[idx]);
+			nowRotation = XMQuaternionSlerp(prevRotation, nowRotation, alpha);
+			XMStoreFloat4(&m_prevRotation[idx], nowRotation);
+			XMStoreFloat4(&m_nowRotation[idx], nowRotation);
+		}
+	}
+}
+
 
 // X -> Y -> Z ¼ø¼­
 void IKManager::quaternionToEuler(const XMFLOAT4& q, float* eulerDeg)

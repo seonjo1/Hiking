@@ -164,7 +164,7 @@ void RaycastingManager::fillInfo(RaycastingInfo& dest, RaycastingInfo& src)
 
 void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
 {
-	static const float toToeEndScale = 0.35f;
+	static const float toToeEndScale = 0.3f;
 	static const float toFootScale = 0.5f;
 
     physx::PxVec3 toToeEnd = physx::PxVec3(toeEndPose.x - toeBasePose.x, 0.0f, toeEndPose.z - toeBasePose.z);
@@ -180,7 +180,7 @@ void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::Px
 
 void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
 {
-	static const float toToeEndScale = 0.35f;
+	static const float toToeEndScale = 0.3f;
 	static const float toFootScale = 0.5f;
 
 	physx::PxVec3 toToeEnd = physx::PxVec3(toeEndPose.x - toeBasePose.x, 0.0f, toeEndPose.z - toeBasePose.z);
@@ -234,7 +234,7 @@ void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hips
 
     if (frontRaySuccess)
     {
-        if (raySuccess && m_Y.pos.y > frontRayHit.block.position.y)
+        if (raySuccess && m_Y.pos.y < frontRayHit.block.position.y)
         {
 			m_Y.pos.y = frontRayHit.block.position.y;
 			m_Y.normal = XMFLOAT3(frontRayHit.block.normal.x, frontRayHit.block.normal.y, frontRayHit.block.normal.z);
