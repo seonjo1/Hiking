@@ -1058,7 +1058,7 @@ void Model::move(XMFLOAT3& targetDir)
 {
 	const static float rotSpeed = 5.0f;
 	const static float accel = 0.01f;
-	const static float maxSpeed = 0.1f;
+	const static float maxSpeed = 0.12f;
 
 	// 현재 방향 벡터
 	XMFLOAT3 nowDir = getRotatedVector(m_rotation.y);
