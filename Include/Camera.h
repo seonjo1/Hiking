@@ -36,7 +36,7 @@ private:
 	XMFLOAT3 m_cameraUp{ 0.0f, 1.0f, 0.0f };
 	XMMATRIX m_viewMatrix;
 
-	const float m_cameraSpeed{ 0.1f };
+	const float m_cameraSpeed{ 0.2f };
 	const float m_cameraSensitivity{ 0.5f };
 	const float m_cameraRotSpeed{ 0.4f };
 };
