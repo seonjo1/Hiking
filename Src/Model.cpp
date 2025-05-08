@@ -587,7 +587,7 @@ void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 
 	//// raycasting을 통한 기본 y값 계산
 	//physx::PxVec3 hips = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips"));
-	//XMFLOAT3 dir = getRotatedVector(m_rotation.y);
+	XMFLOAT3 dir = getRotatedVector(m_rotation.y);
 
 	//physx::PxVec3 hipsFront;
 	//hipsFront.x = hips.x + dir.x * dirOffset;
@@ -597,27 +597,29 @@ void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 	//m_RaycastingManager.raycastingForY(scene, hips, hipsFront);
 
 	// 가장 낮은 발에 몸 위치 맞추기
-	float minY = fminf(m_RaycastingManager.m_LeftFoot.target.y, m_RaycastingManager.m_RightFoot.target.y);
+	float minY = fminf(m_RaycastingManager.m_LeftFoot.target.y, m_RaycastingManager.m_RightFoot.target.y) - 0.15f;
 	//m_RaycastingManager.m_Y.pos.y = fminf(m_RaycastingManager.m_Y.pos.y, minY);
-	m_RaycastingManager.m_Y.pos.y = minY;
 
-	// raycasting 결과 normal
+	// 오르막길이면 경사에 맞춰서 y값을 더 내림
 	XMVECTOR yLeftNormal = XMLoadFloat3(&m_RaycastingManager.m_LeftFoot.normal);
 	XMVECTOR yRightNormal = XMLoadFloat3(&m_RaycastingManager.m_RightFoot.normal);
 	XMVECTOR yNormal = XMVectorScale(XMVectorAdd(yLeftNormal, yRightNormal), 0.5f);
-	XMVECTOR normal = XMVectorSet(0, 1, 0, 0);
-	float dot = XMVectorGetX(XMVector3Dot(normal, yNormal));
-	float angleOffset = 1.0f - fabs(dot);
-	m_RaycastingManager.m_Y.pos.y -= angleOffset * angleOffsetScale;
+	XMVECTOR dirVec = XMLoadFloat3(&dir);
+	float dot = XMVectorGetX(XMVector3Dot(dirVec, yNormal));
+	if (dot < 0.0f)
+	{
+		minY -= fabs(dot) * angleOffsetScale;
+	}
+
 
 	// 한 번에 이동하지 않고 조금씩 이동
 	if (m_position.y > m_RaycastingManager.m_Y.pos.y)
 	{
-		m_position.y = std::fmaxf(m_RaycastingManager.m_Y.pos.y, m_position.y - ySpeed);
+		m_position.y = std::fmaxf(minY, m_position.y - ySpeed);
 	}
 	else
 	{
-		m_position.y = std::fminf(m_RaycastingManager.m_Y.pos.y, m_position.y + ySpeed);
+		m_position.y = std::fminf(minY, m_position.y + ySpeed);
 	}
 }
 
