@@ -7,6 +7,8 @@ public:
 	AnimationClip* clip = nullptr;
 	float currentTime = 0.0f;
 	float speed = 1.0f;
+	XMFLOAT3 leftTargetToHips;
+	XMFLOAT3 rightTargetToHips;
 
 	void Play(AnimationClip* clip);
 	float UpdateTime(float deltaTime);

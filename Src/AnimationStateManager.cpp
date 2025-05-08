@@ -51,6 +51,8 @@ void AnimationStateManager::UpdateAnimationClip(Pose& pose, Skeleton& skeleton) 
     if (previous.clip == nullptr)
     {
         current.SamplePose(pose.local, skeleton);
+		leftTargetToHips = current.leftTargetToHips;
+		rightTargetToHips = current.rightTargetToHips;
     }
     else {
         std::vector<LocalTx> txVectorA(skeleton.bones.size());
@@ -59,6 +61,16 @@ void AnimationStateManager::UpdateAnimationClip(Pose& pose, Skeleton& skeleton) 
         previous.SamplePose(txVectorA, skeleton);
         current.SamplePose(txVectorB, skeleton);
         blendAnimTx(pose.local, txVectorA, txVectorB, blendAlpha);
+        
+		XMVECTOR prevLToH = XMLoadFloat3(&(previous.leftTargetToHips));
+		XMVECTOR currLToH = XMLoadFloat3(&(current.leftTargetToHips));
+        XMVECTOR LToH = XMVectorLerp(prevLToH, currLToH, blendAlpha);
+        XMStoreFloat3(&leftTargetToHips, LToH);
+
+		XMVECTOR prevRToH = XMLoadFloat3(&(previous.rightTargetToHips));
+		XMVECTOR currRToH = XMLoadFloat3(&(current.rightTargetToHips));
+		XMVECTOR RToH = XMVectorLerp(prevRToH, currRToH, blendAlpha);
+		XMStoreFloat3(&rightTargetToHips, RToH);
     }
 }
 
@@ -89,4 +101,52 @@ void AnimationStateManager::getMinYoffset(Pose& pose, Skeleton& skeleton, XMMATR
 		clip.minLeftFootOffset = std::fminf(XMVectorGetY(left), clip.minLeftFootOffset);
 		clip.minRightFootOffset = std::fminf(XMVectorGetY(right), clip.minRightFootOffset);
     }
+}
+
+void AnimationStateManager::setTargetToHipsKeyFrame(Pose& pose, Skeleton& skeleton, XMMATRIX& worldMatrix, AnimationClip& clip, std::string leftPart, std::string rightPart)
+{
+	AnimationPlayer tmpPlayer;
+	tmpPlayer.Play(&clip);
+	BoneTrack& leftFootBoneTrack = clip.boneTracks[leftPart];
+	std::vector<RotationKeyframe>& v = leftFootBoneTrack.rotationKeys;
+
+    int count = v.size();
+
+	clip.leftTargetToHipsVector.resize(count);
+	clip.rightTargetToHipsVector.resize(count);
+
+	for (int i = 0; i < count; ++i)
+	{
+		float time = v[i].time;
+		tmpPlayer.UpdateTimeForYoffset(time);
+		tmpPlayer.SamplePose(pose.local, skeleton);
+		pose.UpdateWorldPos(skeleton);
+
+		XMVECTOR point = XMVectorSet(0, 0, 0, 1);
+		XMMATRIX toHips = XMMatrixMultiply(pose.world[skeleton.GetBoneIndex("mixamorig:Hips")], worldMatrix);
+		XMMATRIX toLeft = XMMatrixMultiply(pose.world[skeleton.GetBoneIndex(leftPart)], worldMatrix);
+		XMMATRIX toRight = XMMatrixMultiply(pose.world[skeleton.GetBoneIndex(rightPart)], worldMatrix);
+
+        XMVECTOR hips = XMVector3TransformCoord(point, toHips);
+		XMVECTOR left = XMVector3TransformCoord(point, toLeft);
+		XMVECTOR right = XMVector3TransformCoord(point, toRight);
+        
+		XMVECTOR leftToHips = XMVectorSubtract(hips, left);
+		XMVECTOR rightToHips = XMVectorSubtract(hips, right);
+
+		XMStoreFloat3(&clip.leftTargetToHipsVector[i].position, leftToHips);
+		XMStoreFloat3(&clip.rightTargetToHipsVector[i].position, rightToHips);
+		clip.leftTargetToHipsVector[i].time = time;
+		clip.rightTargetToHipsVector[i].time = time;
+	}
+}
+
+XMFLOAT3 AnimationStateManager::getLeftTargetToHips()
+{
+    return leftTargetToHips;
+}
+
+XMFLOAT3 AnimationStateManager::getRightTargetToHips()
+{
+    return rightTargetToHips;
 }

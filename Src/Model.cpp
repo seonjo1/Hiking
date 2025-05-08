@@ -461,48 +461,58 @@ void Model::setState(std::string state)
 	}
 }
 
+XMVECTOR Model::getTargetToHipsDest(XMFLOAT3 targetToHipsFloat, XMVECTOR& target)
+{
+	XMVECTOR targetToHips = XMLoadFloat3(&targetToHipsFloat);
+
+	XMVECTOR q = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), XMConvertToRadians(m_rotation.y));
+	targetToHips = XMVector3Rotate(targetToHips, q);
+
+	XMVECTOR hipsDest = XMVectorAdd(target, targetToHips);
+	XMVectorSetZ(hipsDest, 1.0f);
+	return hipsDest;
+}
+
 void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase)
 {
 	static const float hipsSpeed = 0.5f;
-	static const float defaultY = 4.07f;
 
 	// hips 위치 변경
 	physx::PxVec3 hips = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips"));
-	float hipsWorldX = (leftToeBase.x + rightToeBase.x) * 0.5f;
-	float hipsWorldZ = (leftToeBase.z + rightToeBase.z) * 0.5f;
-	float hipsWorldY = hips.y;
 
-	float minY;
+	XMVECTOR hipsDest;
+	XMVECTOR leftTarget = XMVectorSet(leftToeBase.x, leftToeBase.y, leftToeBase.z, 1.0f);
+	XMVECTOR rightTarget = XMVectorSet(rightToeBase.x, rightToeBase.y, rightToeBase.z, 1.0f);
+
+	// idle, walk를 기준으로 왼발, 오른발 선택
 	if (m_animStateManager.currentState == "idle")
 	{
-		minY = std::fminf(leftToeBase.y, rightToeBase.y);
+		if (leftToeBase.y < rightToeBase.y)
+		{
+			hipsDest = getTargetToHipsDest(m_animStateManager.getLeftTargetToHips(), leftTarget);
+		}
+		else
+		{
+			hipsDest = getTargetToHipsDest(m_animStateManager.getRightTargetToHips(), rightTarget);
+		}
 	}
 	else
 	{
 		if (m_animStateManager.walkPhase < 0.5f)
 		{
-			minY = leftToeBase.y;
+			hipsDest = getTargetToHipsDest(m_animStateManager.getLeftTargetToHips(), leftTarget);
 		}
 		else
 		{
-			minY = rightToeBase.y;
+			hipsDest = getTargetToHipsDest(m_animStateManager.getRightTargetToHips(), rightTarget);
 		}
 	}
 
-	float hipsY = hips.y - defaultY;
-	float diff = minY - hipsY;
-	hipsWorldY += diff;
+	// 선택한 발 기준으로 hipsDest 계산
 
-	XMVECTOR hipsDest = XMVectorSet(hipsWorldX, hipsWorldY, hipsWorldZ, 1.0f);
 	XMVECTOR det;
 	XMMATRIX inverseWorld = XMMatrixInverse(&det, worldMatrix);
 	hipsDest = XMVector3TransformCoord(hipsDest, inverseWorld);
-
-	XMMATRIX localMatrix = m_pose.world[m_skeleton.GetBoneIndex("mixamorig:Hips")];
-	XMVECTOR nowHipsPos = XMVector3TransformCoord(XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f), localMatrix);
-
-	hipsDest = XMVectorLerp(nowHipsPos, hipsDest, 0.1f);
-
 	XMStoreFloat3(&m_pose.local[m_skeleton.GetBoneIndex("mixamorig:Hips")].position, hipsDest);
 }
 
@@ -573,6 +583,7 @@ void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 {
 	const static float ySpeed = 0.1f;
 	const static float dirOffset = 0.6f;
+	const static float angleOffsetScale = 2.0f;
 
 	physx::PxVec3 hips = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips"));
 
@@ -585,7 +596,11 @@ void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 
 	m_RaycastingManager.raycastingForY(scene, hips, hipsFront);
 
-	m_RaycastingManager.m_Y.pos.y -= 0.15f;
+	XMVECTOR yNormal = XMLoadFloat3(&m_RaycastingManager.m_Y.normal);
+	XMVECTOR normal = XMVectorSet(0, 1, 0, 0);
+	float dot = XMVectorGetX(XMVector3Dot(normal, yNormal));
+	float angleOffset = 1.0f - fabs(dot);
+	m_RaycastingManager.m_Y.pos.y -= angleOffset * angleOffsetScale;
 
 	if (m_position.y > m_RaycastingManager.m_Y.pos.y)
 	{
@@ -623,7 +638,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 
 		// bone 위치 보정
 		modifyTarget(leftToeBase, rightToeBase);
-		modifyHipsPos(worldMatrix, leftToeBase, rightToeBase);
+		//modifyHipsPos(worldMatrix, leftToeBase, rightToeBase);
 
 		// target 위치 저장
 		m_leftTarget = m_RaycastingManager.m_LeftFoot.target;
@@ -1130,8 +1145,28 @@ void Model::syncModelWithRigidbody(physx::PxPhysics* physics)
 void Model::setYoffset()
 {
 	XMFLOAT3 nowPosition = m_position;
+	XMFLOAT3 nowRotation = m_rotation;
 	m_position = { 0.0f, 0.0f, 0.0f };
+	m_rotation = { -90.0f, 0.0f, 0.0f };
 	XMMATRIX worldMatrix = getWorldMatrix();
 	m_animStateManager.getMinYoffset(m_pose, m_skeleton, worldMatrix, m_animationClips["walk"], "mixamorig:LeftToeBase", "mixamorig:RightToeBase");
 	m_position = nowPosition;
+	m_rotation = nowRotation;
+}
+
+void Model::setTargetToHipsKeyFrame()
+{
+	XMFLOAT3 nowPosition = m_position;
+	XMFLOAT3 nowRotation = m_rotation;
+	m_position = { 0.0f, 0.0f, 0.0f };
+	m_rotation = { -90.0f, 0.0f, 0.0f };
+	XMMATRIX worldMatrix = getWorldMatrix();
+
+	for (auto& pair : m_animationClips)
+	{
+		m_animStateManager.setTargetToHipsKeyFrame(m_pose, m_skeleton, worldMatrix, pair.second, "mixamorig:LeftToeBase", "mixamorig:RightToeBase");
+	}
+	
+	m_position = nowPosition;
+	m_rotation = nowRotation;
 }

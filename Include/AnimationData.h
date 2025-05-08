@@ -60,6 +60,7 @@ struct AnimationClip {
     std::unordered_map<std::string, BoneTrack> boneTracks;
 	float minLeftFootOffset;
 	float minRightFootOffset;
-
+	std::vector<PositionKeyframe> leftTargetToHipsVector;
+	std::vector<PositionKeyframe> rightTargetToHipsVector;
     BoneTrack* GetTrack(const std::string& boneName);
 };

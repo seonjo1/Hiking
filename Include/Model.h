@@ -107,9 +107,11 @@ public:
 	XMFLOAT3 getAxis(float xDeg, float yDeg, float zDeg);
 	float getLeftFootBlendingAlpha();
 	void setYoffset();
+	void setTargetToHipsKeyFrame();
 	void modifyTarget(physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase);
 	void modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase);
 	void modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix);
+	XMVECTOR getTargetToHipsDest(XMFLOAT3 targetToHipsFloat, XMVECTOR& target);
 
 private:
 	void ReleaseTextures();

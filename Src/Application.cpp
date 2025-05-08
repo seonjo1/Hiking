@@ -54,6 +54,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_AnimationModel->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
 	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
 	m_AnimationModel->setYoffset();
+	m_AnimationModel->setTargetToHipsKeyFrame();
 
 	// ±¸ ¸ðµ¨ »ý¼º
 	Model* sphere1 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.525f, 0.502f, 0.329f, 1.0f));

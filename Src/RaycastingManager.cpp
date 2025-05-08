@@ -164,8 +164,8 @@ void RaycastingManager::fillInfo(RaycastingInfo& dest, RaycastingInfo& src)
 
 void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
 {
-	static const float toToeEndScale = 0.4f;
-	static const float toFootScale = 0.55f;
+	static const float toToeEndScale = 0.35f;
+	static const float toFootScale = 0.5f;
 
     physx::PxVec3 toToeEnd = physx::PxVec3(toeEndPose.x - toeBasePose.x, 0.0f, toeEndPose.z - toeBasePose.z);
     toToeEnd = toToeEnd.getNormalized();
@@ -180,8 +180,8 @@ void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::Px
 
 void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
 {
-	static const float toToeEndScale = 0.4f;
-	static const float toFootScale = 0.55f;
+	static const float toToeEndScale = 0.35f;
+	static const float toFootScale = 0.5f;
 
 	physx::PxVec3 toToeEnd = physx::PxVec3(toeEndPose.x - toeBasePose.x, 0.0f, toeEndPose.z - toeBasePose.z);
 	toToeEnd = toToeEnd.getNormalized();
@@ -195,14 +195,16 @@ void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::P
 
 void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose, physx::PxVec3 hipsFrontPose)
 {
+	const float rayStartOffset = -5.0f;
+	const float rayDistance = 15.0f;
     static physx::PxRaycastBuffer rayHit, frontRayHit;
 
     // toe raycasting
-    physx::PxVec3 rayStart = hipsPose + s_GravityDir * s_RayStartOffset;
+    physx::PxVec3 rayStart = hipsPose + s_GravityDir * rayStartOffset;
     bool raySuccess = scene->raycast(
         rayStart,
         s_GravityDir,
-        s_RayDistance,
+        rayDistance,
         rayHit,
         physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
     );
@@ -214,30 +216,28 @@ void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hips
     if (raySuccess)
     {
         m_Y.pos = XMFLOAT3(rayHit.block.position.x, rayHit.block.position.y, rayHit.block.position.z);
+        m_Y.normal = XMFLOAT3(rayHit.block.normal.x, rayHit.block.normal.y, rayHit.block.normal.z);
     }
     else
     {
         m_Y.part = EIKPart::FAIL;
     }
 
-    physx::PxVec3 frontRayStart = hipsFrontPose + s_GravityDir * s_RayStartOffset;
+    physx::PxVec3 frontRayStart = hipsFrontPose + s_GravityDir * rayStartOffset;
 	bool frontRaySuccess = scene->raycast(
 		frontRayStart,
 		s_GravityDir,
-		s_RayDistance,
+        rayDistance,
 		frontRayHit,
 		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
 	);
 
     if (frontRaySuccess)
     {
-        if (raySuccess)
+        if (raySuccess && m_Y.pos.y > frontRayHit.block.position.y)
         {
-            m_Y.pos.y = fmaxf(m_Y.pos.y, frontRayHit.block.position.y);
-        }
-        else
-        {
-            m_Y.pos.y = frontRayHit.block.position.y;
+			m_Y.pos.y = frontRayHit.block.position.y;
+			m_Y.normal = XMFLOAT3(frontRayHit.block.normal.x, frontRayHit.block.normal.y, frontRayHit.block.normal.z);
         }
     }
 }

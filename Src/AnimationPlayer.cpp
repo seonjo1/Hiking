@@ -90,6 +90,9 @@ void AnimationPlayer::SamplePose(std::vector<LocalTx>& txVector, const Skeleton&
 			txVector[i].scale = InterpolateScale(track->scaleKeys, currentTime);
 		}
 	}
+
+	leftTargetToHips = InterpolatePosition(clip->leftTargetToHipsVector, currentTime);
+	rightTargetToHips = InterpolatePosition(clip->rightTargetToHipsVector, currentTime);
 }
 
 void AnimationPlayer::UpdateTimeForYoffset(float time) {

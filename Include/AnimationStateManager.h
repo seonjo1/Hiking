@@ -5,6 +5,8 @@
 class AnimationStateManager {
 public:
 	std::string currentState;
+	XMFLOAT3 leftTargetToHips;
+	XMFLOAT3 rightTargetToHips;
 
 	AnimationPlayer current;
 	AnimationPlayer previous;
@@ -18,4 +20,7 @@ public:
 	void UpdateTime(float dt);
 	void SetState(std::string newState, std::unordered_map<std::string, AnimationClip>& clips);
 	void getMinYoffset(Pose& pose, Skeleton& skeleton, XMMATRIX& worldMatrix, AnimationClip& clip, std::string leftPart, std::string rightPart);
+	void setTargetToHipsKeyFrame(Pose& pose, Skeleton& skeleton, XMMATRIX& worldMatrix, AnimationClip& clip, std::string leftPart, std::string rightPart);
+	XMFLOAT3 getLeftTargetToHips();
+	XMFLOAT3 getRightTargetToHips();
 };
