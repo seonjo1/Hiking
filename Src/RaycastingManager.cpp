@@ -80,7 +80,6 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
 
 	XMVECTOR toeBaseRayStartPose = XMVectorSet(toeBaseRayStart.x, toeBaseRayStart.y, toeBaseRayStart.z, 1.0f);
 
-    p("foot Info!!\n");
     // foot info 채우기
     RaycastingInfo footInfo;
     if (footRaySuccess)
@@ -99,14 +98,8 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
         footInfo.normal = footNormal;
         footInfo.distance = footDistance;
         footInfo.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-
-		p("normal: " + std::to_string(footNormal.x) + " " + std::to_string(footNormal.y) + " " + std::to_string(footNormal.z) + "\n");
-		p("pos: " + std::to_string(footInfo.pos.x) + " " + std::to_string(footInfo.pos.y) + " " + std::to_string(footInfo.pos.z) + "\n");
-		p("toeEndInfo.target: " + std::to_string(footInfo.target.x) + " " + std::to_string(footInfo.target.y) + " " + std::to_string(footInfo.target.z) + "\n");
-		p("distance: " + std::to_string(footDistance) + "\n");
     }
 
-	p("toeEnd Info!!\n");
     // toeEnd info 채우기
 	RaycastingInfo toeEndInfo;
     if (toeEndRaySuccess)
@@ -125,13 +118,8 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
         toeEndInfo.normal = toeEndNormal;
         toeEndInfo.distance = toeEndDistance;
         toeEndInfo.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-		p("normal: " + std::to_string(toeEndNormal.x) + " " + std::to_string(toeEndNormal.y) + " " + std::to_string(toeEndNormal.z) + "\n");
-		p("pos: " + std::to_string(toeEndInfo.pos.x) + " " + std::to_string(toeEndInfo.pos.y) + " " + std::to_string(toeEndInfo.pos.z) + "\n");
-		p("toeEndInfo.target: " + std::to_string(toeEndInfo.target.x) + " " + std::to_string(toeEndInfo.target.y) + " " + std::to_string(toeEndInfo.target.z) + "\n");
-        p("distance: " + std::to_string(toeEndDistance) + "\n");
     }
 
-    p("toeBase Info!!\n");
     // toeBase info 채우기
 	RaycastingInfo toeBaseInfo;
     if (toeBaseRaySuccess)
@@ -143,16 +131,10 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
 		XMVECTOR target = XMLoadFloat3(&toeBaseInfo.target);
 		float toeBaseDistance = XMVectorGetX(XMVector3Length(XMVectorSubtract(toeBaseRayStartPose, target)));
         toeBaseInfo.distance = toeBaseDistance;
-
-		p("normal: " + std::to_string(toeBaseInfo.normal.x) + " " + std::to_string(toeBaseInfo.normal.y) + " " + std::to_string(toeBaseInfo.normal.z) + "\n");
-		p("pos: " + std::to_string(toeBaseInfo.pos.x) + " " + std::to_string(toeBaseInfo.pos.y) + " " + std::to_string(toeBaseInfo.pos.z) + "\n");
-		p("toeEndInfo.target: " + std::to_string(toeBaseInfo.target.x) + " " + std::to_string(toeBaseInfo.target.y) + " " + std::to_string(toeBaseInfo.target.z) + "\n");
-		p("distance: " + std::to_string(toeBaseDistance) + "\n");
     }
 
     if (footRaySuccess)
     {
-        p("foot!! fill!!\n");
         fillInfo(info, footInfo);
     }
     else
@@ -162,13 +144,11 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
 
     if (toeEndRaySuccess && (info.distance > toeEndInfo.distance))
     {
-		p("toeEnd!! fill!!\n");
         fillInfo(info, toeEndInfo);
     }
 
     if (toeBaseRaySuccess && (info.distance > toeBaseInfo.distance))
 	{
-        p("toeBase!! fill!!\n");
 		fillInfo(info, toeBaseInfo);
     }
 }
@@ -213,13 +193,9 @@ void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::P
     footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_RightFoot);
 }
 
-void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose)
+void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose, physx::PxVec3 hipsFrontPose)
 {
-    const float slopeDotThreshold = cosf(physx::PxDegToRad(10.0f));
-    static physx::PxRaycastBuffer rayHit;
-
-    // 디폴트로 Raycasting 실패 등록
-    m_Y.part = EIKPart::NONE;
+    static physx::PxRaycastBuffer rayHit, frontRayHit;
 
     // toe raycasting
     physx::PxVec3 rayStart = hipsPose + s_GravityDir * s_RayStartOffset;
@@ -232,6 +208,7 @@ void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hips
     );
 
     // raycasting 성공시 경사면 각도 확인 (너무 크면 hit 안한처리
+	m_Y.part = EIKPart::NONE;
 
     // 정보 2개중 1개 탈락
     if (raySuccess)
@@ -241,5 +218,26 @@ void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hips
     else
     {
         m_Y.part = EIKPart::FAIL;
+    }
+
+    physx::PxVec3 frontRayStart = hipsFrontPose + s_GravityDir * s_RayStartOffset;
+	bool frontRaySuccess = scene->raycast(
+		frontRayStart,
+		s_GravityDir,
+		s_RayDistance,
+		frontRayHit,
+		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
+	);
+
+    if (frontRaySuccess)
+    {
+        if (raySuccess)
+        {
+            m_Y.pos.y = fmaxf(m_Y.pos.y, frontRayHit.block.position.y);
+        }
+        else
+        {
+            m_Y.pos.y = frontRayHit.block.position.y;
+        }
     }
 }

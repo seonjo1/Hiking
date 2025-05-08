@@ -568,31 +568,47 @@ void Model::modifyTarget(physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase
 	}
 }
 
-void Model::UpdateAnimation(physx::PxScene* scene, float dt)
+void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 {
 	const static float ySpeed = 0.1f;
+	const static float dirOffset = 0.6f;
 
+	physx::PxVec3 hips = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips"));
+
+	XMFLOAT3 dir = getRotatedVector(m_rotation.y);
+
+	physx::PxVec3 hipsFront;
+	hipsFront.x = hips.x + dir.x * dirOffset;
+	hipsFront.y = hips.y + dir.y * dirOffset;
+	hipsFront.z = hips.z + dir.z * dirOffset;
+
+	m_RaycastingManager.raycastingForY(scene, hips, hipsFront);
+
+	m_RaycastingManager.m_Y.pos.y -= 0.15f;
+
+	if (m_position.y > m_RaycastingManager.m_Y.pos.y)
+	{
+		m_position.y = std::fmaxf(m_RaycastingManager.m_Y.pos.y, m_position.y - ySpeed);
+	}
+	else
+	{
+		m_position.y = std::fminf(m_RaycastingManager.m_Y.pos.y, m_position.y + ySpeed);
+	}
+}
+
+void Model::UpdateAnimation(physx::PxScene* scene, float dt)
+{
 	if (m_hasAnimation == true) {
-
-		// world Y값 결정
-		XMMATRIX worldMatrix = getWorldMatrix();
-		m_RaycastingManager.raycastingForY(scene, m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips")));
-
-		m_RaycastingManager.m_Y.pos.y -= 0.15f;
-
-		if (m_position.y > m_RaycastingManager.m_Y.pos.y)
-		{
-			m_position.y = std::fmaxf(m_RaycastingManager.m_Y.pos.y, m_position.y - ySpeed);
-		}
-		else
-		{
-			m_position.y = std::fminf(m_RaycastingManager.m_Y.pos.y, m_position.y + ySpeed);
-		}
 
 		// animation update
 		m_animStateManager.UpdateTime(dt);
 		m_animStateManager.UpdateAnimationClip(m_pose, m_skeleton);
 		m_pose.UpdateWorldPos(m_skeleton);
+
+		XMMATRIX worldMatrix = getWorldMatrix();
+
+		// world Y값 결정
+		modifyWorldY(scene, worldMatrix);
 
 		// Raycasting
 		worldMatrix = getWorldMatrix();

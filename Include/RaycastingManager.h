@@ -28,7 +28,7 @@ class RaycastingManager {
 public:
 	void raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
 	void raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
-	void raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose);
+	void raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose, physx::PxVec3 hipsFrontPose);
 
 	RaycastingInfo m_LeftFoot;
 	RaycastingInfo m_RightFoot;

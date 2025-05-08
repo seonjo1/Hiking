@@ -109,6 +109,7 @@ public:
 	void setYoffset();
 	void modifyTarget(physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase);
 	void modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase);
+	void modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix);
 
 private:
 	void ReleaseTextures();
