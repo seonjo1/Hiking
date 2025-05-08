@@ -598,6 +598,11 @@ void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 
 	// 가장 낮은 발에 몸 위치 맞추기
 	float minY = fminf(m_RaycastingManager.m_LeftFoot.target.y, m_RaycastingManager.m_RightFoot.target.y) - 0.15f;
+	
+	//if (m_animStateManager.currentState == "walk")
+	//{
+	//	minY = (m_RaycastingManager.m_LeftFoot.target.y + m_RaycastingManager.m_RightFoot.target.y) * 0.5f;
+	//}
 	//m_RaycastingManager.m_Y.pos.y = fminf(m_RaycastingManager.m_Y.pos.y, minY);
 
 	// 오르막길이면 경사에 맞춰서 y값을 더 내림
@@ -613,7 +618,7 @@ void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 
 
 	// 한 번에 이동하지 않고 조금씩 이동
-	if (m_position.y > m_RaycastingManager.m_Y.pos.y)
+	if (m_position.y > minY)
 	{
 		m_position.y = std::fmaxf(minY, m_position.y - ySpeed);
 	}
@@ -648,7 +653,6 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		// bone 위치 보정
 		modifyTarget(leftToeBase, rightToeBase);
 
-		
 		//modifyHipsPos(worldMatrix, leftToeBase, rightToeBase);
 
 		// target 위치 저장
