@@ -241,3 +241,35 @@ void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hips
         }
     }
 }
+
+float RaycastingManager::getHeightMapValue(physx::PxScene* scene, float z, float x)
+{
+ //   p("getHeightMapValue!\n");
+	//p("z: " + std::to_string(z) + "\n");
+	//p("x: " + std::to_string(x) + "\n");
+	const float rayStartOffset = -100.0f;
+	const float rayDistance = 150.0f;
+	static physx::PxRaycastBuffer rayHit;
+
+    physx::PxVec3 start = { x, 0.0f, z };
+	// toe raycasting
+	physx::PxVec3 rayStart = start + s_GravityDir * rayStartOffset;
+	bool raySuccess = scene->raycast(
+		rayStart,
+		s_GravityDir,
+		rayDistance,
+		rayHit,
+		physx::PxHitFlag::ePOSITION
+	);
+
+    //if (raySuccess)
+    //{
+    //    p("success!\n");
+    //}
+    //else
+    //{
+    //    p("fail!!\n");
+    //}
+
+    return rayHit.block.position.y;
+}

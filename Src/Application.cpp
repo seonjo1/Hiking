@@ -50,7 +50,6 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 	m_AnimationModel->setPosition(XMFLOAT3(0.0f, -0.15f, 0.0f));
-	//m_AnimationModel->setPosition(XMFLOAT3(0.0f, 10.0f, 0.0f));
 	m_AnimationModel->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
 	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
 	m_AnimationModel->setYoffset();
@@ -71,24 +70,24 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	sphere2->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
 	m_Models.push_back(sphere2);
 
-	// 박스 모델 생성
-	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.502f, 0.329f, 1.0f));
-	box1->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	box1->setPosition(XMFLOAT3(10.0f, -0.5f, 10.0f));
-	box1->setScale(XMFLOAT3(1000.0f, 1.0f, 1000.0f));
-	box1->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
-	m_Models.push_back(box1);
+	// 지형 생성
+	Model* ground = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.502f, 0.329f, 1.0f));
+	ground->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
+	ground->setPosition(XMFLOAT3(10.0f, -0.5f, 10.0f));
+	ground->setScale(XMFLOAT3(1000.0f, 1.0f, 1000.0f));
+	ground->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
+	m_Models.push_back(ground);
 
 
 	//// 박스 모델 생성
-	Model* box2 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.0f, 0.5f, 0.5f, 1.0f));
-	box2->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
+	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.0f, 0.5f, 0.5f, 1.0f));
+	box1->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
 	//box2->setPosition(XMFLOAT3(0.0f, -40.5f, 5.0f));
-	box2->setPosition(XMFLOAT3(0.0f, -40.5f, 50.0f));
-	box2->setScale(XMFLOAT3(100.0f, 100.0f, 100.0f));
-	box2->setRotation(XMFLOAT3(-20.0f, 0.0f, 0.0f));
-	box2->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
-	m_Models.push_back(box2);
+	box1->setPosition(XMFLOAT3(0.0f, -40.5f, 50.0f));
+	box1->setScale(XMFLOAT3(100.0f, 100.0f, 100.0f));
+	box1->setRotation(XMFLOAT3(-20.0f, 0.0f, 0.0f));
+	box1->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
+	m_Models.push_back(box1);
 
 	//// 계단 생성
 	float stairHeight = 0.7f;
@@ -107,6 +106,12 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// 모델 개수 저장
 	m_modelCount = m_Models.size();
+
+	int xMax = 101;
+	int xMin = -101;
+	int zMax = 101;
+	int zMin = -101;
+	m_heightMap.createHeightMap(m_PhysicsManager->m_Scene, xMax, xMin, zMax, zMin);
 
 	// 셰이더 객체 생성 및 초기화
 	m_TextureShader = new TextureShader;
@@ -349,7 +354,7 @@ void Application::ModelControl(Input* input)
 	XMFLOAT3 dir = getDirection(inputState, pressUp, pressLeft, pressDown, pressRight);
 
 	if (inputState){
-		m_AnimationModel->move(dir);
+		m_AnimationModel->move(dir, m_heightMap);
 		m_AnimationModel->setState("walk");
 	}
 	else {

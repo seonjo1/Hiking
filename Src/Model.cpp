@@ -1060,7 +1060,7 @@ void Model::speedDown()
 	m_speed = max(minSpeed, m_speed - accel);
 }
 
-void Model::move(XMFLOAT3& targetDir)
+void Model::move(XMFLOAT3& targetDir, HeightMap& heightMap)
 {
 	const static float rotSpeed = 5.0f;
 	const static float accel = 0.01f;
@@ -1102,14 +1102,20 @@ void Model::move(XMFLOAT3& targetDir)
 			m_rotation.y -= 360.0f;
 	}
 
-	//nowDir = getRotatedVector(m_rotation.y);
-
 	m_speed = min(m_speed + accel, maxSpeed);
 	XMVECTOR dirVec = XMLoadFloat3(&targetDir);
 	XMVECTOR pos = XMLoadFloat3(&m_position);
 	dirVec = XMVectorScale(dirVec, m_speed);
 	pos = XMVectorAdd(dirVec, pos);
 
+	float maxDiff = 3.5f;
+	//p("\n\n\nmove!!!\n");
+	//p("now Y: " + std::to_string(XMVectorGetY(pos)) + "\n");
+	//p("heightMapY: " + std::to_string(heightMap.getHeight(XMVectorGetX(pos), XMVectorGetZ(pos))) + "\n");
+	if (std::fabs(XMVectorGetY(pos) - heightMap.getHeight(XMVectorGetX(pos), XMVectorGetZ(pos))) > maxDiff)
+	{
+		return ;
+	}
 	XMStoreFloat3(&m_position, pos);
 }
 
