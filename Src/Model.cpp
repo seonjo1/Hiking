@@ -498,7 +498,8 @@ void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, phy
 	XMMATRIX inverseWorld = XMMatrixInverse(&det, worldMatrix);
 	hipsDest = XMVector3TransformCoord(hipsDest, inverseWorld);
 
-	XMVECTOR nowHipsPos = XMLoadFloat3(&m_pose.local[m_skeleton.GetBoneIndex("mixamorig:Hips")].position);
+	XMMATRIX localMatrix = m_pose.world[m_skeleton.GetBoneIndex("mixamorig:Hips")];
+	XMVECTOR nowHipsPos = XMVector3TransformCoord(XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f), localMatrix);
 
 	hipsDest = XMVectorLerp(nowHipsPos, hipsDest, 0.1f);
 
