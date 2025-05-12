@@ -232,10 +232,10 @@ void RaycastingManager::raycastingForMoveCheck(physx::PxScene* scene, physx::PxV
 
 	m_MoveCheck.part = EIKPart::FAIL;
 
-	// 정보 2개중 1개 탈락
 	if (leftRaySuccess == true)
 	{
 		m_MoveCheck.part = EIKPart::NONE;
+        m_MoveCheck.target = { leftRayHit.block.position.x, leftRayHit.block.position.y, leftRayHit.block.position.z };
 	}
 
 	physx::PxVec3 rightRayStart = hips + right * rowOffset + colOffset * up + dir * offset;
@@ -250,6 +250,7 @@ void RaycastingManager::raycastingForMoveCheck(physx::PxScene* scene, physx::PxV
 	if (rightRaySuccess == true)
 	{
         m_MoveCheck.part = EIKPart::NONE;
+		m_MoveCheck.target = { rightRayHit.block.position.x, rightRayHit.block.position.y, rightRayHit.block.position.z };
 	}
 
 	physx::PxVec3 centerRayStart = hips + colOffset * up + dir * offset;
@@ -264,6 +265,7 @@ void RaycastingManager::raycastingForMoveCheck(physx::PxScene* scene, physx::PxV
 	if (centerRaySuccess == true)
 	{
 		m_MoveCheck.part = EIKPart::NONE;
+		m_MoveCheck.target = { centerRayHit.block.position.x, centerRayHit.block.position.y, centerRayHit.block.position.z };
 	}
 }
 

@@ -436,6 +436,24 @@ bool Model::DrawRayPointShader(ID3D11DeviceContext* deviceContext, JointShader* 
 	if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
 		return false;
 
+	if (m_RaycastingManager.m_MoveCheck.part != EIKPart::FAIL)
+	{
+		translation = XMMatrixTranslation(m_RaycastingManager.m_MoveCheck.target.x, m_RaycastingManager.m_MoveCheck.target.y, m_RaycastingManager.m_MoveCheck.target.z);
+		matrix.world = scale * translation;
+
+		if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
+			return false;
+	}
+
+	if (m_RaycastingManager.m_NextStep.part != EIKPart::FAIL)
+	{
+		translation = XMMatrixTranslation(m_RaycastingManager.m_NextStep.target.x, m_RaycastingManager.m_NextStep.target.y, m_RaycastingManager.m_NextStep.target.z);
+		matrix.world = scale * translation;
+
+		if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
+			return false;
+	}
+
 	return true;
 }
 
