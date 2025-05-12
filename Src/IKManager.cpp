@@ -385,7 +385,6 @@ void IKManager::updateAngle(Pose& pose, XMMATRIX& worldMatrix, Skeleton& skeleto
 			// local로 변환 (부모의 변환은 현재 변경된 quat으로 계산)
 			int boneIdx = bone.idx;
 			XMMATRIX transform = XMMatrixIdentity();
-
 			{
 				XMMATRIX local = pose.getLocalTranslationMatrix(boneIdx);
 				transform = XMMatrixMultiply(transform, local);
@@ -404,6 +403,7 @@ void IKManager::updateAngle(Pose& pose, XMMATRIX& worldMatrix, Skeleton& skeleto
 				parent = XMMatrixMultiply(parent, local);
 				boneIdx = skeleton.bones[boneIdx].parentIndex;
 			}
+
 			transform = XMMatrixMultiply(transform, parent);
 			transform = XMMatrixMultiply(transform, worldMatrix);
 

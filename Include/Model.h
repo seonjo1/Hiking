@@ -16,6 +16,15 @@ class JointShader;
 class BoneShader;
 class ModelShader;
 
+struct StepInfo
+{
+	XMFLOAT3 nextStep{ 0.0f, 0.0f, 0.0f };
+	XMFLOAT3 nextStepEnd{ 0.0f, 0.0f, 0.0f };
+	XMFLOAT3 lastStep{ 0.0f, 0.0f, 0.0f };
+	XMFLOAT3 lastStepEnd{ 0.0f, 0.0f, 0.0f };
+	bool leftGo{ true };
+};
+
 struct Matrix
 {
 	XMMATRIX world;
@@ -64,7 +73,7 @@ public:
 	Model(const Model&);
 	~Model();
 
-	void LoadByAssimp(ID3D11Device*, ID3D11DeviceContext*, std::string filename);	
+	void LoadByAssimp(ID3D11Device*, ID3D11DeviceContext*, std::string filename);
 	void processNode(ID3D11Device*, ID3D11DeviceContext*, aiNode*, const aiScene*);
 	void processMesh(ID3D11Device*, ID3D11DeviceContext*, aiMesh*, const aiScene*);
 	void LoadAnimationData(const aiScene* scene, Skeleton& skeleton);
@@ -112,12 +121,18 @@ public:
 	void modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase);
 	void modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix);
 	XMVECTOR getTargetToHipsDest(XMFLOAT3 targetToHipsFloat, XMVECTOR& target);
+	void setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, float walkPhase);
+	void setIdleStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, bool leftGo);
+	void UpdateNextStep(XMMATRIX& worldMatrix);
+	void blendNextStep();
 
 private:
 	void ReleaseTextures();
 	void ReleaseMeshes();
-	
+
+	bool m_stop{ false };
 	XMFLOAT3 m_position;
+	XMFLOAT3 m_prevPosition;
 	XMFLOAT3 m_rotation;
 	XMFLOAT3 m_scale;
 	XMFLOAT3 m_leftTarget;
@@ -145,4 +160,8 @@ private:
 	bool m_hasAnimation = false;
 	float m_speed{ 0.0f };
 	UINT m_size; // mesh 개수
+
+	// 다음 Step 예측
+	StepInfo m_currentStep;
+	StepInfo m_prevStep;
 };

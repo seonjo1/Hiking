@@ -29,9 +29,13 @@ public:
 	void raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
 	void raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
 	void raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose, physx::PxVec3 hipsFrontPose);
+	void raycastingForNextStep(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
+	void raycastingForMoveCheck(physx::PxScene* scene, physx::PxVec3 hips, physx::PxVec3 leftToeBasePose, physx::PxVec3 rightToeBasePose, physx::PxVec3 dir);
 	float getHeightMapValue(physx::PxScene* scene, float z, float x);
 	RaycastingInfo m_LeftFoot;
 	RaycastingInfo m_RightFoot;
+	RaycastingInfo m_NextStep;
+	RaycastingInfo m_MoveCheck;
 	RaycastingInfo m_Y;
 
 private:

@@ -15,12 +15,15 @@ public:
 	float walkPhase = 0.0f;
 	float startPhase = 0.0f;
 
-	void blendAnimTx(std::vector<LocalTx>& txVectorTarget, std::vector<LocalTx>& txVectorA, std::vector<LocalTx>& txVectorB, float blendAlpha);
+	void initAnimationPlayer(int boneSize);
+	void BlendAnimation(Pose& pose);
+	void blendAnimTx(std::vector<LocalTx>& poseLocal, float blendAlpha);
 	void UpdateAnimationClip(Pose& pose, Skeleton& skeleton);
 	void UpdateTime(float dt);
-	void SetState(std::string newState, std::unordered_map<std::string, AnimationClip>& clips);
+	bool SetState(std::string newState, std::unordered_map<std::string, AnimationClip>& clips);
 	void getMinYoffset(Pose& pose, Skeleton& skeleton, XMMATRIX& worldMatrix, AnimationClip& clip, std::string leftPart, std::string rightPart);
 	void setTargetToHipsKeyFrame(Pose& pose, Skeleton& skeleton, XMMATRIX& worldMatrix, AnimationClip& clip, std::string leftPart, std::string rightPart);
 	XMFLOAT3 getLeftTargetToHips();
 	XMFLOAT3 getRightTargetToHips();
+	void getCurrentWorldBoneTransform(Pose& pose, int idx);
 };

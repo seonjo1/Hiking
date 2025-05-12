@@ -1,12 +1,12 @@
 #include "AnimationStateManager.h"
 
-void AnimationStateManager::SetState(std::string newState, std::unordered_map<std::string, AnimationClip>& clips) {
+bool AnimationStateManager::SetState(std::string newState, std::unordered_map<std::string, AnimationClip>& clips) {
     if (newState == currentState) {
-        return;
+        return false;
     }
 
     if (clips.find(newState) == clips.end()) {
-        return;
+        return false;
     }
 
     previous = current;
@@ -14,6 +14,8 @@ void AnimationStateManager::SetState(std::string newState, std::unordered_map<st
     currentState = newState;
     blendAlpha = 0.0f;
     walkPhase = 0.0f;
+
+    return true;
 }
 
 void AnimationStateManager::UpdateTime(float dt) {
@@ -23,60 +25,77 @@ void AnimationStateManager::UpdateTime(float dt) {
 	if (blendAlpha > 1.0f) blendAlpha = 1.0f;
 }
 
-void AnimationStateManager::blendAnimTx(std::vector<LocalTx>& txVectorTarget, std::vector<LocalTx>& txVectorA, std::vector<LocalTx>& txVectorB, float blendAlpha)
+void AnimationStateManager::blendAnimTx(std::vector<LocalTx>& poseLocal, float blendAlpha)
 {
-    size_t count = txVectorTarget.size();
+    size_t count = poseLocal.size();
+
+	std::vector<LocalTx>& pl = previous.pose.local;
+	std::vector<LocalTx>& cl = current.pose.local;
 
     for (size_t i = 0; i < count; ++i) {
         // Position
-        XMVECTOR posA = XMLoadFloat3(&txVectorA[i].position);
-        XMVECTOR posB = XMLoadFloat3(&txVectorB[i].position);
+        XMVECTOR posA = XMLoadFloat3(&pl[i].position);
+        XMVECTOR posB = XMLoadFloat3(&cl[i].position);
         XMVECTOR posLerp = XMVectorLerp(posA, posB, blendAlpha);
-        XMStoreFloat3(&(txVectorTarget[i].position), posLerp);
+        XMStoreFloat3(&(poseLocal[i].position), posLerp);
 
         // Scale
-        XMVECTOR scaleA = XMLoadFloat3(&txVectorA[i].scale);
-        XMVECTOR scaleB = XMLoadFloat3(&txVectorB[i].scale);
+        XMVECTOR scaleA = XMLoadFloat3(&pl[i].scale);
+        XMVECTOR scaleB = XMLoadFloat3(&cl[i].scale);
         XMVECTOR scaleLerp = XMVectorLerp(scaleA, scaleB, blendAlpha);
-        XMStoreFloat3(&(txVectorTarget[i].scale), scaleLerp);
+        XMStoreFloat3(&(poseLocal[i].scale), scaleLerp);
 
         // Rotation (quaternion SLERP)
-        XMVECTOR rotA = XMLoadFloat4(&txVectorA[i].rotation);
-        XMVECTOR rotB = XMLoadFloat4(&txVectorB[i].rotation);
+        XMVECTOR rotA = XMLoadFloat4(&pl[i].rotation);
+        XMVECTOR rotB = XMLoadFloat4(&cl[i].rotation);
         XMVECTOR rotSlerp = XMQuaternionSlerp(rotA, rotB, blendAlpha);
-        XMStoreFloat4(&(txVectorTarget[i].rotation), rotSlerp);
+        XMStoreFloat4(&(poseLocal[i].rotation), rotSlerp);
     }
 }
+
 void AnimationStateManager::UpdateAnimationClip(Pose& pose, Skeleton& skeleton) {
     if (previous.clip == nullptr)
     {
-        current.SamplePose(pose.local, skeleton);
+        current.SamplePose(skeleton);
+        current.pose.UpdateWorldPos(skeleton);
+    }
+    else {
+        previous.SamplePose(skeleton);
+        current.SamplePose(skeleton);
+		previous.pose.UpdateWorldPos(skeleton);
+		current.pose.UpdateWorldPos(skeleton);
+    }
+}
+
+void AnimationStateManager::BlendAnimation(Pose& pose)
+{
+    if (previous.clip == nullptr)
+	{
+        current.moveToPose(pose.local);
 		leftTargetToHips = current.leftTargetToHips;
 		rightTargetToHips = current.rightTargetToHips;
     }
-    else {
-        std::vector<LocalTx> txVectorA(skeleton.bones.size());
-        std::vector<LocalTx> txVectorB(skeleton.bones.size());
+    else
+	{
+		blendAnimTx(pose.local, blendAlpha);
 
-        previous.SamplePose(txVectorA, skeleton);
-        current.SamplePose(txVectorB, skeleton);
-        blendAnimTx(pose.local, txVectorA, txVectorB, blendAlpha);
-        
 		XMVECTOR prevLToH = XMLoadFloat3(&(previous.leftTargetToHips));
 		XMVECTOR currLToH = XMLoadFloat3(&(current.leftTargetToHips));
-        XMVECTOR LToH = XMVectorLerp(prevLToH, currLToH, blendAlpha);
-        XMStoreFloat3(&leftTargetToHips, LToH);
+		XMVECTOR LToH = XMVectorLerp(prevLToH, currLToH, blendAlpha);
+		XMStoreFloat3(&leftTargetToHips, LToH);
 
 		XMVECTOR prevRToH = XMLoadFloat3(&(previous.rightTargetToHips));
 		XMVECTOR currRToH = XMLoadFloat3(&(current.rightTargetToHips));
 		XMVECTOR RToH = XMVectorLerp(prevRToH, currRToH, blendAlpha);
 		XMStoreFloat3(&rightTargetToHips, RToH);
+
     }
 }
 
 void AnimationStateManager::getMinYoffset(Pose& pose, Skeleton& skeleton, XMMATRIX& worldMatrix, AnimationClip& clip, std::string leftPart, std::string rightPart)
 {
     AnimationPlayer tmpPlayer;
+	tmpPlayer.pose.Initialize(skeleton.bones.size());
     tmpPlayer.Play(&clip);
     BoneTrack& leftFootBoneTrack = clip.boneTracks[leftPart];
     std::vector<RotationKeyframe>& v = leftFootBoneTrack.rotationKeys;
@@ -88,7 +107,8 @@ void AnimationStateManager::getMinYoffset(Pose& pose, Skeleton& skeleton, XMMATR
     {
         float time = v[i].time;
         tmpPlayer.UpdateTimeForYoffset(time);
-        tmpPlayer.SamplePose(pose.local, skeleton);
+        tmpPlayer.SamplePose(skeleton);
+        tmpPlayer.moveToPose(pose.local);
 		pose.UpdateWorldPos(skeleton);
         
         XMVECTOR point = XMVectorSet(0, 0, 0, 1);
@@ -105,40 +125,78 @@ void AnimationStateManager::getMinYoffset(Pose& pose, Skeleton& skeleton, XMMATR
 
 void AnimationStateManager::setTargetToHipsKeyFrame(Pose& pose, Skeleton& skeleton, XMMATRIX& worldMatrix, AnimationClip& clip, std::string leftPart, std::string rightPart)
 {
-	AnimationPlayer tmpPlayer;
-	tmpPlayer.Play(&clip);
-	BoneTrack& leftFootBoneTrack = clip.boneTracks[leftPart];
-	std::vector<RotationKeyframe>& v = leftFootBoneTrack.rotationKeys;
+    static const float groundY = 0.07f;
+
+    AnimationPlayer tmpPlayer;
+    tmpPlayer.pose.Initialize(skeleton.bones.size());
+    tmpPlayer.Play(&clip);
+    BoneTrack& leftFootBoneTrack = clip.boneTracks[leftPart];
+    std::vector<RotationKeyframe>& v = leftFootBoneTrack.rotationKeys;
 
     int count = v.size();
 
-	clip.leftTargetToHipsVector.resize(count);
-	clip.rightTargetToHipsVector.resize(count);
+    clip.leftTargetToHipsVector.resize(count);
+    clip.rightTargetToHipsVector.resize(count);
 
-	for (int i = 0; i < count; ++i)
-	{
-		float time = v[i].time;
-		tmpPlayer.UpdateTimeForYoffset(time);
-		tmpPlayer.SamplePose(pose.local, skeleton);
-		pose.UpdateWorldPos(skeleton);
+    float prevLeftY = 0.0f;
+    float prevRightY = 0.0f;
 
-		XMVECTOR point = XMVectorSet(0, 0, 0, 1);
-		XMMATRIX toHips = XMMatrixMultiply(pose.world[skeleton.GetBoneIndex("mixamorig:Hips")], worldMatrix);
+    for (int i = 0; i < count; ++i)
+    {
+        float time = v[i].time;
+        tmpPlayer.UpdateTimeForYoffset(time);
+        tmpPlayer.SamplePose(skeleton);
+        tmpPlayer.moveToPose(pose.local);
+        pose.UpdateWorldPos(skeleton);
+
+        XMVECTOR point = XMVectorSet(0, 0, 0, 1);
+        XMMATRIX toHips = XMMatrixMultiply(pose.world[skeleton.GetBoneIndex("mixamorig:Hips")], worldMatrix);
 		XMMATRIX toLeft = XMMatrixMultiply(pose.world[skeleton.GetBoneIndex(leftPart)], worldMatrix);
+		XMMATRIX toLeftEnd = XMMatrixMultiply(pose.world[skeleton.GetBoneIndex("mixamorig:LeftToe_End")], worldMatrix);
 		XMMATRIX toRight = XMMatrixMultiply(pose.world[skeleton.GetBoneIndex(rightPart)], worldMatrix);
+		XMMATRIX toRightEnd = XMMatrixMultiply(pose.world[skeleton.GetBoneIndex("mixamorig:RightToe_End")], worldMatrix);
 
         XMVECTOR hips = XMVector3TransformCoord(point, toHips);
 		XMVECTOR left = XMVector3TransformCoord(point, toLeft);
+		XMVECTOR leftEnd = XMVector3TransformCoord(point, toLeftEnd);
 		XMVECTOR right = XMVector3TransformCoord(point, toRight);
-        
-		XMVECTOR leftToHips = XMVectorSubtract(hips, left);
-		XMVECTOR rightToHips = XMVectorSubtract(hips, right);
+		XMVECTOR rightEnd = XMVector3TransformCoord(point, toRightEnd);
 
-		XMStoreFloat3(&clip.leftTargetToHipsVector[i].position, leftToHips);
-		XMStoreFloat3(&clip.rightTargetToHipsVector[i].position, rightToHips);
-		clip.leftTargetToHipsVector[i].time = time;
-		clip.rightTargetToHipsVector[i].time = time;
-	}
+        if (clip.name != "idle")
+        {
+            if (prevLeftY > groundY && XMVectorGetY(left) < groundY)
+            {
+                clip.leftToRightPhase = time / clip.duration;
+				XMVECTOR leftToRight = XMVectorSubtract(left, right);
+				XMVECTOR leftEndToRightEnd = XMVectorSubtract(leftEnd, rightEnd);
+				XMStoreFloat3(&clip.leftToRightOffset, leftToRight);
+				XMStoreFloat3(&clip.leftEndToRightEndOffset, leftEndToRightEnd);
+            }
+            if (prevRightY > groundY && XMVectorGetY(right) < groundY)
+            {
+                clip.rightToLeftPhase = time / clip.duration;
+				XMVECTOR rightToLeft = XMVectorSubtract(right, left);
+				XMVECTOR rightEndToLeftEnd = XMVectorSubtract(rightEnd, leftEnd);
+				XMStoreFloat3(&clip.rightToLeftOffset, rightToLeft);
+				XMStoreFloat3(&clip.rightEndToLeftEndOffset, rightEndToLeftEnd);
+            }
+			prevLeftY = XMVectorGetY(left);
+			prevRightY = XMVectorGetY(right);
+        }
+
+        XMVECTOR leftToHips = XMVectorSubtract(hips, left);
+        XMVECTOR rightToHips = XMVectorSubtract(hips, right);
+
+        //p("time: " + std::to_string(time) + "\n");
+        //p("hips: " + std::to_string(XMVectorGetX(hips)) + " " + std::to_string(XMVectorGetY(hips)) + " " + std::to_string(XMVectorGetZ(hips)) + "\n");
+        //p("left: " + std::to_string(XMVectorGetX(left)) + " " + std::to_string(XMVectorGetY(left)) + " " + std::to_string(XMVectorGetZ(left)) + "\n");
+        //p("right: " + std::to_string(XMVectorGetX(right)) + " " + std::to_string(XMVectorGetY(right)) + " " + std::to_string(XMVectorGetZ(right)) + "\n");
+
+        XMStoreFloat3(&clip.leftTargetToHipsVector[i].position, leftToHips);
+        XMStoreFloat3(&clip.rightTargetToHipsVector[i].position, rightToHips);
+        clip.leftTargetToHipsVector[i].time = time;
+        clip.rightTargetToHipsVector[i].time = time;
+    }
 }
 
 XMFLOAT3 AnimationStateManager::getLeftTargetToHips()
@@ -149,4 +207,15 @@ XMFLOAT3 AnimationStateManager::getLeftTargetToHips()
 XMFLOAT3 AnimationStateManager::getRightTargetToHips()
 {
     return rightTargetToHips;
+}
+
+void AnimationStateManager::initAnimationPlayer(int boneSize)
+{
+	current.pose.Initialize(boneSize);
+	previous.pose.Initialize(boneSize);
+}
+
+void AnimationStateManager::getCurrentWorldBoneTransform(Pose& pose, int idx)
+{
+    pose.world[idx] = current.pose.world[idx];
 }

@@ -2,7 +2,7 @@
 #include "IKManager.h"
 
 const float RaycastingManager::s_RayStartOffset = -3.5f;
-const float RaycastingManager::s_RayDistance = 7.0f;
+const float RaycastingManager::s_RayDistance = 5.0f;
 const physx::PxVec3 RaycastingManager::s_GravityDir = { 0.0f, -1.0f, 0.0f };
 
 float RaycastingManager::getDistance(physx::PxVec3& toTarget, physx::PxVec3& dir)
@@ -192,6 +192,81 @@ void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::P
 
     footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_RightFoot);
 }
+
+void RaycastingManager::raycastingForNextStep(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
+{
+	static const float toToeEndScale = 0.3f;
+	static const float toFootScale = 0.5f;
+
+	physx::PxVec3 toToeEnd = physx::PxVec3(toeEndPose.x - toeBasePose.x, 0.0f, toeEndPose.z - toeBasePose.z);
+	toToeEnd = toToeEnd.getNormalized();
+	physx::PxVec3 toFoot = -toToeEnd;
+
+	toToeEnd = toToeEnd * toToeEndScale;
+	toFoot = toFoot * toFootScale;
+
+	footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_RightFoot);
+}
+
+void RaycastingManager::raycastingForMoveCheck(physx::PxScene* scene, physx::PxVec3 hips, physx::PxVec3 leftToeBasePose, physx::PxVec3 rightToeBasePose, physx::PxVec3 dir)
+{
+	const float rayDistance = 2.8f;
+	const float rowOffset = 0.7f;
+	const float colOffset = -0.8f;
+    const float offset = -0.3f;
+	static physx::PxRaycastBuffer leftRayHit, rightRayHit, centerRayHit;
+    
+    physx::PxVec3 up = { 0.0f, 1.0f, 0.0f };
+    physx::PxVec3 left = up.cross(dir);
+    physx::PxVec3 right = -left;
+
+	// left raycasting
+	physx::PxVec3 leftRayStart = hips + left * rowOffset + colOffset * up + dir * offset;
+	bool leftRaySuccess = scene->raycast(
+        leftRayStart,
+		dir,
+		rayDistance,
+		leftRayHit,
+		physx::PxHitFlag::ePOSITION
+	);
+
+	m_MoveCheck.part = EIKPart::FAIL;
+
+	// 정보 2개중 1개 탈락
+	if (leftRaySuccess == true)
+	{
+		m_MoveCheck.part = EIKPart::NONE;
+	}
+
+	physx::PxVec3 rightRayStart = hips + right * rowOffset + colOffset * up + dir * offset;
+	bool rightRaySuccess = scene->raycast(
+        rightRayStart,
+		dir,
+		rayDistance,
+        rightRayHit,
+		physx::PxHitFlag::ePOSITION
+	);
+
+	if (rightRaySuccess == true)
+	{
+        m_MoveCheck.part = EIKPart::NONE;
+	}
+
+	physx::PxVec3 centerRayStart = hips + colOffset * up + dir * offset;
+	bool centerRaySuccess = scene->raycast(
+		centerRayStart,
+		dir,
+		rayDistance,
+		centerRayHit,
+		physx::PxHitFlag::ePOSITION
+	);
+
+	if (centerRaySuccess == true)
+	{
+		m_MoveCheck.part = EIKPart::NONE;
+	}
+}
+
 
 void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose, physx::PxVec3 hipsFrontPose)
 {

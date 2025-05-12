@@ -79,15 +79,15 @@ XMFLOAT3 AnimationPlayer::InterpolateScale(const std::vector<ScaleKeyframe>& key
 	return keys.back().scale;
 }
 
-void AnimationPlayer::SamplePose(std::vector<LocalTx>& txVector, const Skeleton& skeleton) {
+void AnimationPlayer::SamplePose(const Skeleton& skeleton) {
 	for (size_t i = 0; i < skeleton.bones.size(); ++i) {
 		const std::string& boneName = skeleton.bones[i].name;
 		BoneTrack* track = clip->GetTrack(boneName);
 
 		if (track) {
-			txVector[i].position = InterpolatePosition(track->positionKeys, currentTime);
-			txVector[i].rotation = InterpolateRotation(track->rotationKeys, currentTime);
-			txVector[i].scale = InterpolateScale(track->scaleKeys, currentTime);
+			pose.local[i].position = InterpolatePosition(track->positionKeys, currentTime);
+			pose.local[i].rotation = InterpolateRotation(track->rotationKeys, currentTime);
+			pose.local[i].scale = InterpolateScale(track->scaleKeys, currentTime);
 		}
 	}
 
@@ -97,4 +97,17 @@ void AnimationPlayer::SamplePose(std::vector<LocalTx>& txVector, const Skeleton&
 
 void AnimationPlayer::UpdateTimeForYoffset(float time) {
 	currentTime = time;
+}
+
+
+void AnimationPlayer::moveToPose(std::vector<LocalTx>& poseLocal)
+{
+	size_t count = poseLocal.size();
+
+	for (size_t i = 0; i < count; ++i)
+	{
+		poseLocal[i].position = pose.local[i].position;
+		poseLocal[i].rotation = pose.local[i].rotation;
+		poseLocal[i].scale = pose.local[i].scale;
+	}
 }
