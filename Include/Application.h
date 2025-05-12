@@ -52,7 +52,6 @@ private:
 	BoneShader* m_BoneShader;
 	ModelShader* m_ModelShader;
 	PhysicsManager* m_PhysicsManager;
-	HeightMap m_heightMap;
 
 	int m_modelCount;
 	bool m_boneDebugMode{ false };

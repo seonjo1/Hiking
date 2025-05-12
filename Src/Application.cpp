@@ -107,12 +107,6 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	// 모델 개수 저장
 	m_modelCount = m_Models.size();
 
-	int xMax = 101;
-	int xMin = -101;
-	int zMax = 101;
-	int zMin = -101;
-	m_heightMap.createHeightMap(m_PhysicsManager->m_Scene, xMax, xMin, zMax, zMin);
-
 	// 셰이더 객체 생성 및 초기화
 	m_TextureShader = new TextureShader;
 	result = m_TextureShader->Initialize(m_Direct3D->GetDevice(), hwnd);
@@ -354,7 +348,7 @@ void Application::ModelControl(Input* input)
 	XMFLOAT3 dir = getDirection(inputState, pressUp, pressLeft, pressDown, pressRight);
 
 	if (inputState){
-		m_AnimationModel->move(dir, m_heightMap);
+		m_AnimationModel->move(dir);
 		m_AnimationModel->setState("walk");
 	}
 	else {

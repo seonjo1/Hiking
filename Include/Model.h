@@ -9,7 +9,6 @@
 #include "PhysicsManager.h"
 #include "RaycastingManager.h"
 #include "IKManager.h"
-#include "HeightMap.h"
 #include <unordered_set>
 
 class TextureShader;
@@ -96,7 +95,7 @@ public:
 	void setRotation(XMFLOAT3);
 	void setScale(XMFLOAT3);
 	void speedDown();
-	void move(XMFLOAT3&, HeightMap&);
+	void move(XMFLOAT3&);
 	bool getRotateDir(XMFLOAT3& targetDir, XMFLOAT3& nowDir);
 	XMFLOAT3 getRotatedVector(float degree);
 	void setToTarget(XMFLOAT3& targetDir);
