@@ -543,31 +543,50 @@ void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, phy
 	XMStoreFloat3(&m_pose.local[m_skeleton.GetBoneIndex("mixamorig:Hips")].position, hipsDest);
 }
 
-void Model::modifyTarget(XMMATRIX& worldMatrix)
+void Model::processBlockCase(physx::PxScene* scene, float& nextY, float& ratio)
+{
+	if (m_currentStep.changed == true)
+	{
+		// 첫 시작에 가장 높은 장애물 찾기
+		physx::PxVec3 start = { m_currentStep.lastStepRay.x, m_currentStep.lastStepRay.y, m_currentStep.lastStepRay.z };
+		physx::PxVec3 end = { m_currentStep.nextStep.x, m_currentStep.nextStep.y , m_currentStep.nextStep.z };
+		m_currentStep.isBlocked = m_RaycastingManager.raycastingForFindBlock(scene, start, end);
+
+		if (m_currentStep.isBlocked == true)
+		{
+			// 찾은 경우 blockY, blockRatio 세팅
+			m_currentStep.blockY = m_RaycastingManager.m_FindObstacle.target.y;
+			if (start.x != end.x)
+				m_currentStep.blockRatio = (m_RaycastingManager.m_FindObstacle.target.x - start.x) / (end.x - start.x);
+			else
+				m_currentStep.blockRatio = (m_RaycastingManager.m_FindObstacle.target.z - start.z) / (end.z - start.z);
+		}
+	}
+
+	if (m_currentStep.isBlocked == true)
+	{
+		// block인 경우
+		if (m_currentStep.blockRatio < ratio)
+		{
+			// block 지점 지난 경우 false
+			m_currentStep.isBlocked = false;
+		}
+		else
+		{
+			// 아직 block 구간인 경우 ratio, nextY 세팅
+			ratio = ratio / m_currentStep.blockRatio;
+			nextY = m_currentStep.blockY;
+		}
+	}
+}
+
+void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 {
 	const static float targetSpeed = 0.4f;
 
 	// animation을 반영한 target 보정
 	if (m_animStateManager.currentState == "walk")
 	{
-		//physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
-		//float leftToeBaseY = leftToeBase.y - m_position.y;
-		//float leftToeBaseOffset = leftToeBaseY - m_animationClips["walk"].minLeftFootOffset;
-		//XMFLOAT3 leftNormal = m_RaycastingManager.m_LeftFoot.normal;
-		//XMVECTOR leftOffset = XMVector3Normalize(XMLoadFloat3(&leftNormal));
-		//leftOffset = XMVectorScale(leftOffset, leftToeBaseOffset);
-		//XMVECTOR leftTarget = XMLoadFloat3(&m_RaycastingManager.m_LeftFoot.target);
-		//leftTarget = XMVectorAdd(leftTarget, leftOffset);
-
-		//physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
-		//float rightToeBaseY = rightToeBase.y - m_position.y;
-		//float rightToeBaseOffset = rightToeBaseY - m_animationClips["walk"].minRightFootOffset;
-		//XMFLOAT3 rightNormal = m_RaycastingManager.m_RightFoot.normal;
-		//XMVECTOR rightOffset = XMVector3Normalize(XMLoadFloat3(&rightNormal));
-		//rightOffset = XMVectorScale(rightOffset, rightToeBaseOffset);
-		//XMVECTOR rightTarget = XMLoadFloat3(&m_RaycastingManager.m_RightFoot.target);
-		//rightTarget = XMVectorAdd(rightTarget, rightOffset);
-
 		physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
 		float leftToeBaseY = leftToeBase.y - m_position.y;
 		float leftToeBaseOffset = leftToeBaseY - m_animationClips["walk"].minLeftFootOffset;
@@ -582,9 +601,11 @@ void Model::modifyTarget(XMMATRIX& worldMatrix)
 			// left go의 경우 left에 offset 추가
 			float nextY = m_currentStep.nextStep.y;
 			float& nowY = m_currentStep.nowY;
-
 			float ratio = m_animStateManager.current.getLeftGoRatio();
 
+			processBlockCase(scene, nextY, ratio);
+
+			// Y값 보정 시작
 			if (nowY < nextY)
 			{
 				float offset = (nextY - nowY) * sinf(ratio * XM_PIDIV2) * 0.6f;
@@ -612,8 +633,9 @@ void Model::modifyTarget(XMMATRIX& worldMatrix)
 			// right go의 경우 right에 offset 추가
 			float nextY = m_currentStep.nextStep.y;
 			float& nowY = m_currentStep.nowY;
-
 			float ratio = m_animStateManager.current.getRightGoRatio();
+
+			processBlockCase(scene, nextY, ratio);
 
 			if (nowY < nextY)
 			{
@@ -672,6 +694,7 @@ void Model::modifyTarget(XMMATRIX& worldMatrix)
 			XMStoreFloat3(&m_RaycastingManager.m_RightFoot.target, rightTarget);
 		}
 	}
+	m_currentStep.changed = false;
 }
 
 void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
@@ -757,16 +780,22 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 			// right -> left로 변경됐으므로 left 현재 위치를 last step으로 기록
 			stepInfo.leftGo = true;
 			physx::PxVec3 leftToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"));
-			//physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
-			stepInfo.lastStep.x = m_RaycastingManager.m_LeftFoot.pos.x;
-			stepInfo.lastStep.y = m_RaycastingManager.m_LeftFoot.pos.y;
-			stepInfo.lastStep.z = m_RaycastingManager.m_LeftFoot.pos.z;
+			physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
+	
+			stepInfo.lastStepRay.x = m_RaycastingManager.m_LeftFoot.pos.x;
+			stepInfo.lastStepRay.y = m_RaycastingManager.m_LeftFoot.pos.y;
+			stepInfo.lastStepRay.z = m_RaycastingManager.m_LeftFoot.pos.z;
 
-			stepInfo.nowY = stepInfo.lastStep.y;
+			stepInfo.lastStep.x = leftToeBase.x;
+			stepInfo.lastStep.y = leftToeBase.y;
+			stepInfo.lastStep.z = leftToeBase.z;
 
 			stepInfo.lastStepEnd.x = leftToeEnd.x;
 			stepInfo.lastStepEnd.y = leftToeEnd.y;
 			stepInfo.lastStepEnd.z = leftToeEnd.z;
+
+			stepInfo.nowY = stepInfo.lastStepRay.y;
+			stepInfo.changed = true;
 		}
 
 		// 진행 방향 구하기
@@ -806,15 +835,22 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 			stepInfo.leftGo = false;
 
 			physx::PxVec3 rightToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"));
+			physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
 
-			stepInfo.lastStep.x = m_RaycastingManager.m_RightFoot.pos.x;
-			stepInfo.lastStep.y = m_RaycastingManager.m_RightFoot.pos.y;
-			stepInfo.lastStep.z = m_RaycastingManager.m_RightFoot.pos.z;
-			stepInfo.nowY = stepInfo.lastStep.y;
+			stepInfo.lastStepRay.x = m_RaycastingManager.m_RightFoot.pos.x;
+			stepInfo.lastStepRay.y = m_RaycastingManager.m_RightFoot.pos.y;
+			stepInfo.lastStepRay.z = m_RaycastingManager.m_RightFoot.pos.z;
+
+			stepInfo.lastStep.x = rightToeBase.x;
+			stepInfo.lastStep.y = rightToeBase.y;
+			stepInfo.lastStep.z = rightToeBase.z;
 
 			stepInfo.lastStepEnd.x = rightToeEnd.x;
 			stepInfo.lastStepEnd.y = rightToeEnd.y;
 			stepInfo.lastStepEnd.z = rightToeEnd.z;
+
+			stepInfo.nowY = stepInfo.lastStepRay.y;
+			stepInfo.changed = true;
 		}
 		
 		// 진행 방향 구하기
@@ -1011,7 +1047,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		}
 
 		// 9. bone 위치 보정
-		modifyTarget(worldMatrix);
+		modifyTarget(scene, worldMatrix);
 
 		// 10. world Y값 결정
 		modifyWorldY(scene, worldMatrix);
@@ -1419,7 +1455,7 @@ void Model::move(XMFLOAT3& targetDir)
 {
 	const static float rotSpeed = 10.0f;
 	const static float accel = 1.0f;
-	const static float maxSpeed = 7.13f;
+	const static float maxSpeed = 7.155f;
 
 	// 현재 방향 벡터
 	XMFLOAT3 nowDir = getRotatedVector(m_rotation.y);

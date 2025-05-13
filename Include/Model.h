@@ -21,8 +21,13 @@ struct StepInfo
 	XMFLOAT3 nextStep{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 nextStepEnd{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 lastStep{ 0.0f, 0.0f, 0.0f };
+	XMFLOAT3 lastStepRay{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 lastStepEnd{ 0.0f, 0.0f, 0.0f };
 	float nowY;
+	float blockY;
+	float blockRatio;
+	bool changed{ false };
+	bool isBlocked{ false };
 	bool leftGo{ true };
 };
 
@@ -118,7 +123,7 @@ public:
 	float getLeftFootBlendingAlpha();
 	void setYoffset();
 	void setTargetToHipsKeyFrame();
-	void modifyTarget(XMMATRIX& worldMatrix);
+	void modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix);
 	void modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase);
 	void modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix);
 	XMVECTOR getTargetToHipsDest(XMFLOAT3 targetToHipsFloat, XMVECTOR& target);
@@ -131,6 +136,7 @@ public:
 	void checkCanMove();
 	void moveModel(XMMATRIX& worldMatrix, float dt);
 	void footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix);
+	void processBlockCase(physx::PxScene* scene, float& nextY, float& ratio);
 
 private:
 	void ReleaseTextures();

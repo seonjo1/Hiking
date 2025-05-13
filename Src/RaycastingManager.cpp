@@ -269,6 +269,77 @@ void RaycastingManager::raycastingForMoveCheck(physx::PxScene* scene, physx::PxV
 	}
 }
 
+void RaycastingManager::raycastingForBlockInfo(physx::PxScene* scene)
+{
+	static const float yOffset = 10.0f;
+	static const float distance = 15.0f;
+
+	static physx::PxRaycastBuffer rayHit;
+
+	physx::PxVec3 dir = { 0.0f, -1.0f, 0.0f };
+	physx::PxVec3 offset = { 0.0f, 1.0f, 0.0f };
+	physx::PxVec3 start = { m_FindObstacle.pos.x, m_FindObstacle.pos.y, m_FindObstacle.pos.z };
+	physx::PxVec3 rayStart = start + offset * yOffset;
+	bool raySuccess = scene->raycast(
+		rayStart,
+		dir,
+		distance,
+		rayHit,
+		physx::PxHitFlag::ePOSITION
+	);
+
+	m_FindObstacle.target.x = rayHit.block.position.x;
+	m_FindObstacle.target.y = rayHit.block.position.y;
+	m_FindObstacle.target.z = rayHit.block.position.z;
+}
+
+
+bool RaycastingManager::raycastingForFindBlock(physx::PxScene* scene, physx::PxVec3 start, physx::PxVec3 end)
+{
+	static physx::PxRaycastBuffer rayHit;
+
+	physx::PxVec3 dir = (end - start);
+	float rayDistance = dir.magnitude();
+	dir.normalize();
+	physx::PxVec3 up = { 0.0f, 1.0f, 0.0f };
+	float lOffset = 0.0f;
+	float rOffset = 3.5f;
+	for (int i = 0; i < 8; i++)
+	{
+		float offset = (lOffset + rOffset) * 0.5f;
+		physx::PxVec3 rayStart = start + up * offset;
+	
+		bool raySuccess = scene->raycast(
+			rayStart,
+			dir,
+			rayDistance,
+			rayHit,
+			physx::PxHitFlag::ePOSITION
+		);
+
+		if (raySuccess == true)
+		{
+			lOffset = offset;
+			m_FindObstacle.pos.x = rayHit.block.position.x;
+			m_FindObstacle.pos.y = rayHit.block.position.y;
+			m_FindObstacle.pos.z = rayHit.block.position.z;
+		}
+		else
+		{
+			rOffset = offset;
+		}
+	}
+
+	if (lOffset == 0.0f)
+	{
+		return false;
+	}
+	else
+	{
+		raycastingForBlockInfo(scene);
+		return true;
+	}
+}
 
 void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose, physx::PxVec3 hipsFrontPose)
 {

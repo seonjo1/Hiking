@@ -93,9 +93,12 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	float stairHeight = 0.7f;
 	float stairXWidth = 2.0f;
 	float stairZWidth = 10.0f;
+	XMFLOAT4 colors[3] = { XMFLOAT4(0.229f, 0.239f, 0.461f, 1.0f), XMFLOAT4(0.429f, 0.639f, 0.261f, 1.0f) , XMFLOAT4(0.929f, 0.639f, 0.261f, 1.0f) };
+
 	for (int i = 0; i < 20; i++)
 	{
-		Model* stair = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.929f, 0.639f, 0.161f, 1.0f));
+		XMFLOAT4 color = colors[(i % 3)];
+		Model* stair = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), color);
 		stair->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
 		stair->setPosition(XMFLOAT3(8.0f + stairXWidth * i, 0.5f * (stairHeight + stairHeight * i), 0.0f));
 		stair->setScale(XMFLOAT3(stairXWidth, stairHeight + stairHeight * i, stairZWidth));
