@@ -564,13 +564,16 @@ void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, phy
 	XMStoreFloat3(&m_pose.local[m_skeleton.GetBoneIndex("mixamorig:Hips")].position, hipsDest);
 }
 
-void Model::modifyTarget(physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase)
+void Model::modifyTarget(XMMATRIX& worldMatrix)
 {
 	const static float targetSpeed = 0.4f;
 
 	// animation을 반영한 target 보정
 	if (m_animStateManager.currentState == "walk")
 	{
+		physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
+		physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
+
 		float leftToeBaseY = leftToeBase.y - m_position.y;
 		float rightToeBaseY = rightToeBase.y - m_position.y;
 
@@ -658,6 +661,7 @@ void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 	{
 		m_position.y = std::fminf(minY, m_position.y + ySpeed);
 	}
+	worldMatrix = getWorldMatrix();
 }
 
 void Model::setIdleStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, bool leftGo)
@@ -701,52 +705,90 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 		return;
 	}
 
-	if (walkPhase < player.clip->leftToRightPhase || player.clip->rightToLeftPhase <= walkPhase)
-	{
-		// left go
-		if (stepInfo.leftGo == false)
-		{
-			stepInfo.leftGo = true;
-			stepInfo.lastStep = stepInfo.nextStep;
-			stepInfo.lastStepEnd = stepInfo.nextStepEnd;
-		}
+	//if (walkPhase < player.clip->leftPhase || player.clip->rightPhase <= walkPhase)
+	//{
+	//	// left go
+	//	if (stepInfo.leftGo == false)
+	//	{
+	//		// right -> left로 변경됐으므로 right 현재 위치를 last step으로 기록
+	//		stepInfo.leftGo = true;
 
-		XMVECTOR offset = XMLoadFloat3(&player.clip->rightToLeftOffset);
-		XMVECTOR quat = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), XMConvertToRadians(m_rotation.y));
-		XMVector3Rotate(offset, quat);
-		XMVECTOR baseStep = XMLoadFloat3(&stepInfo.lastStep);
-		XMVECTOR next = XMVectorAdd(baseStep, offset);
-		XMStoreFloat3(&stepInfo.nextStep, next);
+	//		physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
+	//		physx::PxVec3 rightToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"));
+	//		
+	//		stepInfo.lastStep.x = rightToeBase.x;
+	//		stepInfo.lastStep.y = rightToeBase.y;
+	//		stepInfo.lastStep.z = rightToeBase.z;
 
-		XMVECTOR offsetEnd = XMLoadFloat3(&player.clip->rightEndToLeftEndOffset);
-		XMVector3Rotate(offsetEnd, quat);
-		XMVECTOR baseStepEnd = XMLoadFloat3(&stepInfo.lastStepEnd);
-		XMVECTOR nextEnd = XMVectorAdd(baseStepEnd, offsetEnd);
-		XMStoreFloat3(&stepInfo.nextStepEnd, nextEnd);
-	}
-	else
-	{
-		// right go
-		if (stepInfo.leftGo == true)
-		{
-			stepInfo.leftGo = false;
-			stepInfo.lastStep = stepInfo.nextStep;
-			stepInfo.lastStepEnd = stepInfo.nextStepEnd;
-		}
+	//		stepInfo.lastStepEnd.x = rightToeEnd.x;
+	//		stepInfo.lastStepEnd.y = rightToeEnd.y;
+	//		stepInfo.lastStepEnd.z = rightToeEnd.z;
+	//	}
 
-		XMVECTOR offset = XMLoadFloat3(&player.clip->leftToRightOffset);
-		XMVECTOR quat = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), XMConvertToRadians(m_rotation.y));
-		XMVector3Rotate(offset, quat);
-		XMVECTOR baseStep = XMLoadFloat3(&stepInfo.lastStep);
-		XMVECTOR next = XMVectorAdd(baseStep, offset);
-		XMStoreFloat3(&stepInfo.nextStep, next);
+	//	// 진행 방향 구하기
+	//	XMVECTOR dir = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
+	//	XMVECTOR quat = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), XMConvertToRadians(m_rotation.y));
+	//	dir = XMVector3Rotate(dir, quat);
+	//	
+	//	// 다음 Step까지의 움직임 구하기
 
-		XMVECTOR offsetEnd = XMLoadFloat3(&player.clip->leftEndToRightEndOffset);
-		XMVector3Rotate(offsetEnd, quat);
-		XMVECTOR baseStepEnd = XMLoadFloat3(&stepInfo.lastStepEnd);
-		XMVECTOR nextEnd = XMVectorAdd(baseStepEnd, offsetEnd);
-		XMStoreFloat3(&stepInfo.nextStepEnd, nextEnd);
-	}
+	//	// 다음 Step에서의 발 위치 구하기
+
+
+	//	XMVECTOR offset = XMLoadFloat3(&player.clip->rightToLeftOffset);
+	//	offset = XMVector3Rotate(offset, quat);
+	//	XMVECTOR baseStep = XMLoadFloat3(&stepInfo.lastStep);
+	//	XMVECTOR next = XMVectorAdd(baseStep, offset);
+	//	XMStoreFloat3(&stepInfo.nextStep, next);
+
+	//	XMVECTOR offsetEnd = XMLoadFloat3(&player.clip->rightEndToLeftEndOffset);
+	//	offsetEnd = XMVector3Rotate(offsetEnd, quat);
+	//	XMVECTOR baseStepEnd = XMLoadFloat3(&stepInfo.lastStepEnd);
+	//	XMVECTOR nextEnd = XMVectorAdd(baseStepEnd, offsetEnd);
+	//	XMStoreFloat3(&stepInfo.nextStepEnd, nextEnd);
+	//}
+	//else
+	//{
+	//	// right go
+	//	if (stepInfo.leftGo == true)
+	//	{
+	//		// left -> right로 바뀌었으므로 left 위치를 이전 위치로 기록
+	//		stepInfo.leftGo = false;
+
+	//		physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
+	//		physx::PxVec3 leftToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"));
+
+	//		stepInfo.lastStep.x = leftToeBase.x;
+	//		stepInfo.lastStep.y = leftToeBase.y;
+	//		stepInfo.lastStep.z = leftToeBase.z;
+
+	//		stepInfo.lastStepEnd.x = leftToeEnd.x;
+	//		stepInfo.lastStepEnd.y = leftToeEnd.y;
+	//		stepInfo.lastStepEnd.z = leftToeEnd.z;
+	//	}
+	//	
+	//	// 진행 방향 구하기
+	//	XMVECTOR dir = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
+	//	XMVECTOR quat = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), XMConvertToRadians(m_rotation.y));
+	//	dir = XMVector3Rotate(dir, quat);
+
+	//	// 다음 Step까지의 움직임 구하기
+
+	//	// 다음 Step에서의 발 위치 구하기
+
+	//	XMVECTOR offset = XMLoadFloat3(&player.clip->leftToRightOffset);
+	//	XMVECTOR quat = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), XMConvertToRadians(m_rotation.y));
+	//	offset = XMVector3Rotate(offset, quat);
+	//	XMVECTOR baseStep = XMLoadFloat3(&stepInfo.lastStep);
+	//	XMVECTOR next = XMVectorAdd(baseStep, offset);
+	//	XMStoreFloat3(&stepInfo.nextStep, next);
+
+	//	XMVECTOR offsetEnd = XMLoadFloat3(&player.clip->leftEndToRightEndOffset);
+	//	offsetEnd = XMVector3Rotate(offsetEnd, quat);
+	//	XMVECTOR baseStepEnd = XMLoadFloat3(&stepInfo.lastStepEnd);
+	//	XMVECTOR nextEnd = XMVectorAdd(baseStepEnd, offsetEnd);
+	//	XMStoreFloat3(&stepInfo.nextStepEnd, nextEnd);
+	//}
 }
 
 void Model::UpdateNextStep(XMMATRIX& worldMatrix)
@@ -782,8 +824,9 @@ void Model::UpdateNextStep(XMMATRIX& worldMatrix)
 	}
 }
 
-void Model::blendNextStep()
+void Model::blendingNextStep()
 {
+	// blending Next Step
 	XMVECTOR currNextStep = XMLoadFloat3(&m_currentStep.nextStep);
 	XMVECTOR prevNextStep = XMLoadFloat3(&m_prevStep.nextStep);
 	XMVECTOR currNextStepEnd = XMLoadFloat3(&m_currentStep.nextStepEnd);
@@ -794,89 +837,122 @@ void Model::blendNextStep()
 
 	XMStoreFloat3(&m_currentStep.nextStep, currNextStep);
 	XMStoreFloat3(&m_currentStep.nextStepEnd, currNextStepEnd);
+
 }
 
+void Model::raycastingToForward(physx::PxScene* scene, XMMATRIX& worldMatrix)
+{
+	physx::PxVec3 hips = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips"));
+
+	XMVECTOR dirVec = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
+	XMVECTOR quat = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), XMConvertToRadians(m_rotation.y));
+	dirVec = XMVector3Normalize(XMVector3Rotate(dirVec, quat));
+	physx::PxVec3 dir = { XMVectorGetX(dirVec), XMVectorGetY(dirVec), XMVectorGetZ(dirVec) };
+	m_RaycastingManager.raycastingForMoveCheck(scene, hips, dir);
+}
+
+void Model::raycastingNextStep(physx::PxScene* scene)
+{
+	physx::PxVec3 nextToeBase = { m_currentStep.nextStep.x, m_currentStep.nextStep.y, m_currentStep.nextStep.z };
+	physx::PxVec3 nextToeEnd = { m_currentStep.nextStepEnd.x, m_currentStep.nextStepEnd.y, m_currentStep.nextStepEnd.z };
+	m_RaycastingManager.raycastingForNextStep(scene, nextToeBase, nextToeEnd);
+}
+
+void Model::checkCanMove()
+{
+	if (m_RaycastingManager.m_MoveCheck.part == EIKPart::NONE || m_RaycastingManager.m_NextStep.part == EIKPart::FAIL)
+	{
+		if (m_RaycastingManager.m_MoveCheck.part == EIKPart::NONE)
+		{
+			p("front block!!\n");
+		}
+		if (m_RaycastingManager.m_NextStep.part == EIKPart::FAIL)
+		{
+			p("foot block!!\n");
+		}
+		m_stop = true;
+		m_position = m_prevPosition;
+	}
+}
+
+void Model::moveModel(XMMATRIX& worldMatrix, float dt)
+{
+	// 진행 방향 구하기
+	XMVECTOR dir = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
+	XMVECTOR quat = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), XMConvertToRadians(m_rotation.y));
+	dir = XMVector3Rotate(dir, quat);
+	dir = XMVectorScale(dir, m_speed * dt);
+
+	// 현재 위치에 이동방향 더하기
+	XMVECTOR pos = XMLoadFloat3(&m_position);
+	pos = XMVectorAdd(pos, dir);
+	XMStoreFloat3(&m_position, pos);
+	m_prevPosition = m_position;
+
+	worldMatrix = getWorldMatrix();
+}
+
+void Model::footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix)
+{
+	physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
+	physx::PxVec3 leftToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"));
+	physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
+	physx::PxVec3 rightToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"));
+	m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd);
+	m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd);
+
+	// Raycasting 실패시 IK 적용 x
+	if (m_RaycastingManager.m_LeftFoot.part == EIKPart::FAIL || m_RaycastingManager.m_RightFoot.part == EIKPart::FAIL)
+	{
+		m_pose.UpdateFinalPos(m_skeleton);
+		return;
+	}
+}
 
 void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 {
 	if (m_hasAnimation == true) {
 
-		/*
-		1. animation update(블랜딩 아직 안 하고 현재, 이전 애니메이션 pose 구해놓기)
-		2. 현재, 이전 애니메이션 기반 다음 Step 계산
-			- 만약 이동 불가면 속도 0처리 + 이전 위치로 복귀
-		3. 현재, 이전 애니메이션, 다음 Step 기반 현재 Target 계산
-		4. 애니메이션, 다음 Step, Target 블랜딩
-		*/
-		
 		// 1. anmation update
 		m_animStateManager.UpdateTime(dt);
 		m_animStateManager.UpdateAnimationClip(m_pose, m_skeleton);
 		
-		// 2. 현재, 이전 애니메이션 기반 next step 계산 (step은 두 발의 Target Y값 + 이동 불가 판정에만 영향을 끼침)
-		XMMATRIX worldMatrix = getWorldMatrix();
-		UpdateNextStep(worldMatrix);
-		
-		// 3. next step 및 애니메이션 블랜딩
-		blendNextStep();
+		// 2. blending animation
 		m_animStateManager.BlendAnimation(m_pose);
 		m_pose.UpdateWorldPos(m_skeleton);
-
-
-		// 4. 이동 불가 확인 및 next step Raycasting
-		// 다음 Step 확인
-		physx::PxVec3 nextToeBase = { m_currentStep.nextStep.x, m_currentStep.nextStep.y, m_currentStep.nextStep.z };
-		physx::PxVec3 nextToeEnd = { m_currentStep.nextStepEnd.x, m_currentStep.nextStepEnd.y, m_currentStep.nextStepEnd.z };
-		m_RaycastingManager.raycastingForNextStep(scene, nextToeBase, nextToeEnd);
-			
-		// 몸 앞쪽 확인
-		physx::PxVec3 hips = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips"));
-		physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
-		physx::PxVec3 leftToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"));
-		physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
-		physx::PxVec3 rightToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"));
-
-		XMVECTOR dirVec = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
-		XMVECTOR quat = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), XMConvertToRadians(m_rotation.y));
-		dirVec = XMVector3Normalize(XMVector3Rotate(dirVec, quat));
-		physx::PxVec3 dir = { XMVectorGetX(dirVec), XMVectorGetY(dirVec), XMVectorGetZ(dirVec) };
-		m_RaycastingManager.raycastingForMoveCheck(scene, hips, leftToeBase, rightToeBase, dir);
-			
-		if (m_RaycastingManager.m_MoveCheck.part == EIKPart::NONE || m_RaycastingManager.m_NextStep.part == EIKPart::FAIL)
-		{
-			if (m_RaycastingManager.m_MoveCheck.part == EIKPart::NONE)
-			{
-				p("front block!!\n");
-			}
-			if (m_RaycastingManager.m_NextStep.part == EIKPart::FAIL)
-			{
-				p("foot block!!\n");
-			}
-			m_stop = true;
-			m_position = m_prevPosition;
-		}
 		
-		// 5. 블랜딩 결과로 Raycasting
-		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd);
-		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd);
-
-		// Raycasting 실패시 IK 적용 x
-		if (m_RaycastingManager.m_LeftFoot.part == EIKPart::FAIL || m_RaycastingManager.m_RightFoot.part == EIKPart::FAIL)
-		{
-			m_pose.UpdateFinalPos(m_skeleton);
-			return;
-		}
-
-		// world Y값 결정
+		// 3. 현재, 이전 애니메이션 기반 next step 계산 (step은 두 발의 Target Y값 + 이동 불가 판정에만 영향을 끼침)
+		XMMATRIX worldMatrix = getWorldMatrix();
+		//UpdateNextStep(worldMatrix);
+		
+		// 4. next step 블랜딩
+		blendingNextStep();
+		
+		// 5. next step Raycasting
+		raycastingNextStep(scene);
+		
+		// 6. 몸 앞쪽 Raycasting
+		raycastingToForward(scene, worldMatrix);
+		
+		// 7. 이동 불가 check
+		checkCanMove();
+		
+		// 8. 모델 move
+		moveModel(worldMatrix, dt);
+		
+		// 9. 블랜딩 결과로 Raycasting
+		footRaycasting(scene, worldMatrix);
+		
+		// 10. world Y값 결정
 		modifyWorldY(scene, worldMatrix);
-		// bone 위치 보정
-		modifyTarget(leftToeBase, rightToeBase);
-
-		// target 위치 저장
+		
+		// 11. bone 위치 보정
+		modifyTarget(worldMatrix);
+		
+		// 12. target 위치 저장
 		m_leftTarget = m_RaycastingManager.m_LeftFoot.target;
 		m_rightTarget = m_RaycastingManager.m_RightFoot.target;
 
-		worldMatrix = getWorldMatrix();
 		/*
 		 [Foot IK 적용]
 		 0. IKangle Update
@@ -1266,7 +1342,7 @@ void Model::setToTarget(XMFLOAT3& targetDir)
 
 void Model::speedDown()
 {
-	const static float accel = 0.01f;
+	const static float accel = 1.0f;
 	const static float minSpeed = 0.0f;
 	
 	m_speed = max(minSpeed, m_speed - accel);
@@ -1274,9 +1350,9 @@ void Model::speedDown()
 
 void Model::move(XMFLOAT3& targetDir)
 {
-	const static float rotSpeed = 5.0f;
-	const static float accel = 0.01f;
-	const static float maxSpeed = 0.12f;
+	const static float rotSpeed = 10.0f;
+	const static float accel = 1.0f;
+	const static float maxSpeed = 7.3f;
 
 	// 현재 방향 벡터
 	XMFLOAT3 nowDir = getRotatedVector(m_rotation.y);
@@ -1315,12 +1391,13 @@ void Model::move(XMFLOAT3& targetDir)
 	}
 
 	m_speed = min(m_speed + accel, maxSpeed);
-	XMVECTOR dirVec = XMLoadFloat3(&targetDir);
-	XMVECTOR pos = XMLoadFloat3(&m_position);
-	dirVec = XMVectorScale(dirVec, m_speed);
-	pos = XMVectorAdd(dirVec, pos);
-	m_prevPosition = m_position;
-	XMStoreFloat3(&m_position, pos);
+
+	//XMVECTOR dirVec = XMLoadFloat3(&targetDir);
+	//XMVECTOR pos = XMLoadFloat3(&m_position);
+	//dirVec = XMVectorScale(dirVec, m_speed);
+	//pos = XMVectorAdd(dirVec, pos);
+	//m_prevPosition = m_position;
+	//XMStoreFloat3(&m_position, pos);
 }
 
 void Model::addMesh(Mesh* mesh)

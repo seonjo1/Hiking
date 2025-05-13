@@ -208,7 +208,7 @@ void RaycastingManager::raycastingForNextStep(physx::PxScene* scene, physx::PxVe
 	footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_RightFoot);
 }
 
-void RaycastingManager::raycastingForMoveCheck(physx::PxScene* scene, physx::PxVec3 hips, physx::PxVec3 leftToeBasePose, physx::PxVec3 rightToeBasePose, physx::PxVec3 dir)
+void RaycastingManager::raycastingForMoveCheck(physx::PxScene* scene, physx::PxVec3 hips, physx::PxVec3 dir)
 {
 	const float rayDistance = 2.8f;
 	const float rowOffset = 0.7f;

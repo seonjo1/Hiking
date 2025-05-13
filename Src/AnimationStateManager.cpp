@@ -166,19 +166,15 @@ void AnimationStateManager::setTargetToHipsKeyFrame(Pose& pose, Skeleton& skelet
         {
             if (prevLeftY > groundY && XMVectorGetY(left) < groundY)
             {
-                clip.leftToRightPhase = time / clip.duration;
-				XMVECTOR leftToRight = XMVectorSubtract(left, right);
-				XMVECTOR leftEndToRightEnd = XMVectorSubtract(leftEnd, rightEnd);
-				XMStoreFloat3(&clip.leftToRightOffset, leftToRight);
-				XMStoreFloat3(&clip.leftEndToRightEndOffset, leftEndToRightEnd);
+                clip.leftPhase = time / clip.duration;
+				clip.leftToeOffset = toLeft;
+				clip.leftToeEndOffset = toLeftEnd;
             }
             if (prevRightY > groundY && XMVectorGetY(right) < groundY)
             {
-                clip.rightToLeftPhase = time / clip.duration;
-				XMVECTOR rightToLeft = XMVectorSubtract(right, left);
-				XMVECTOR rightEndToLeftEnd = XMVectorSubtract(rightEnd, leftEnd);
-				XMStoreFloat3(&clip.rightToLeftOffset, rightToLeft);
-				XMStoreFloat3(&clip.rightEndToLeftEndOffset, rightEndToLeftEnd);
+				clip.rightPhase = time / clip.duration;
+				clip.rightToeOffset = toRight;
+				clip.rightToeEndOffset = toRightEnd;
             }
 			prevLeftY = XMVectorGetY(left);
 			prevRightY = XMVectorGetY(right);

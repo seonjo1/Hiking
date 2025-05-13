@@ -117,14 +117,19 @@ public:
 	float getLeftFootBlendingAlpha();
 	void setYoffset();
 	void setTargetToHipsKeyFrame();
-	void modifyTarget(physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase);
+	void modifyTarget(XMMATRIX& worldMatrix);
 	void modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase);
 	void modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix);
 	XMVECTOR getTargetToHipsDest(XMFLOAT3 targetToHipsFloat, XMVECTOR& target);
 	void setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, float walkPhase);
 	void setIdleStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, bool leftGo);
 	void UpdateNextStep(XMMATRIX& worldMatrix);
-	void blendNextStep();
+	void blendingNextStep();
+	void raycastingNextStep(physx::PxScene* scene);
+	void raycastingToForward(physx::PxScene* scene, XMMATRIX& worldMatrix);
+	void checkCanMove();
+	void moveModel(XMMATRIX& worldMatrix, float dt);
+	void footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix);
 
 private:
 	void ReleaseTextures();
