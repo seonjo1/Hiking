@@ -13,14 +13,17 @@ bool AnimationStateManager::SetState(std::string newState, std::unordered_map<st
     current.Play(&(clips[newState]));
     currentState = newState;
     blendAlpha = 0.0f;
-    walkPhase = 0.0f;
+    if (newState == "walk")
+    {
+		walkPhase = 0.0f;
+    }
 
     return true;
 }
 
 void AnimationStateManager::UpdateTime(float dt) {
-    walkPhase = current.UpdateTime(dt);
-    previous.UpdateTime(dt);
+    current.UpdateTime(dt, walkPhase);
+    previous.UpdateTime(dt, walkPhase);
 	blendAlpha += dt * blendSpeed;
 	if (blendAlpha > 1.0f) blendAlpha = 1.0f;
 }
@@ -158,23 +161,21 @@ void AnimationStateManager::setTargetToHipsKeyFrame(Pose& pose, Skeleton& skelet
 
         XMVECTOR hips = XMVector3TransformCoord(point, toHips);
 		XMVECTOR left = XMVector3TransformCoord(point, toLeft);
-		XMVECTOR leftEnd = XMVector3TransformCoord(point, toLeftEnd);
 		XMVECTOR right = XMVector3TransformCoord(point, toRight);
-		XMVECTOR rightEnd = XMVector3TransformCoord(point, toRightEnd);
 
         if (clip.name != "idle")
         {
             if (prevLeftY > groundY && XMVectorGetY(left) < groundY)
             {
                 clip.leftPhase = time / clip.duration;
-				clip.leftToeOffset = toLeft;
-				clip.leftToeEndOffset = toLeftEnd;
+				clip.leftToeTx = pose.world[skeleton.GetBoneIndex(leftPart)];
+				clip.leftToeEndTx = pose.world[skeleton.GetBoneIndex("mixamorig:LeftToe_End")];
             }
             if (prevRightY > groundY && XMVectorGetY(right) < groundY)
             {
 				clip.rightPhase = time / clip.duration;
-				clip.rightToeOffset = toRight;
-				clip.rightToeEndOffset = toRightEnd;
+				clip.rightToeTx = pose.world[skeleton.GetBoneIndex(rightPart)];
+				clip.rightToeEndTx = pose.world[skeleton.GetBoneIndex("mixamorig:RightToe_End")];
             }
 			prevLeftY = XMVectorGetY(left);
 			prevRightY = XMVectorGetY(right);

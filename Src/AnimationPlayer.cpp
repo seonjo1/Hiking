@@ -5,22 +5,17 @@ void AnimationPlayer::Play(AnimationClip* newClip) {
 	currentTime = 0.0f;
 }
 
-float AnimationPlayer::UpdateTime(float deltaTime) {
-	static const float speed = 40.0f;
-
+float AnimationPlayer::UpdateTime(float deltaTime, float& walkPhase) {
 	if (!clip) return 0.0f;
 
 	currentTime += speed * deltaTime * clip->ticksPerSecond;
+
 	if (currentTime >= clip->duration)
 		currentTime = fmod(currentTime, clip->duration);
 
 	if (clip->name == "walk")
 	{
-		return currentTime / clip->duration;
-	}
-	else
-	{
-		return 1.0f;
+		walkPhase =  currentTime / clip->duration;
 	}
 }
 
@@ -110,4 +105,30 @@ void AnimationPlayer::moveToPose(std::vector<LocalTx>& poseLocal)
 		poseLocal[i].rotation = pose.local[i].rotation;
 		poseLocal[i].scale = pose.local[i].scale;
 	}
+}
+
+float AnimationPlayer::getDt(bool leftGo)
+{
+	float ratio, dt, ticks;
+	float nowPhase = currentTime / clip->duration;
+	if (leftGo)
+	{
+		if (nowPhase >= clip->rightPhase)
+		{
+			ratio = 1.0f - nowPhase + clip->leftPhase;
+		}
+		else
+		{
+			ratio = (clip->leftPhase - nowPhase);
+		}
+	}
+	else
+	{
+		ratio = clip->rightPhase - nowPhase;
+
+	}
+
+	ticks = ratio * clip->duration;
+	dt = ticks / (speed * clip->ticksPerSecond);
+	return dt;
 }

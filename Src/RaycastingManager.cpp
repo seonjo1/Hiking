@@ -205,7 +205,7 @@ void RaycastingManager::raycastingForNextStep(physx::PxScene* scene, physx::PxVe
 	toToeEnd = toToeEnd * toToeEndScale;
 	toFoot = toFoot * toFootScale;
 
-	footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_RightFoot);
+	footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_NextStep);
 }
 
 void RaycastingManager::raycastingForMoveCheck(physx::PxScene* scene, physx::PxVec3 hips, physx::PxVec3 dir)

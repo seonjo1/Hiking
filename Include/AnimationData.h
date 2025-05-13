@@ -63,10 +63,10 @@ struct AnimationClip {
 	std::vector<PositionKeyframe> leftTargetToHipsVector;
 	std::vector<PositionKeyframe> rightTargetToHipsVector;
 
-	XMMATRIX leftToeOffset;
-    XMMATRIX rightToeOffset;
-	XMMATRIX leftToeEndOffset;
-	XMMATRIX rightToeEndOffset;
+	XMMATRIX leftToeTx;
+    XMMATRIX rightToeTx;
+	XMMATRIX leftToeEndTx;
+	XMMATRIX rightToeEndTx;
     float leftPhase;
     float rightPhase;
     BoneTrack* GetTrack(const std::string& boneName);
