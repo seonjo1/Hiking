@@ -580,29 +580,25 @@ void Model::modifyTarget(XMMATRIX& worldMatrix)
 		if (m_currentStep.leftGo == true)
 		{
 			// left go의 경우 left에 offset 추가
-			float lastY = m_currentStep.lastStep.y;
 			float nextY = m_currentStep.nextStep.y;
-			float nowY = lastY;
+			float& nowY = m_currentStep.nowY;
+
 			float ratio = m_animStateManager.current.getLeftGoRatio();
 
-			if (lastY < nextY)
+			if (nowY < nextY)
 			{
-				float offset = (nextY - lastY) * sinf(ratio * XM_PIDIV2);
+				float offset = (nextY - nowY) * sinf(ratio * XM_PIDIV2) * 0.6f;
 				nowY += offset;
 			}
 			else
 			{
-				float offset = (lastY - nextY) * sinf(ratio * XM_PIDIV2);
-				nowY -= offset;
+				float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f) * 0.7f;
+				nowY += offset;
 			}
 
 			XMFLOAT3 leftTargetTmp = m_RaycastingManager.m_LeftFoot.target;
 
-			if (nowY > m_RaycastingManager.m_LeftFoot.target.y)
-			{
-				leftTargetTmp.y = nowY;
-			}
-
+			leftTargetTmp.y = nowY;
 			leftTargetTmp.y += leftToeBaseOffset;
 			leftTarget = XMLoadFloat3(&leftTargetTmp);
 
@@ -614,29 +610,25 @@ void Model::modifyTarget(XMMATRIX& worldMatrix)
 		else
 		{
 			// right go의 경우 right에 offset 추가
-			float lastY = m_currentStep.lastStep.y;
 			float nextY = m_currentStep.nextStep.y;
-			float nowY = lastY;
+			float& nowY = m_currentStep.nowY;
+
 			float ratio = m_animStateManager.current.getRightGoRatio();
 
-			if (lastY < nextY)
+			if (nowY < nextY)
 			{
-				float offset = (nextY - lastY) * sinf(ratio * XM_PIDIV2);
+				float offset = (nextY - nowY) * sinf(ratio * XM_PIDIV2) * 0.6f;
 				nowY += offset;
 			}
 			else
 			{
-				float offset = (lastY - nextY) * sinf(ratio * XM_PIDIV2);
-				nowY -= offset;
+				float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f) * 0.7f;
+				nowY += offset;
 			}
 
 			XMFLOAT3 rightTargetTmp = m_RaycastingManager.m_RightFoot.target;
 
-			if (nowY > m_RaycastingManager.m_RightFoot.target.y)
-			{
-				rightTargetTmp.y = nowY;
-			}
-
+			rightTargetTmp.y = nowY;
 			rightTargetTmp.y += rightToeBaseOffset;
 			rightTarget = XMLoadFloat3(&rightTargetTmp);
 
@@ -770,6 +762,8 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 			stepInfo.lastStep.y = m_RaycastingManager.m_LeftFoot.pos.y;
 			stepInfo.lastStep.z = m_RaycastingManager.m_LeftFoot.pos.z;
 
+			stepInfo.nowY = stepInfo.lastStep.y;
+
 			stepInfo.lastStepEnd.x = leftToeEnd.x;
 			stepInfo.lastStepEnd.y = leftToeEnd.y;
 			stepInfo.lastStepEnd.z = leftToeEnd.z;
@@ -816,6 +810,7 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 			stepInfo.lastStep.x = m_RaycastingManager.m_RightFoot.pos.x;
 			stepInfo.lastStep.y = m_RaycastingManager.m_RightFoot.pos.y;
 			stepInfo.lastStep.z = m_RaycastingManager.m_RightFoot.pos.z;
+			stepInfo.nowY = stepInfo.lastStep.y;
 
 			stepInfo.lastStepEnd.x = rightToeEnd.x;
 			stepInfo.lastStepEnd.y = rightToeEnd.y;
@@ -1424,7 +1419,7 @@ void Model::move(XMFLOAT3& targetDir)
 {
 	const static float rotSpeed = 10.0f;
 	const static float accel = 1.0f;
-	const static float maxSpeed = 7.3f;
+	const static float maxSpeed = 7.13f;
 
 	// 현재 방향 벡터
 	XMFLOAT3 nowDir = getRotatedVector(m_rotation.y);

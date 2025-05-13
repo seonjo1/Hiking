@@ -22,6 +22,7 @@ struct StepInfo
 	XMFLOAT3 nextStepEnd{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 lastStep{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 lastStepEnd{ 0.0f, 0.0f, 0.0f };
+	float nowY;
 	bool leftGo{ true };
 };
 
