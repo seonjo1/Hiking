@@ -20,4 +20,6 @@ public:
 	XMFLOAT3 InterpolateScale(const std::vector<ScaleKeyframe>& keys, float time);
 	void moveToPose(std::vector<LocalTx>& poseLocal);
 	float getDt(bool leftGo);
+	float getLeftGoRatio();
+	float getRightGoRatio();
 };

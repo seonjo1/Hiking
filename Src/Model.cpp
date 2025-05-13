@@ -550,35 +550,105 @@ void Model::modifyTarget(XMMATRIX& worldMatrix)
 	// animation을 반영한 target 보정
 	if (m_animStateManager.currentState == "walk")
 	{
+		//physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
+		//float leftToeBaseY = leftToeBase.y - m_position.y;
+		//float leftToeBaseOffset = leftToeBaseY - m_animationClips["walk"].minLeftFootOffset;
+		//XMFLOAT3 leftNormal = m_RaycastingManager.m_LeftFoot.normal;
+		//XMVECTOR leftOffset = XMVector3Normalize(XMLoadFloat3(&leftNormal));
+		//leftOffset = XMVectorScale(leftOffset, leftToeBaseOffset);
+		//XMVECTOR leftTarget = XMLoadFloat3(&m_RaycastingManager.m_LeftFoot.target);
+		//leftTarget = XMVectorAdd(leftTarget, leftOffset);
+
+		//physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
+		//float rightToeBaseY = rightToeBase.y - m_position.y;
+		//float rightToeBaseOffset = rightToeBaseY - m_animationClips["walk"].minRightFootOffset;
+		//XMFLOAT3 rightNormal = m_RaycastingManager.m_RightFoot.normal;
+		//XMVECTOR rightOffset = XMVector3Normalize(XMLoadFloat3(&rightNormal));
+		//rightOffset = XMVectorScale(rightOffset, rightToeBaseOffset);
+		//XMVECTOR rightTarget = XMLoadFloat3(&m_RaycastingManager.m_RightFoot.target);
+		//rightTarget = XMVectorAdd(rightTarget, rightOffset);
+
 		physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
-		physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
-
 		float leftToeBaseY = leftToeBase.y - m_position.y;
-		float rightToeBaseY = rightToeBase.y - m_position.y;
-
 		float leftToeBaseOffset = leftToeBaseY - m_animationClips["walk"].minLeftFootOffset;
+	
+		physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
+		float rightToeBaseY = rightToeBase.y - m_position.y;
 		float rightToeBaseOffset = rightToeBaseY - m_animationClips["walk"].minRightFootOffset;
 
-		XMFLOAT3 leftNormal = m_RaycastingManager.m_LeftFoot.normal;
-		XMFLOAT3 rightNormal = m_RaycastingManager.m_RightFoot.normal;
+		XMVECTOR leftTarget, rightTarget;
+		if (m_currentStep.leftGo == true)
+		{
+			// left go의 경우 left에 offset 추가
+			float lastY = m_currentStep.lastStep.y;
+			float nextY = m_currentStep.nextStep.y;
+			float nowY = lastY;
+			float ratio = m_animStateManager.current.getLeftGoRatio();
 
-		XMVECTOR leftOffset = XMVector3Normalize(XMLoadFloat3(&leftNormal));
-		XMVECTOR rightOffset = XMVector3Normalize(XMLoadFloat3(&rightNormal));
+			if (lastY < nextY)
+			{
+				float offset = (nextY - lastY) * sinf(ratio * XM_PIDIV2);
+				nowY += offset;
+			}
+			else
+			{
+				float offset = (lastY - nextY) * sinf(ratio * XM_PIDIV2);
+				nowY -= offset;
+			}
 
-		leftOffset = XMVectorScale(leftOffset, leftToeBaseOffset);
-		rightOffset = XMVectorScale(rightOffset, rightToeBaseOffset);
+			XMFLOAT3 leftTargetTmp = m_RaycastingManager.m_LeftFoot.target;
 
-		XMVECTOR leftTarget = XMLoadFloat3(&m_RaycastingManager.m_LeftFoot.target);
-		XMVECTOR rightTarget = XMLoadFloat3(&m_RaycastingManager.m_RightFoot.target);
-		leftTarget = XMVectorAdd(leftTarget, leftOffset);
-		rightTarget = XMVectorAdd(rightTarget, rightOffset);
+			if (nowY > m_RaycastingManager.m_LeftFoot.target.y)
+			{
+				leftTargetTmp.y = nowY;
+			}
 
+			leftTargetTmp.y += leftToeBaseOffset;
+			leftTarget = XMLoadFloat3(&leftTargetTmp);
+
+			// left go의 경우 right는 그냥 현재 위치에 대해 적용
+			XMFLOAT3 rightTargetTmp = m_RaycastingManager.m_RightFoot.target;
+			rightTargetTmp.y += rightToeBaseOffset;
+			rightTarget = XMLoadFloat3(&rightTargetTmp);
+		}
+		else
+		{
+			// right go의 경우 right에 offset 추가
+			float lastY = m_currentStep.lastStep.y;
+			float nextY = m_currentStep.nextStep.y;
+			float nowY = lastY;
+			float ratio = m_animStateManager.current.getRightGoRatio();
+
+			if (lastY < nextY)
+			{
+				float offset = (nextY - lastY) * sinf(ratio * XM_PIDIV2);
+				nowY += offset;
+			}
+			else
+			{
+				float offset = (lastY - nextY) * sinf(ratio * XM_PIDIV2);
+				nowY -= offset;
+			}
+
+			XMFLOAT3 rightTargetTmp = m_RaycastingManager.m_RightFoot.target;
+
+			if (nowY > m_RaycastingManager.m_RightFoot.target.y)
+			{
+				rightTargetTmp.y = nowY;
+			}
+
+			rightTargetTmp.y += rightToeBaseOffset;
+			rightTarget = XMLoadFloat3(&rightTargetTmp);
+
+			// right go의 경우 left는 그냥 현재 위치에 대해 적용
+			XMFLOAT3 leftTargetTmp = m_RaycastingManager.m_LeftFoot.target;
+			leftTargetTmp.y += leftToeBaseOffset;
+			leftTarget = XMLoadFloat3(&leftTargetTmp);
+		}
+
+		// Target에 점진적 접근
 		XMVECTOR prevLeftTarget = XMLoadFloat3(&m_leftTarget);
-		XMVECTOR prevRightTarget = XMLoadFloat3(&m_rightTarget);
-
 		XMVECTOR toLeftTarget = XMVectorSubtract(leftTarget, prevLeftTarget);
-		XMVECTOR toRightTarget = XMVectorSubtract(rightTarget, prevRightTarget);
-
 		float toLeftTargetLength = XMVectorGetX(XMVector3Length(toLeftTarget));
 		if (toLeftTargetLength > targetSpeed)
 		{
@@ -593,6 +663,9 @@ void Model::modifyTarget(XMMATRIX& worldMatrix)
 			XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.target, leftTarget);
 		}
 
+
+		XMVECTOR prevRightTarget = XMLoadFloat3(&m_rightTarget);
+		XMVECTOR toRightTarget = XMVectorSubtract(rightTarget, prevRightTarget);
 		float toRightTargetLength = XMVectorGetX(XMVector3Length(toRightTarget));
 		if (toRightTargetLength > targetSpeed)
 		{
@@ -691,12 +764,11 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 		{
 			// right -> left로 변경됐으므로 left 현재 위치를 last step으로 기록
 			stepInfo.leftGo = true;
-			physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
 			physx::PxVec3 leftToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"));
-
-			stepInfo.lastStep.x = leftToeBase.x;
-			stepInfo.lastStep.y = leftToeBase.y;
-			stepInfo.lastStep.z = leftToeBase.z;
+			//physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
+			stepInfo.lastStep.x = m_RaycastingManager.m_LeftFoot.pos.x;
+			stepInfo.lastStep.y = m_RaycastingManager.m_LeftFoot.pos.y;
+			stepInfo.lastStep.z = m_RaycastingManager.m_LeftFoot.pos.z;
 
 			stepInfo.lastStepEnd.x = leftToeEnd.x;
 			stepInfo.lastStepEnd.y = leftToeEnd.y;
@@ -739,17 +811,15 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 			// left -> right로 바뀌었으므로 left 위치를 이전 위치로 기록
 			stepInfo.leftGo = false;
 
-			physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
 			physx::PxVec3 rightToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"));
 
-			stepInfo.lastStep.x = rightToeBase.x;
-			stepInfo.lastStep.y = rightToeBase.y;
-			stepInfo.lastStep.z = rightToeBase.z;
+			stepInfo.lastStep.x = m_RaycastingManager.m_RightFoot.pos.x;
+			stepInfo.lastStep.y = m_RaycastingManager.m_RightFoot.pos.y;
+			stepInfo.lastStep.z = m_RaycastingManager.m_RightFoot.pos.z;
 
 			stepInfo.lastStepEnd.x = rightToeEnd.x;
 			stepInfo.lastStepEnd.y = rightToeEnd.y;
 			stepInfo.lastStepEnd.z = rightToeEnd.z;
-
 		}
 		
 		// 진행 방향 구하기
@@ -825,7 +895,6 @@ void Model::blendingNextStep()
 
 		currNextStep = XMVectorLerp(prevNextStep, currNextStep, m_animStateManager.blendAlpha);
 		currNextStepEnd = XMVectorLerp(prevNextStepEnd, currNextStepEnd, m_animStateManager.blendAlpha);
-
 		XMStoreFloat3(&m_currentStep.nextStep, currNextStep);
 		XMStoreFloat3(&m_currentStep.nextStepEnd, currNextStepEnd);
 	}
@@ -844,14 +913,21 @@ void Model::raycastingToForward(physx::PxScene* scene, XMMATRIX& worldMatrix)
 
 void Model::raycastingNextStep(physx::PxScene* scene)
 {
-	physx::PxVec3 nextToeBase = { m_currentStep.nextStep.x, m_currentStep.nextStep.y, m_currentStep.nextStep.z };
-	physx::PxVec3 nextToeEnd = { m_currentStep.nextStepEnd.x, m_currentStep.nextStepEnd.y, m_currentStep.nextStepEnd.z };
-	m_RaycastingManager.raycastingForNextStep(scene, nextToeBase, nextToeEnd);
+	if (m_animStateManager.currentState == "walk" || m_animStateManager.blendAlpha < 1.0f)
+	{
+		physx::PxVec3 nextToeBase = { m_currentStep.nextStep.x, m_currentStep.nextStep.y, m_currentStep.nextStep.z };
+		physx::PxVec3 nextToeEnd = { m_currentStep.nextStepEnd.x, m_currentStep.nextStepEnd.y, m_currentStep.nextStepEnd.z };
+		m_RaycastingManager.raycastingForNextStep(scene, nextToeBase, nextToeEnd);
+		m_currentStep.nextStep.x = m_RaycastingManager.m_NextStep.target.x;
+		m_currentStep.nextStep.y = m_RaycastingManager.m_NextStep.target.y;
+		m_currentStep.nextStep.z = m_RaycastingManager.m_NextStep.target.z;
+	}
 }
 
 void Model::checkCanMove()
 {
-	if (m_RaycastingManager.m_MoveCheck.part == EIKPart::NONE || m_RaycastingManager.m_NextStep.part == EIKPart::FAIL)
+	//if (m_RaycastingManager.m_MoveCheck.part == EIKPart::NONE || m_RaycastingManager.m_NextStep.part == EIKPart::FAIL)
+	if (m_RaycastingManager.m_MoveCheck.part == EIKPart::NONE)
 	{
 		if (m_RaycastingManager.m_MoveCheck.part == EIKPart::NONE)
 		{
@@ -878,7 +954,6 @@ void Model::moveModel(XMMATRIX& worldMatrix, float dt)
 	XMVECTOR pos = XMLoadFloat3(&m_position);
 	pos = XMVectorAdd(pos, dir);
 	XMStoreFloat3(&m_position, pos);
-	m_prevPosition = m_position;
 
 	worldMatrix = getWorldMatrix();
 }
@@ -893,11 +968,10 @@ void Model::footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix)
 	m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd);
 
 	// Raycasting 실패시 IK 적용 x
-	if (m_RaycastingManager.m_LeftFoot.part == EIKPart::FAIL || m_RaycastingManager.m_RightFoot.part == EIKPart::FAIL)
-	{
-		m_pose.UpdateFinalPos(m_skeleton);
-		return;
-	}
+	//if (m_RaycastingManager.m_LeftFoot.part == EIKPart::FAIL || m_RaycastingManager.m_RightFoot.part == EIKPart::FAIL)
+	//{
+	//	m_stop = true;
+	//}
 }
 
 void Model::UpdateAnimation(physx::PxScene* scene, float dt)
@@ -906,44 +980,48 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		// 1. anmation update
 		m_animStateManager.UpdateTime(dt);
 		m_animStateManager.UpdateAnimationClip(m_pose, m_skeleton);
-		
-		// 3. 현재, 이전 애니메이션 기반 next step 계산 (step은 두 발의 Target Y값 + 이동 불가 판정에만 영향을 끼침)
-		XMMATRIX worldMatrix = getWorldMatrix();
-		UpdateNextStep(worldMatrix);
-		
-		// 4. next step 블랜딩
-		blendingNextStep();
 		m_animStateManager.BlendAnimation(m_pose);
 		m_pose.UpdateWorldPos(m_skeleton);
 		
-		// 5. next step Raycasting
+		// 2. 현재, 이전 애니메이션 기반 next step 계산 (step은 두 발의 Target Y값 + 이동 불가 판정에만 영향을 끼침)
+		XMMATRIX worldMatrix = getWorldMatrix();
+		UpdateNextStep(worldMatrix);
+		
+		// 3. next step 블랜딩
+		blendingNextStep();
+		
+		// 4. next step Raycasting
 		raycastingNextStep(scene);
 		
-		// 6. 몸 앞쪽 Raycasting
+		// 5. 몸 앞쪽 Raycasting
 		raycastingToForward(scene, worldMatrix);
 		
-		// 7. 이동 불가 check
+		// 6. 이동 불가 check
 		checkCanMove();
+
+		// 7. 모델 move
+		moveModel(worldMatrix, dt);
+		
+		// 8. 블랜딩 결과로 Raycasting
+		footRaycasting(scene, worldMatrix);
 		if (m_stop == true)
 		{
 			m_pose.UpdateFinalPos(m_skeleton);
 			m_stop = false;
 			return;
 		}
+		else
+		{
+			m_prevPosition = m_position;
+		}
 
-		// 8. 모델 move
-		moveModel(worldMatrix, dt);
-		
-		// 9. 블랜딩 결과로 Raycasting
-		footRaycasting(scene, worldMatrix);
-		
+		// 9. bone 위치 보정
+		modifyTarget(worldMatrix);
+
 		// 10. world Y값 결정
 		modifyWorldY(scene, worldMatrix);
-		
-		// 11. bone 위치 보정
-		modifyTarget(worldMatrix);
-		
-		// 12. target 위치 저장
+
+		// 11. target 위치 저장
 		m_leftTarget = m_RaycastingManager.m_LeftFoot.target;
 		m_rightTarget = m_RaycastingManager.m_RightFoot.target;
 

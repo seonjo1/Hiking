@@ -107,6 +107,28 @@ void AnimationPlayer::moveToPose(std::vector<LocalTx>& poseLocal)
 	}
 }
 
+float AnimationPlayer::getLeftGoRatio()
+{
+	float len;
+	float phaseLen = (1.0f - clip->rightPhase + clip->leftPhase);
+	float nowPhase = currentTime / clip->duration;
+	if (nowPhase >= clip->rightPhase)
+	{
+		len = nowPhase - clip->rightPhase;
+	}
+	else
+	{
+		len = 1.0f - clip->rightPhase + nowPhase;
+	}
+	return len / phaseLen;
+}
+
+float AnimationPlayer::getRightGoRatio()
+{
+	float nowPhase = currentTime / clip->duration;
+	return (nowPhase - clip->leftPhase) / (clip->rightPhase - clip->leftPhase);
+}
+
 float AnimationPlayer::getDt(bool leftGo)
 {
 	float ratio, dt, ticks;
