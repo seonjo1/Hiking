@@ -141,6 +141,7 @@ private:
 	Mesh* m_rangeAxisMesh;
 	Mesh* m_jointMesh;
 	Mesh* m_boneMesh;
+	Mesh* m_stepMesh;
 	Mesh* m_cornMesh;
 	Mesh* m_rayToTargetMesh;
 	Mesh* m_rayNormalMesh;

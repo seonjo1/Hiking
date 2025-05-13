@@ -32,6 +32,7 @@ Model::Model()
 	m_scale = { 1.0f, 1.0f, 1.0f };
 	m_size = 0;
 	m_boneMesh = 0;
+	m_stepMesh = 0;
 	m_jointMesh = 0;
 	m_rayToTargetMesh = 0;
 	m_rayNormalMesh = 0;
@@ -90,6 +91,7 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_pose.Initialize(m_skeleton.bones.size());
 		m_animStateManager.SetState("idle", m_animationClips);
 		m_jointMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), 3.0f);
+		m_stepMesh = Mesh::createDebugSphere(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), 3.0f);
 		m_boneMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 		m_rayToTargetMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
 		m_rayNormalMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f));
@@ -436,12 +438,15 @@ bool Model::DrawRayPointShader(ID3D11DeviceContext* deviceContext, JointShader* 
 	if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
 		return false;
 
+
+	scale = XMMatrixScaling(0.03f, 0.03f, 0.03f);
+	m_stepMesh->Render(deviceContext);
 	if (m_RaycastingManager.m_MoveCheck.part != EIKPart::FAIL)
 	{
 		translation = XMMatrixTranslation(m_RaycastingManager.m_MoveCheck.target.x, m_RaycastingManager.m_MoveCheck.target.y, m_RaycastingManager.m_MoveCheck.target.z);
 		matrix.world = scale * translation;
 
-		if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
+		if (jointShader->Render(deviceContext, m_stepMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
 			return false;
 	}
 
@@ -450,7 +455,7 @@ bool Model::DrawRayPointShader(ID3D11DeviceContext* deviceContext, JointShader* 
 		translation = XMMatrixTranslation(m_RaycastingManager.m_NextStep.target.x, m_RaycastingManager.m_NextStep.target.y, m_RaycastingManager.m_NextStep.target.z);
 		matrix.world = scale * translation;
 
-		if (jointShader->Render(deviceContext, m_jointMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
+		if (jointShader->Render(deviceContext, m_stepMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
 			return false;
 	}
 
@@ -967,6 +972,12 @@ void Model::ReleaseMeshes()
 	{
 		m_boneMesh->Shutdown();
 		delete m_boneMesh;
+	}
+
+	if (m_stepMesh)
+	{
+		m_stepMesh->Shutdown();
+		delete m_stepMesh;
 	}
 
 	if (m_rangeAxisMesh)
