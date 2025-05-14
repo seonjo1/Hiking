@@ -599,9 +599,6 @@ void Model::processBlockCase(physx::PxScene* scene)
 		physx::PxVec3 start = { m_currentStep.nowStep.x, m_currentStep.nowStep.y, m_currentStep.nowStep.z };
 		physx::PxVec3 end = { m_currentStep.nextStep.x, m_currentStep.nextStep.y , m_currentStep.nextStep.z };
 		physx::PxVec3 dir = { m_currentStep.blockDir.x, m_currentStep.blockDir.y, m_currentStep.blockDir.z };
-		// start 살짝 뒤로 보내기
-		//start.x -= m_currentStep.blockDir.x * 0.1f;
-		//start.z -= m_currentStep.blockDir.z * 0.1f;
 
 		m_currentStep.isBlocked = m_RaycastingManager.raycastingForFindBlock(scene, start, end, dir);
 
@@ -609,7 +606,7 @@ void Model::processBlockCase(physx::PxScene* scene)
 		{
 			// 찾은 경우 blockY, blockRatio 세팅
 			m_currentStep.target = m_RaycastingManager.m_FindObstacle.target;
-			m_currentStep.target.y += 0.1f;
+			m_currentStep.target.y += 0.2f;
 			m_currentStep.start = m_currentStep.nowStep;
 		}
 		else
@@ -638,18 +635,6 @@ void Model::setNowStep()
 	float nextY = m_currentStep.target.y;
 	float nowY = m_currentStep.nowStep.y;
 	float startY = m_currentStep.start.y;
-
-	// Y값 보정 시작
-	//if (nowY < nextY)
-	//{
-	//	float offset = (nextY - nowY) * sinf(ratio * XM_PIDIV2);
-	//	nowY += offset;
-	//}
-	//else
-	//{
-	//	float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f);
-	//	nowY += offset;
-	//}
 
 	if (startY < nextY)
 	{
