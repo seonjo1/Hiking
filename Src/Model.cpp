@@ -555,7 +555,7 @@ void Model::processBlockCase(physx::PxScene* scene, float& nextY, float& ratio)
 		if (m_currentStep.isBlocked == true)
 		{
 			// 찾은 경우 blockY, blockRatio 세팅
-			m_currentStep.blockY = m_RaycastingManager.m_FindObstacle.target.y;
+			m_currentStep.blockY = m_RaycastingManager.m_FindObstacle.target.y + 0.1f;
 			if (start.x != end.x)
 				m_currentStep.blockRatio = (m_RaycastingManager.m_FindObstacle.target.x - start.x) / (end.x - start.x);
 			else
@@ -613,7 +613,7 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 			}
 			else
 			{
-				float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f) * 0.7f;
+				float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f) * 0.5f;
 				nowY += offset;
 			}
 
@@ -644,7 +644,7 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 			}
 			else
 			{
-				float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f) * 0.7f;
+				float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f) * 0.5f;
 				nowY += offset;
 			}
 
@@ -995,6 +995,7 @@ void Model::footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix)
 	physx::PxVec3 leftToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"));
 	physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
 	physx::PxVec3 rightToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"));
+
 	m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd);
 	m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd);
 
@@ -1008,21 +1009,23 @@ void Model::footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix)
 void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 {
 	if (m_hasAnimation == true) {
+		XMMATRIX worldMatrix = getWorldMatrix();
+		
+		// Next Step 처리
+		{
+			// 현재, 이전 애니메이션 기반 next step 계산 (step은 두 발의 Target Y값 + 이동 불가 판정에만 영향을 끼침)
+			UpdateNextStep(worldMatrix);
+			// next step 블랜딩
+			blendingNextStep();
+			// next step Raycasting
+			raycastingNextStep(scene);
+		}
+		
 		// 1. anmation update
 		m_animStateManager.UpdateTime(dt);
 		m_animStateManager.UpdateAnimationClip(m_pose, m_skeleton);
 		m_animStateManager.BlendAnimation(m_pose);
 		m_pose.UpdateWorldPos(m_skeleton);
-		
-		// 2. 현재, 이전 애니메이션 기반 next step 계산 (step은 두 발의 Target Y값 + 이동 불가 판정에만 영향을 끼침)
-		XMMATRIX worldMatrix = getWorldMatrix();
-		UpdateNextStep(worldMatrix);
-		
-		// 3. next step 블랜딩
-		blendingNextStep();
-		
-		// 4. next step Raycasting
-		raycastingNextStep(scene);
 		
 		// 5. 몸 앞쪽 Raycasting
 		raycastingToForward(scene, worldMatrix);
