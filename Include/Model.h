@@ -18,12 +18,12 @@ class ModelShader;
 
 struct StepInfo
 {
+	XMFLOAT3 nowStep{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 nextStep{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 nextStepEnd{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 lastStep{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 lastStepRay{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 lastStepEnd{ 0.0f, 0.0f, 0.0f };
-	float nowY;
 	float blockY;
 	float blockRatio;
 	bool changed{ false };

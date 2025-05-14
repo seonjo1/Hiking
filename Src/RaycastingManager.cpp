@@ -304,7 +304,8 @@ bool RaycastingManager::raycastingForFindBlock(physx::PxScene* scene, physx::PxV
 	physx::PxVec3 up = { 0.0f, 1.0f, 0.0f };
 	float lOffset = 0.0f;
 	float rOffset = 3.5f;
-	for (int i = 0; i < 8; i++)
+
+	for (int i = 0; i < 10; i++)
 	{
 		float offset = (lOffset + rOffset) * 0.5f;
 		physx::PxVec3 rayStart = start + up * offset;

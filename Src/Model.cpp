@@ -458,6 +458,16 @@ bool Model::DrawRayPointShader(ID3D11DeviceContext* deviceContext, JointShader* 
 			return false;
 	}
 
+	scale = XMMatrixScaling(0.05f, 0.05f, 0.05f);
+
+	if (m_currentStep.isBlocked == true)
+	{
+		translation = XMMatrixTranslation(m_RaycastingManager.m_FindObstacle.target.x, m_RaycastingManager.m_FindObstacle.target.y, m_RaycastingManager.m_FindObstacle.target.z);
+		matrix.world = scale * translation;
+		if (jointShader->Render(deviceContext, m_stepMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
+			return false;
+	}
+
 	return true;
 }
 
@@ -545,10 +555,10 @@ void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, phy
 
 void Model::processBlockCase(physx::PxScene* scene, float& nextY, float& ratio)
 {
-	if (m_currentStep.changed == true)
+	//if (m_currentStep.changed == true)
 	{
 		// 첫 시작에 가장 높은 장애물 찾기
-		physx::PxVec3 start = { m_currentStep.lastStepRay.x, m_currentStep.lastStepRay.y, m_currentStep.lastStepRay.z };
+		physx::PxVec3 start = { m_currentStep.nowStep.x, m_currentStep.nowStep.y, m_currentStep.nowStep.z };
 		physx::PxVec3 end = { m_currentStep.nextStep.x, m_currentStep.nextStep.y , m_currentStep.nextStep.z };
 		m_currentStep.isBlocked = m_RaycastingManager.raycastingForFindBlock(scene, start, end);
 
@@ -565,24 +575,15 @@ void Model::processBlockCase(physx::PxScene* scene, float& nextY, float& ratio)
 
 	if (m_currentStep.isBlocked == true)
 	{
-		// block인 경우
-		if (m_currentStep.blockRatio < ratio)
-		{
-			// block 지점 지난 경우 false
-			m_currentStep.isBlocked = false;
-		}
-		else
-		{
-			// 아직 block 구간인 경우 ratio, nextY 세팅
-			ratio = ratio / m_currentStep.blockRatio;
-			nextY = m_currentStep.blockY;
-		}
+		// 아직 block 구간인 경우 ratio, nextY 세팅
+		ratio = fmin(ratio / m_currentStep.blockRatio, 1.0f);
+		nextY = m_currentStep.blockY;
 	}
 }
 
 void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 {
-	const static float targetSpeed = 0.4f;
+	const static float targetSpeed = 0.3f;
 
 	// animation을 반영한 target 보정
 	if (m_animStateManager.currentState == "walk")
@@ -595,12 +596,13 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 		float rightToeBaseY = rightToeBase.y - m_position.y;
 		float rightToeBaseOffset = rightToeBaseY - m_animationClips["walk"].minRightFootOffset;
 
+
 		XMVECTOR leftTarget, rightTarget;
 		if (m_currentStep.leftGo == true)
 		{
 			// left go의 경우 left에 offset 추가
 			float nextY = m_currentStep.nextStep.y;
-			float& nowY = m_currentStep.nowY;
+			float& nowY = m_currentStep.nowStep.y;
 			float ratio = m_animStateManager.current.getLeftGoRatio();
 
 			processBlockCase(scene, nextY, ratio);
@@ -617,6 +619,9 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 				nowY += offset;
 			}
 
+			m_currentStep.nowStep.x = m_RaycastingManager.m_LeftFoot.target.x;
+			m_currentStep.nowStep.z = m_RaycastingManager.m_LeftFoot.target.z;
+
 			XMFLOAT3 leftTargetTmp = m_RaycastingManager.m_LeftFoot.target;
 
 			leftTargetTmp.y = nowY;
@@ -632,7 +637,7 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 		{
 			// right go의 경우 right에 offset 추가
 			float nextY = m_currentStep.nextStep.y;
-			float& nowY = m_currentStep.nowY;
+			float& nowY = m_currentStep.nowStep.y;
 			float ratio = m_animStateManager.current.getRightGoRatio();
 
 			processBlockCase(scene, nextY, ratio);
@@ -647,6 +652,8 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 				float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f) * 0.5f;
 				nowY += offset;
 			}
+			m_currentStep.nowStep.x = m_RaycastingManager.m_RightFoot.target.x;
+			m_currentStep.nowStep.z = m_RaycastingManager.m_RightFoot.target.z;
 
 			XMFLOAT3 rightTargetTmp = m_RaycastingManager.m_RightFoot.target;
 
@@ -694,7 +701,6 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 			XMStoreFloat3(&m_RaycastingManager.m_RightFoot.target, rightTarget);
 		}
 	}
-	m_currentStep.changed = false;
 }
 
 void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
@@ -794,7 +800,10 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 			stepInfo.lastStepEnd.y = leftToeEnd.y;
 			stepInfo.lastStepEnd.z = leftToeEnd.z;
 
-			stepInfo.nowY = stepInfo.lastStepRay.y;
+			stepInfo.nowStep.x = stepInfo.lastStepRay.x;
+			stepInfo.nowStep.y = stepInfo.lastStepRay.y;
+			stepInfo.nowStep.z = stepInfo.lastStepRay.z;
+
 			stepInfo.changed = true;
 		}
 
@@ -849,7 +858,10 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 			stepInfo.lastStepEnd.y = rightToeEnd.y;
 			stepInfo.lastStepEnd.z = rightToeEnd.z;
 
-			stepInfo.nowY = stepInfo.lastStepRay.y;
+			stepInfo.nowStep.x = stepInfo.lastStepRay.x;
+			stepInfo.nowStep.y = stepInfo.lastStepRay.y;
+			stepInfo.nowStep.z = stepInfo.lastStepRay.z;
+
 			stepInfo.changed = true;
 		}
 		
@@ -1058,6 +1070,9 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		// 11. target 위치 저장
 		m_leftTarget = m_RaycastingManager.m_LeftFoot.target;
 		m_rightTarget = m_RaycastingManager.m_RightFoot.target;
+
+		p("m_leftTarget: " + std::to_string(m_leftTarget.x) + " " + std::to_string(m_leftTarget.y) + " " + std::to_string(m_leftTarget.z) + "\n");
+		p("m_rightTarget: " + std::to_string(m_rightTarget.x) + " " + std::to_string(m_rightTarget.y) + " " + std::to_string(m_rightTarget.z) + "\n");
 
 		/*
 		 [Foot IK 적용]
