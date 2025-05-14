@@ -25,6 +25,8 @@ struct StepInfo
 	XMFLOAT3 lastStepRay{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 lastStepEnd{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 blockDir{ 0.0f, 0.0f, 0.0f };
+	XMFLOAT3 start{ 0.0f, 0.0f, 0.0f };
+	XMFLOAT3 target{ 0.0f, 0.0f, 0.0f };
 	float blockY;
 	float blockRatio;
 	bool blockCheck{ false };
@@ -137,7 +139,8 @@ public:
 	void checkCanMove();
 	void moveModel(XMMATRIX& worldMatrix, float dt);
 	void footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix);
-	void processBlockCase(physx::PxScene* scene, float& nextY, float& ratio);
+	void processBlockCase(physx::PxScene* scene);
+	void setNowStep();
 
 private:
 	void ReleaseTextures();
@@ -155,6 +158,7 @@ private:
 	Mesh* m_jointMesh;
 	Mesh* m_boneMesh;
 	Mesh* m_stepMesh;
+	Mesh* m_blockMesh;
 	Mesh* m_cornMesh;
 	Mesh* m_rayToTargetMesh;
 	Mesh* m_rayNormalMesh;

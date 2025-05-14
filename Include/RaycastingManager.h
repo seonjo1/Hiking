@@ -31,7 +31,7 @@ public:
 	void raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose, physx::PxVec3 hipsFrontPose);
 	void raycastingForNextStep(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
 	void raycastingForMoveCheck(physx::PxScene* scene, physx::PxVec3 hips, physx::PxVec3 dir);
-	bool raycastingForFindBlock(physx::PxScene* scene, physx::PxVec3 start, physx::PxVec3 end);
+	bool raycastingForFindBlock(physx::PxScene* scene, physx::PxVec3 start, physx::PxVec3 end, physx::PxVec3 xzDir);
 	void raycastingForBlockInfo(physx::PxScene* scene);
 
 	RaycastingInfo m_LeftFoot;

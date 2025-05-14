@@ -42,10 +42,10 @@ void Application::createStairs(int num)
 void Application::createRandomTerrain(int num)
 {
 	// 타일 기본 크기 (XZ 크기 고정, Y는 랜덤 높이)
-	const float tileWidth = 1.5f;
+	const float tileWidth = 2.0f;
 	const float tileDepth = 10.0f;
 	const float minHeight = 0.1f;
-	const float maxHeight = 2.5f;
+	const float maxHeight = 2.2f;
 	// 회전 최대 각도 (도 단위)
 	const float maxAngleDeg = 25.0f;
 

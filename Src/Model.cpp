@@ -33,6 +33,7 @@ Model::Model()
 	m_size = 0;
 	m_boneMesh = 0;
 	m_stepMesh = 0;
+	m_blockMesh = 0;
 	m_jointMesh = 0;
 	m_rayToTargetMesh = 0;
 	m_rayNormalMesh = 0;
@@ -92,10 +93,12 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_animStateManager.SetState("idle", m_animationClips);
 		m_jointMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), 3.0f);
 		m_stepMesh = Mesh::createDebugSphere(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), 3.0f);
+		m_blockMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f), 3.0f);
 		m_boneMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 		m_rayToTargetMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
 		m_rayNormalMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f));
 		m_rangeAxisMesh = Mesh::createDebugLine(device, XMFLOAT4(0.976f, 0.357f, 0.749f, 1.0f));
+		
 		m_cornMesh = Mesh::createCone(device);
 		initRangeAxis();
 		m_IKManager.initIKChains(m_skeleton);
@@ -459,6 +462,7 @@ bool Model::DrawRayPointShader(ID3D11DeviceContext* deviceContext, JointShader* 
 	}
 
 	scale = XMMatrixScaling(0.05f, 0.05f, 0.05f);
+	m_blockMesh->Render(deviceContext);
 
 	if (m_currentStep.isBlocked == true)
 	{
@@ -553,9 +557,10 @@ void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, phy
 	XMStoreFloat3(&m_pose.local[m_skeleton.GetBoneIndex("mixamorig:Hips")].position, hipsDest);
 }
 
-void Model::processBlockCase(physx::PxScene* scene, float& nextY, float& ratio)
+void Model::processBlockCase(physx::PxScene* scene)
 {
-	if (m_currentStep.isBlocked == true)
+	p("function start\n");
+	if (m_currentStep.blockCheck == true)
 	{
 		// 방향 검사 (block 당시 dir 필요)
 		XMVECTOR blockDir = XMLoadFloat3(&m_currentStep.blockDir);
@@ -565,23 +570,18 @@ void Model::processBlockCase(physx::PxScene* scene, float& nextY, float& ratio)
 	
 		if (XMVectorGetX(XMVector3Dot(nowDir, blockDir)) < 0.9f)
 		{
-			p("rotate so block check true\n");
-			m_currentStep.blockCheck == false;
+			m_currentStep.blockCheck = false;
 			m_currentStep.isBlocked = false;
 		}
 		else
 		{
 			// 도착 했는지 검사 (now와 target, end 검사)
 			XMVECTOR now = XMLoadFloat3(&m_currentStep.nowStep);
-			XMVECTOR target = XMLoadFloat3(&m_RaycastingManager.m_FindObstacle.target);
-			XMVECTOR next = XMLoadFloat3(&m_currentStep.nextStep);
-
+			XMVECTOR target = XMLoadFloat3(&m_currentStep.target);
 			XMVECTOR nowToTarget = XMVectorSubtract(target, now);
-			XMVECTOR nowToNext = XMVectorSubtract(next, now);
 
-			if (XMVectorGetX(XMVector3Dot(nowToNext, nowToTarget)) < 0.0f)
+			if (XMVectorGetX(XMVector3Dot(blockDir, nowToTarget)) < 0.0f)
 			{
-				p("arrive so block check true\n");
 				m_currentStep.blockCheck = false;
 				m_currentStep.isBlocked = false;
 			}
@@ -590,35 +590,72 @@ void Model::processBlockCase(physx::PxScene* scene, float& nextY, float& ratio)
 
 	if (m_currentStep.blockCheck == false)
 	{
+		// 현재 각도 저장
+		XMVECTOR nowDir = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
+		XMVECTOR q = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), XMConvertToRadians(m_rotation.y));
+		nowDir = XMVector3Rotate(nowDir, q);
+		XMStoreFloat3(&m_currentStep.blockDir, nowDir);
+		
 		// 첫 시작에 가장 높은 장애물 찾기
 		physx::PxVec3 start = { m_currentStep.nowStep.x, m_currentStep.nowStep.y, m_currentStep.nowStep.z };
 		physx::PxVec3 end = { m_currentStep.nextStep.x, m_currentStep.nextStep.y , m_currentStep.nextStep.z };
-		m_currentStep.isBlocked = m_RaycastingManager.raycastingForFindBlock(scene, start, end);
+		physx::PxVec3 dir = { m_currentStep.blockDir.x, m_currentStep.blockDir.y, m_currentStep.blockDir.z };
+		// start 살짝 뒤로 보내기
+		//start.x -= m_currentStep.blockDir.x * 0.1f;
+		//start.z -= m_currentStep.blockDir.z * 0.1f;
+
+		m_currentStep.isBlocked = m_RaycastingManager.raycastingForFindBlock(scene, start, end, dir);
 
 		if (m_currentStep.isBlocked == true)
 		{
 			// 찾은 경우 blockY, blockRatio 세팅
-			m_currentStep.blockY = m_RaycastingManager.m_FindObstacle.target.y + 0.1f;
-			if (start.x != end.x)
-				m_currentStep.blockRatio = (m_RaycastingManager.m_FindObstacle.target.x - start.x) / (end.x - start.x);
-			else
-				m_currentStep.blockRatio = (m_RaycastingManager.m_FindObstacle.target.z - start.z) / (end.z - start.z);
-			
-			XMVECTOR nowDir = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
-			XMVECTOR q = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), XMConvertToRadians(m_rotation.y));
-			nowDir = XMVector3Rotate(nowDir, q);
-			XMStoreFloat3(&m_currentStep.blockDir, nowDir);
+			m_currentStep.target = m_RaycastingManager.m_FindObstacle.target;
+			m_currentStep.target.y += 0.1f;
+			m_currentStep.start = m_currentStep.nowStep;
 		}
+		else
+		{
+			m_currentStep.target = m_currentStep.nextStep;
+			m_currentStep.start = m_currentStep.nowStep;
+		}
+
+
 
 		m_currentStep.blockCheck = true;
 	}
+}
 
-	if (m_currentStep.isBlocked == true)
+void Model::setNowStep()
+{
+	XMVECTOR blockDir = XMLoadFloat3(&m_currentStep.blockDir);
+	XMVECTOR now = XMLoadFloat3(&m_currentStep.nowStep);
+	XMVECTOR start = XMLoadFloat3(&m_currentStep.start);
+	XMVECTOR target = XMLoadFloat3(&m_currentStep.target);
+
+	XMVECTOR nowToTarget = XMVectorSubtract(target, now);
+	XMVECTOR startToTarget = XMVectorSubtract(target, start);
+
+	float nowToTargetLen = XMVectorGetX(XMVector3Dot(nowToTarget, blockDir));
+	float startToTargetLen = XMVectorGetX(XMVector3Dot(startToTarget, blockDir));
+	float ratio = nowToTargetLen / startToTargetLen;
+	float nextY = m_currentStep.target.y;
+	float nowY = m_currentStep.nowStep.y;
+
+	// Y값 보정 시작
+	if (nowY < nextY)
 	{
-		// 아직 block 구간인 경우 ratio, nextY 세팅
-		ratio = fmin(ratio / m_currentStep.blockRatio, 1.0f);
-		nextY = m_currentStep.blockY;
+		float offset = (nextY - nowY) * sinf(ratio * XM_PIDIV2);
+		nowY += offset;
 	}
+	else
+	{
+		float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f);
+		nowY += offset;
+	}
+
+	m_currentStep.nowStep.x = m_RaycastingManager.m_LeftFoot.target.x;
+	m_currentStep.nowStep.y = nowY;
+	m_currentStep.nowStep.z = m_RaycastingManager.m_LeftFoot.target.z;
 }
 
 void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
@@ -641,30 +678,11 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 		if (m_currentStep.leftGo == true)
 		{
 			// left go의 경우 left에 offset 추가
-			float nextY = m_currentStep.nextStep.y;
-			float& nowY = m_currentStep.nowStep.y;
-			float ratio = m_animStateManager.current.getLeftGoRatio();
-
-			processBlockCase(scene, nextY, ratio);
-
-			// Y값 보정 시작
-			if (nowY < nextY)
-			{
-				float offset = (nextY - nowY) * sinf(ratio * XM_PIDIV2) * 0.6f;
-				nowY += offset;
-			}
-			else
-			{
-				float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f) * 0.5f;
-				nowY += offset;
-			}
-
-			m_currentStep.nowStep.x = m_RaycastingManager.m_LeftFoot.target.x;
-			m_currentStep.nowStep.z = m_RaycastingManager.m_LeftFoot.target.z;
-
+			processBlockCase(scene);
+			setNowStep();
+			
 			XMFLOAT3 leftTargetTmp = m_RaycastingManager.m_LeftFoot.target;
-
-			leftTargetTmp.y = nowY;
+			leftTargetTmp.y = m_currentStep.nowStep.y;
 			leftTargetTmp.y += leftToeBaseOffset;
 			leftTarget = XMLoadFloat3(&leftTargetTmp);
 
@@ -676,28 +694,11 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 		else
 		{
 			// right go의 경우 right에 offset 추가
-			float nextY = m_currentStep.nextStep.y;
-			float& nowY = m_currentStep.nowStep.y;
-			float ratio = m_animStateManager.current.getRightGoRatio();
-
-			processBlockCase(scene, nextY, ratio);
-
-			if (nowY < nextY)
-			{
-				float offset = (nextY - nowY) * sinf(ratio * XM_PIDIV2) * 0.6f;
-				nowY += offset;
-			}
-			else
-			{
-				float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f) * 0.5f;
-				nowY += offset;
-			}
-			m_currentStep.nowStep.x = m_RaycastingManager.m_RightFoot.target.x;
-			m_currentStep.nowStep.z = m_RaycastingManager.m_RightFoot.target.z;
+			processBlockCase(scene);
+			setNowStep();
 
 			XMFLOAT3 rightTargetTmp = m_RaycastingManager.m_RightFoot.target;
-
-			rightTargetTmp.y = nowY;
+			rightTargetTmp.y = m_currentStep.nowStep.y;
 			rightTargetTmp.y += rightToeBaseOffset;
 			rightTarget = XMLoadFloat3(&rightTargetTmp);
 
@@ -1228,6 +1229,12 @@ void Model::ReleaseMeshes()
 		delete m_jointMesh;
 	}
 
+	if (m_blockMesh)
+	{
+		m_blockMesh->Shutdown();
+		delete m_blockMesh;
+	}
+
 	if (m_rayToTargetMesh)
 	{
 		m_rayToTargetMesh->Shutdown();
@@ -1512,7 +1519,7 @@ void Model::move(XMFLOAT3& targetDir)
 {
 	const static float rotSpeed = 10.0f;
 	const static float accel = 1.0f;
-	const static float maxSpeed = 7.14f;
+	const static float maxSpeed = 7.135f;
 
 	// 현재 방향 벡터
 	XMFLOAT3 nowDir = getRotatedVector(m_rotation.y);

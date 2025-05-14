@@ -294,9 +294,32 @@ void RaycastingManager::raycastingForBlockInfo(physx::PxScene* scene)
 }
 
 
-bool RaycastingManager::raycastingForFindBlock(physx::PxScene* scene, physx::PxVec3 start, physx::PxVec3 end)
+bool RaycastingManager::raycastingForFindBlock(physx::PxScene* scene, physx::PxVec3 start, physx::PxVec3 end, physx::PxVec3 xzDir)
 {
 	static physx::PxRaycastBuffer rayHit;
+
+	// start 가 물체 안에 있는지 확인
+	{
+		physx::PxRaycastBuffer hit;
+		physx::PxVec3 up = { 0.0f, 1.0f, 0.0f };
+		physx::PxVec3 rayStart = start + up * 10.0f;
+		bool raySuccess = scene->raycast(
+			rayStart,
+			-up,
+			30.0f,
+			hit,
+			physx::PxHitFlag::ePOSITION
+		);
+
+		// start가 물체 아래 있으면 그 위치 살짝 앞으로 target 설정 
+		if (raySuccess && start.y < hit.block.position.y)
+		{
+			m_FindObstacle.target.x = hit.block.position.x + xzDir.x * 0.1f;
+			m_FindObstacle.target.y = hit.block.position.y;
+			m_FindObstacle.target.z = hit.block.position.z + xzDir.z * 0.1f;
+			return true;
+		}
+	}
 
 	physx::PxVec3 dir = (end - start);
 	float rayDistance = dir.magnitude();
