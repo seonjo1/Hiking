@@ -8,6 +8,7 @@
 #include "boneShader.h"
 #include "modelShader.h"
 #include "input.h"
+#include <random>
 
 const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = true;
@@ -37,6 +38,8 @@ public:
 	void setRayDebugMode(bool);
 	void CameraRotate(int x, int y);
 	void SaveCameraCurrentPos(int x, int y);
+	void createStairs(int num);
+	void createRandomTerrain(int num);
 
 private:
 	bool Render();
