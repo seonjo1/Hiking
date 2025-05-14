@@ -274,23 +274,41 @@ void RaycastingManager::raycastingForBlockInfo(physx::PxScene* scene, physx::PxV
 	static const float yOffset = 10.0f;
 	static const float distance = 15.0f;
 
-	static physx::PxRaycastBuffer rayHit;
+	static physx::PxRaycastBuffer frontRayHit, backRayHit;
 
 	physx::PxVec3 dir = { 0.0f, -1.0f, 0.0f };
 	physx::PxVec3 offset = { 0.0f, 1.0f, 0.0f };
 	physx::PxVec3 start = { m_FindObstacle.pos.x, m_FindObstacle.pos.y, m_FindObstacle.pos.z };
-	physx::PxVec3 rayStart = start + offset * yOffset + xzDir * 0.01f;
-	bool raySuccess = scene->raycast(
-		rayStart,
+
+	physx::PxVec3 frontRayStart = start + offset * yOffset + xzDir * 0.01f;
+	bool frontRaySuccess = scene->raycast(
+		frontRayStart,
 		dir,
 		distance,
-		rayHit,
+		frontRayHit,
 		physx::PxHitFlag::ePOSITION
 	);
 
-	m_FindObstacle.target.x = rayHit.block.position.x;
-	m_FindObstacle.target.y = rayHit.block.position.y;
-	m_FindObstacle.target.z = rayHit.block.position.z;
+	physx::PxVec3 backRayStart = start + offset * yOffset + xzDir * -0.01f;
+	bool backRaySuccess = scene->raycast(
+		backRayStart,
+		dir,
+		distance,
+		backRayHit,
+		physx::PxHitFlag::ePOSITION
+	);
+
+	m_FindObstacle.target.x = m_FindObstacle.pos.x;
+	m_FindObstacle.target.z = m_FindObstacle.pos.z;
+
+	if (frontRayHit.block.position.y > backRayHit.block.position.y)
+	{
+		m_FindObstacle.target.y = frontRayHit.block.position.y;
+	}
+	else
+	{
+		m_FindObstacle.target.y = backRayHit.block.position.y;
+	}
 }
 
 
