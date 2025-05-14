@@ -559,7 +559,6 @@ void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, phy
 
 void Model::processBlockCase(physx::PxScene* scene)
 {
-	p("function start\n");
 	if (m_currentStep.blockCheck == true)
 	{
 		// 방향 검사 (block 당시 dir 필요)
@@ -619,8 +618,6 @@ void Model::processBlockCase(physx::PxScene* scene)
 			m_currentStep.start = m_currentStep.nowStep;
 		}
 
-
-
 		m_currentStep.blockCheck = true;
 	}
 }
@@ -637,25 +634,34 @@ void Model::setNowStep()
 
 	float nowToTargetLen = XMVectorGetX(XMVector3Dot(nowToTarget, blockDir));
 	float startToTargetLen = XMVectorGetX(XMVector3Dot(startToTarget, blockDir));
-	float ratio = nowToTargetLen / startToTargetLen;
+	float ratio = (1.0f - nowToTargetLen / startToTargetLen);
 	float nextY = m_currentStep.target.y;
 	float nowY = m_currentStep.nowStep.y;
+	float startY = m_currentStep.start.y;
 
 	// Y값 보정 시작
-	if (nowY < nextY)
+	//if (nowY < nextY)
+	//{
+	//	float offset = (nextY - nowY) * sinf(ratio * XM_PIDIV2);
+	//	nowY += offset;
+	//}
+	//else
+	//{
+	//	float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f);
+	//	nowY += offset;
+	//}
+
+	if (startY < nextY)
 	{
-		float offset = (nextY - nowY) * sinf(ratio * XM_PIDIV2);
-		nowY += offset;
+		float offset = (nextY - startY) * sinf(ratio * XM_PIDIV2);
+		nowY = startY + offset;
 	}
 	else
 	{
-		float offset = (nowY - nextY) * (cosf(ratio * XM_PIDIV2) - 1.0f);
-		nowY += offset;
+		float offset = (startY - nextY) * sinf((1.0f - ratio) * XM_PIDIV2);
+		nowY = nextY + offset;
 	}
-
-	m_currentStep.nowStep.x = m_RaycastingManager.m_LeftFoot.target.x;
 	m_currentStep.nowStep.y = nowY;
-	m_currentStep.nowStep.z = m_RaycastingManager.m_LeftFoot.target.z;
 }
 
 void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
@@ -680,7 +686,9 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 			// left go의 경우 left에 offset 추가
 			processBlockCase(scene);
 			setNowStep();
-			
+			m_currentStep.nowStep.x = m_RaycastingManager.m_LeftFoot.target.x;
+			m_currentStep.nowStep.z = m_RaycastingManager.m_LeftFoot.target.z;
+
 			XMFLOAT3 leftTargetTmp = m_RaycastingManager.m_LeftFoot.target;
 			leftTargetTmp.y = m_currentStep.nowStep.y;
 			leftTargetTmp.y += leftToeBaseOffset;
@@ -696,6 +704,8 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 			// right go의 경우 right에 offset 추가
 			processBlockCase(scene);
 			setNowStep();
+			m_currentStep.nowStep.x = m_RaycastingManager.m_RightFoot.target.x;
+			m_currentStep.nowStep.z = m_RaycastingManager.m_RightFoot.target.z;
 
 			XMFLOAT3 rightTargetTmp = m_RaycastingManager.m_RightFoot.target;
 			rightTargetTmp.y = m_currentStep.nowStep.y;
