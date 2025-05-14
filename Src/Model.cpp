@@ -555,7 +555,40 @@ void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, phy
 
 void Model::processBlockCase(physx::PxScene* scene, float& nextY, float& ratio)
 {
-	//if (m_currentStep.changed == true)
+	if (m_currentStep.isBlocked == true)
+	{
+		// 방향 검사 (block 당시 dir 필요)
+		XMVECTOR blockDir = XMLoadFloat3(&m_currentStep.blockDir);
+		XMVECTOR nowDir = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
+		XMVECTOR q = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), XMConvertToRadians(m_rotation.y));
+		nowDir = XMVector3Rotate(nowDir, q);
+	
+		if (XMVectorGetX(XMVector3Dot(nowDir, blockDir)) < 0.9f)
+		{
+			p("rotate so block check true\n");
+			m_currentStep.blockCheck == false;
+			m_currentStep.isBlocked = false;
+		}
+		else
+		{
+			// 도착 했는지 검사 (now와 target, end 검사)
+			XMVECTOR now = XMLoadFloat3(&m_currentStep.nowStep);
+			XMVECTOR target = XMLoadFloat3(&m_RaycastingManager.m_FindObstacle.target);
+			XMVECTOR next = XMLoadFloat3(&m_currentStep.nextStep);
+
+			XMVECTOR nowToTarget = XMVectorSubtract(target, now);
+			XMVECTOR nowToNext = XMVectorSubtract(next, now);
+
+			if (XMVectorGetX(XMVector3Dot(nowToNext, nowToTarget)) < 0.0f)
+			{
+				p("arrive so block check true\n");
+				m_currentStep.blockCheck = false;
+				m_currentStep.isBlocked = false;
+			}
+		}
+	}
+
+	if (m_currentStep.blockCheck == false)
 	{
 		// 첫 시작에 가장 높은 장애물 찾기
 		physx::PxVec3 start = { m_currentStep.nowStep.x, m_currentStep.nowStep.y, m_currentStep.nowStep.z };
@@ -570,7 +603,14 @@ void Model::processBlockCase(physx::PxScene* scene, float& nextY, float& ratio)
 				m_currentStep.blockRatio = (m_RaycastingManager.m_FindObstacle.target.x - start.x) / (end.x - start.x);
 			else
 				m_currentStep.blockRatio = (m_RaycastingManager.m_FindObstacle.target.z - start.z) / (end.z - start.z);
+			
+			XMVECTOR nowDir = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
+			XMVECTOR q = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), XMConvertToRadians(m_rotation.y));
+			nowDir = XMVector3Rotate(nowDir, q);
+			XMStoreFloat3(&m_currentStep.blockDir, nowDir);
 		}
+
+		m_currentStep.blockCheck = true;
 	}
 
 	if (m_currentStep.isBlocked == true)
@@ -804,7 +844,8 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 			stepInfo.nowStep.y = stepInfo.lastStepRay.y;
 			stepInfo.nowStep.z = stepInfo.lastStepRay.z;
 
-			stepInfo.changed = true;
+			stepInfo.blockCheck = false;
+			stepInfo.isBlocked = false;
 		}
 
 		// 진행 방향 구하기
@@ -862,7 +903,8 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 			stepInfo.nowStep.y = stepInfo.lastStepRay.y;
 			stepInfo.nowStep.z = stepInfo.lastStepRay.z;
 
-			stepInfo.changed = true;
+			stepInfo.blockCheck = false;
+			stepInfo.isBlocked = false;
 		}
 		
 		// 진행 방향 구하기
@@ -1070,9 +1112,6 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		// 11. target 위치 저장
 		m_leftTarget = m_RaycastingManager.m_LeftFoot.target;
 		m_rightTarget = m_RaycastingManager.m_RightFoot.target;
-
-		p("m_leftTarget: " + std::to_string(m_leftTarget.x) + " " + std::to_string(m_leftTarget.y) + " " + std::to_string(m_leftTarget.z) + "\n");
-		p("m_rightTarget: " + std::to_string(m_rightTarget.x) + " " + std::to_string(m_rightTarget.y) + " " + std::to_string(m_rightTarget.z) + "\n");
 
 		/*
 		 [Foot IK 적용]

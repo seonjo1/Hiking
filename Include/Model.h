@@ -24,9 +24,10 @@ struct StepInfo
 	XMFLOAT3 lastStep{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 lastStepRay{ 0.0f, 0.0f, 0.0f };
 	XMFLOAT3 lastStepEnd{ 0.0f, 0.0f, 0.0f };
+	XMFLOAT3 blockDir{ 0.0f, 0.0f, 0.0f };
 	float blockY;
 	float blockRatio;
-	bool changed{ false };
+	bool blockCheck{ false };
 	bool isBlocked{ false };
 	bool leftGo{ true };
 };
