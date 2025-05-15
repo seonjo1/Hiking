@@ -202,6 +202,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
 	m_AnimationModel->setYoffset();
 	m_AnimationModel->setTargetToHipsKeyFrame();
+	m_AnimationModel->createRagdoll(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
 
 	// ¸ðµ¨ »ý¼º
 	createGround();

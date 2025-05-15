@@ -5,6 +5,8 @@
 #include <vector>
 #include <unordered_map>
 #include "Common.h"
+#include "PhysicsManager.h"
+#include "PhysicsObject.h"
 
 using namespace DirectX;
 
@@ -12,7 +14,7 @@ struct Bone {
     std::string name;
     int parentIndex = -1;
     std::vector<int> children;
-    XMMATRIX offsetMatrix;
+    XMMATRIX offsetMatrix;  // 기본 transform의 역함수
     bool hasAxis { false };
     XMFLOAT3 axis { 0.0f, 0.0f, 0.0f };
     float xMax{ 0.0f };
@@ -21,11 +23,22 @@ struct Bone {
 	float zMin{ 0.0f };
 	float twist{ 0.0f };
 };
-    
+
+struct Body
+{
+    int boneIdx;
+    PhysicsObject* body;
+	XMFLOAT4 originBodyRot; // 초기 Body의 월드 회전
+	XMFLOAT4 originJointRot; // 초기 Bone의 월드 회전
+    XMFLOAT3 jointPos;      // RigidBody 내부에서 Bone 위치 (offset)
+};
+
 class Skeleton {
 public:
     std::vector<Bone> bones;
+    std::vector<Body*> bodies;
     std::unordered_map<std::string, int> nameToIndex;
+    bool isRagdollActive = false;
     int rootBoneIdx;
     int GetBoneIndex(const std::string& name) const;
     void SetBoneAxisAndRange(const std::string& name, XMFLOAT3 axis, float xMax, float xMin, float zMax, float zMin, float twist);

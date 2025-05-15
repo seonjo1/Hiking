@@ -158,6 +158,12 @@ void PhysicsObject::updateMass()
 	physx::PxRigidBodyExt::updateMassAndInertia(*dynamicActor, this->mass);
 }
 
+void PhysicsObject::createCapsuleShape(physx::PxPhysics* physics, float radius, float halfHeight)
+{
+	m_shape = physx::PxRigidActorExt::createExclusiveShape(*m_actor, physx::PxCapsuleGeometry(radius, halfHeight), *m_material);
+	m_shape->setLocalPose(physx::PxTransform(physx::PxQuat(physx::PxPi / 2, physx::PxVec3(0, 0, 1))));
+}
+
 
 void PhysicsObject::updatePosition(const physx::PxVec3& newPos) {
 	physx::PxTransform newTransform(newPos);
