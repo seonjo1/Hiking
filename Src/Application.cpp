@@ -96,6 +96,77 @@ void Application::createRandomTerrain(int num)
 	}
 }
 
+void Application::createGround()
+{
+	// 지형 생성
+	Model* ground = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.502f, 0.329f, 1.0f));
+	ground->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
+	ground->setPosition(XMFLOAT3(10.0f, -0.5f, 10.0f));
+	ground->setScale(XMFLOAT3(1000.0f, 1.0f, 1000.0f));
+	ground->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
+	m_Models.push_back(ground);
+}
+
+
+void Application::createRock()
+{
+	// 구 모델 생성
+	Model* rock = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.202f, 0.529f, 1.0f));
+	rock->createDynamicSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene, 100.0f);
+	rock->setPosition(XMFLOAT3(0.0f, 20.0f, 10.0f));
+	rock->setScale(XMFLOAT3(7.0f, 7.0f, 7.0f));
+	rock->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
+	m_Models.push_back(rock);
+}
+
+void Application::createSlope()
+{
+	Model* slope = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.0f, 0.5f, 0.5f, 1.0f));
+	slope->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
+	slope->setPosition(XMFLOAT3(0.0f, -40.5f, 50.0f));
+	slope->setScale(XMFLOAT3(100.0f, 100.0f, 100.0f));
+	slope->setRotation(XMFLOAT3(-20.0f, 0.0f, 0.0f));
+	slope->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
+	m_Models.push_back(slope);
+}
+
+bool Application::initShaders(HWND hwnd)
+{
+	// 셰이더 객체 생성 및 초기화
+	m_TextureShader = new TextureShader;
+	bool result = m_TextureShader->Initialize(m_Direct3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the texture shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_JointShader = new JointShader;
+	result = m_JointShader->Initialize(m_Direct3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the joint shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_BoneShader = new BoneShader;
+	result = m_BoneShader->Initialize(m_Direct3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the bone shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_ModelShader = new ModelShader;
+	result = m_ModelShader->Initialize(m_Direct3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the model shader object.", L"Error", MB_OK);
+		return false;
+	}
+	return true;
+}
+
 bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 {
 	bool result;
@@ -132,80 +203,20 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_AnimationModel->setYoffset();
 	m_AnimationModel->setTargetToHipsKeyFrame();
 
-	// 구 모델 생성
-	Model* sphere1 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.525f, 0.502f, 0.329f, 1.0f));
-	sphere1->createStaticSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	sphere1->setPosition(XMFLOAT3(-10.0f, -498.0f, 30.0f));
-	sphere1->setScale(XMFLOAT3(1000.0f, 1000.0f, 1000.0f));
-	sphere1->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
-	m_Models.push_back(sphere1);
-
-	Model* sphere2 = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.525f, 0.502f, 0.329f, 1.0f));
-	sphere2->createStaticSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	sphere2->setPosition(XMFLOAT3(10.0f, -1.5f, 10.0f));
-	sphere2->setScale(XMFLOAT3(10.0f, 5.0f, 10.0f));
-	sphere2->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
-	m_Models.push_back(sphere2);
-
-	// 지형 생성
-	Model* ground = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.502f, 0.329f, 1.0f));
-	ground->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	ground->setPosition(XMFLOAT3(10.0f, -0.5f, 10.0f));
-	ground->setScale(XMFLOAT3(1000.0f, 1.0f, 1000.0f));
-	ground->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
-	m_Models.push_back(ground);
-
-
-	//// 박스 모델 생성
-	Model* box1 = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.0f, 0.5f, 0.5f, 1.0f));
-	box1->createStaticBox(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	//box2->setPosition(XMFLOAT3(0.0f, -40.5f, 5.0f));
-	box1->setPosition(XMFLOAT3(0.0f, -40.5f, 50.0f));
-	box1->setScale(XMFLOAT3(100.0f, 100.0f, 100.0f));
-	box1->setRotation(XMFLOAT3(-20.0f, 0.0f, 0.0f));
-	box1->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
-	m_Models.push_back(box1);
-	
+	// 모델 생성
+	createGround();
+	createRock();
+	createSlope();
 	createStairs(20);
 	createRandomTerrain(30);
 
 	// 모델 개수 저장
 	m_modelCount = m_Models.size();
 
-	// 셰이더 객체 생성 및 초기화
-	m_TextureShader = new TextureShader;
-	result = m_TextureShader->Initialize(m_Direct3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the texture shader object.", L"Error", MB_OK);
-		return false;
-	}
+	// 셰이더 초기화
+	bool success = initShaders(hwnd);
 
-	m_JointShader = new JointShader;
-	result = m_JointShader->Initialize(m_Direct3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the joint shader object.", L"Error", MB_OK);
-		return false;
-	}
-
-	m_BoneShader = new BoneShader;
-	result = m_BoneShader->Initialize(m_Direct3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the bone shader object.", L"Error", MB_OK);
-		return false;
-	}
-
-	m_ModelShader = new ModelShader;
-	result = m_ModelShader->Initialize(m_Direct3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the model shader object.", L"Error", MB_OK);
-		return false;
-	}
-
-	return true;
+	return success;
 }
 
 void Application::Shutdown()

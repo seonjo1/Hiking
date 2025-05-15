@@ -1614,6 +1614,16 @@ void Model::createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene)
 	m_physicsObject->addToScene(scene);
 }
 
+void Model::createDynamicSphere(physx::PxPhysics* physics, physx::PxScene* scene, float mass)
+{
+	m_physicsObject = new PhysicsObject();
+	m_physicsObject->createDynamicObject(physics);
+	m_physicsObject->setMaterial(physics, 0.6f, 0.6f, 0.3f);
+	m_physicsObject->createSphereShape(physics, physx::PxMeshScale(1.0f));
+	m_physicsObject->setMass(mass);
+	m_physicsObject->addToScene(scene);
+}
+
 void Model::syncModelWithRigidbody(physx::PxPhysics* physics)
 {
 	if (m_physicsObject)
@@ -1631,6 +1641,10 @@ void Model::syncModelWithRigidbody(physx::PxPhysics* physics)
 		m_physicsObject->updatePosition(physx::PxVec3(m_position.x, m_position.y, m_position.z));
 		m_physicsObject->updateRotation(quatRotation);
 		m_physicsObject->updateScale(physics, m_scale);
+		if (m_physicsObject->isDynamic == true)
+		{
+			m_physicsObject->updateMass();
+		}
 	}
 }
 

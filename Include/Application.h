@@ -40,6 +40,10 @@ public:
 	void SaveCameraCurrentPos(int x, int y);
 	void createStairs(int num);
 	void createRandomTerrain(int num);
+	void createSlope();
+	void createGround();
+	void createRock();
+	bool initShaders(HWND hwnd);
 
 private:
 	bool Render();

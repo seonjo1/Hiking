@@ -5,6 +5,7 @@
 #include <PxMaterial.h>
 #include <PxShape.h>
 #include <vector>
+#include <PxActor.h>
 #include <PxCooking.h>
 #include "Common.h"
 
@@ -22,6 +23,8 @@ public:
 	physx::PxShape* m_shape = nullptr;       // 충돌체
 	physx::PxMaterial* m_material = nullptr; // 물리 재질
 	ECollider m_collider;
+	bool isDynamic{ false };
+	float mass;
 
 	// rigidbody -> material -> shape -> mass
 	void createDynamicObject(physx::PxPhysics* physics);
@@ -37,4 +40,5 @@ public:
 	void updateScale(physx::PxPhysics* physics, XMFLOAT3& newScale);
 	void addToScene(physx::PxScene* scene);
 	void shutdown();
+	void updateMass();
 };

@@ -105,6 +105,7 @@ public:
 
 	void createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene);
 	void createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene);
+	void createDynamicSphere(physx::PxPhysics* physics, physx::PxScene* scene, float mass);
 
 	void Shutdown();
 	XMMATRIX getWorldMatrix();

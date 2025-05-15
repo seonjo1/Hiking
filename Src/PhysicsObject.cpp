@@ -5,6 +5,7 @@ void PhysicsObject::createDynamicObject(physx::PxPhysics* physics) {
 	physx::PxTransform transform(physx::PxVec3(0.0f), physx::PxQuat(0.0f, 0.0f, 0.0f, 1.0f));
 	physx::PxRigidDynamic* dynamicActor = physics->createRigidDynamic(transform);
 	m_actor = dynamicActor;
+	isDynamic = true;
 }
 
 void PhysicsObject::createStaticObject(physx::PxPhysics* physics) {
@@ -65,31 +66,34 @@ void PhysicsObject::initSphereMesh(std::vector<physx::PxVec3>& vertices, std::ve
 
 void PhysicsObject::createMeshCollider(physx::PxPhysics* physics, std::vector<physx::PxVec3>& vertices, std::vector<physx::PxU32>& indices, physx::PxMeshScale meshScale)
 {
-	physx::PxTriangleMeshDesc meshDesc{};
-	meshDesc.points.count = static_cast<uint32_t>(vertices.size());
-	meshDesc.points.stride = sizeof(physx::PxVec3);
-	meshDesc.points.data = vertices.data();
+	// 1. ConvexMesh 설명자 준비
+	physx::PxConvexMeshDesc convexDesc{};
+	convexDesc.points.count = static_cast<uint32_t>(vertices.size());
+	convexDesc.points.stride = sizeof(physx::PxVec3);
+	convexDesc.points.data = vertices.data();
+	convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
 
-	meshDesc.triangles.count = static_cast<uint32_t>(indices.size() / 3);
-	meshDesc.triangles.stride = sizeof(uint32_t) * 3;
-	meshDesc.triangles.data = indices.data();
-
+	// 2. Cooking 파라미터 설정
 	physx::PxCookingParams cookParams(physics->getTolerancesScale());
 	cookParams.meshPreprocessParams |= physx::PxMeshPreprocessingFlag::eWELD_VERTICES;
-	cookParams.meshWeldTolerance = 0.0001f;  // 너무 가까운 정점 병합 방지용
+	cookParams.meshWeldTolerance = 0.0001f;
 
+	// 3. ConvexMesh 생성
 	physx::PxDefaultMemoryOutputStream outStream;
-	bool result = PxCookTriangleMesh(cookParams, meshDesc, outStream);
-
-	if (!result) {
-		p("CookTriangleMesh failed!\n");
+	if (!PxCookConvexMesh(cookParams, convexDesc, outStream)) {
+		p("CookConvexMesh failed!\n");
 		return;
 	}
 
 	physx::PxDefaultMemoryInputData inputStream(outStream.getData(), outStream.getSize());
-	physx::PxTriangleMesh* triMesh = physics->createTriangleMesh(inputStream);
+	physx::PxConvexMesh* convexMesh = physics->createConvexMesh(inputStream);
+	if (!convexMesh) {
+		p("createConvexMesh failed!\n");
+		return;
+	}
 
-	physx::PxTriangleMeshGeometry geometry(triMesh, meshScale);
+	// 4. ConvexMeshGeometry로 Shape 생성 및 부착
+	physx::PxConvexMeshGeometry geometry(convexMesh, meshScale);
 	m_shape = physics->createShape(geometry, *m_material);
 	m_actor->attachShape(*m_shape);
 }
@@ -107,12 +111,6 @@ void PhysicsObject::createSphereShape(physx::PxPhysics* physics, physx::PxMeshSc
 
 	createMeshCollider(physics, vertices, indices, meshScale);
 	m_collider = ECollider::SPHERE;
-
-	// 구 형태의 충돌체 생성
-	//physx::PxSphereGeometry sphereGeometry(radius);  // 반지름 설정
-	//m_shape = physics->createShape(sphereGeometry, *m_material);  // 재질을 설정하여 충돌체 생성
-	//m_shape->setContactOffset(0.01f);
-	//m_actor->attachShape(*m_shape);
 }
 
 void PhysicsObject::createBoxShape(physx::PxPhysics* physics, physx::PxMeshScale meshScale)
@@ -149,9 +147,17 @@ void PhysicsObject::createBoxShape(physx::PxPhysics* physics, physx::PxMeshScale
 
 void PhysicsObject::setMass(float mass)
 {
+	this->mass = mass;
 	physx::PxRigidDynamic* dynamicActor = static_cast<physx::PxRigidDynamic*>(m_actor);
 	physx::PxRigidBodyExt::updateMassAndInertia(*dynamicActor, mass);
 }
+
+void PhysicsObject::updateMass()
+{
+	physx::PxRigidDynamic* dynamicActor = static_cast<physx::PxRigidDynamic*>(m_actor);
+	physx::PxRigidBodyExt::updateMassAndInertia(*dynamicActor, this->mass);
+}
+
 
 void PhysicsObject::updatePosition(const physx::PxVec3& newPos) {
 	physx::PxTransform newTransform(newPos);
