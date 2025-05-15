@@ -60,6 +60,25 @@ Model::~Model()
 {
 }
 
+void Model::initDebugMeshes(ID3D11Device* device)
+{
+	m_jointMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), 3.0f);
+	m_stepMesh = Mesh::createDebugSphere(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), 3.0f);
+	m_blockMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f), 3.0f);
+	m_startMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), 3.0f);
+	m_boneMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+	m_rayToTargetMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
+	m_rayNormalMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f));
+	m_rangeAxisMesh = Mesh::createDebugLine(device, XMFLOAT4(0.976f, 0.357f, 0.749f, 1.0f));
+	m_cornMesh = Mesh::createCone(device);
+	initRangeAxis();
+}
+
+void Model::initRagdoll()
+{
+
+}
+
 void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::string filename)
 {
 	Assimp::Importer importer;
@@ -92,17 +111,8 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		LoadAnimationData(scene, m_skeleton);
 		m_pose.Initialize(m_skeleton.bones.size());
 		m_animStateManager.SetState("idle", m_animationClips);
-		m_jointMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), 3.0f);
-		m_stepMesh = Mesh::createDebugSphere(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), 3.0f);
-		m_blockMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f), 3.0f);
-		m_startMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), 3.0f);
-		m_boneMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-		m_rayToTargetMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
-		m_rayNormalMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f));
-		m_rangeAxisMesh = Mesh::createDebugLine(device, XMFLOAT4(0.976f, 0.357f, 0.749f, 1.0f));
-		
-		m_cornMesh = Mesh::createCone(device);
-		initRangeAxis();
+		initDebugMeshes(device);
+		initRagdoll();
 		m_IKManager.initIKChains(m_skeleton);
 		m_animStateManager.initAnimationPlayer(m_skeleton.bones.size());
 	}

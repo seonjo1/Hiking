@@ -92,6 +92,8 @@ public:
 	void LoadBoneOffsets(const aiScene* scene, Skeleton& skeleton);
 	bool HasAnimationInfo(const aiScene* scene);
 	void setState(std::string state);
+	void initDebugMeshes(ID3D11Device* device);
+	void initRagdoll();
 
 	void UpdateAnimation(physx::PxScene* scene, float dt);
 	bool DrawTextureShader(ID3D11DeviceContext*, TextureShader*, Matrix&);
