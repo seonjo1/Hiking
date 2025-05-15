@@ -160,6 +160,7 @@ private:
 	Mesh* m_stepMesh;
 	Mesh* m_blockMesh;
 	Mesh* m_cornMesh;
+	Mesh* m_startMesh;
 	Mesh* m_rayToTargetMesh;
 	Mesh* m_rayNormalMesh;
 	std::vector<Mesh*> m_meshes;

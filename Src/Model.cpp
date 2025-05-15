@@ -33,6 +33,7 @@ Model::Model()
 	m_size = 0;
 	m_boneMesh = 0;
 	m_stepMesh = 0;
+	m_startMesh = 0;
 	m_blockMesh = 0;
 	m_jointMesh = 0;
 	m_rayToTargetMesh = 0;
@@ -94,6 +95,7 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		m_jointMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), 3.0f);
 		m_stepMesh = Mesh::createDebugSphere(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), 3.0f);
 		m_blockMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f), 3.0f);
+		m_startMesh = Mesh::createDebugSphere(device, XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), 3.0f);
 		m_boneMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
 		m_rayToTargetMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
 		m_rayNormalMesh = Mesh::createDebugLine(device, XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f));
@@ -470,6 +472,13 @@ bool Model::DrawRayPointShader(ID3D11DeviceContext* deviceContext, JointShader* 
 		matrix.world = scale * translation;
 		if (jointShader->Render(deviceContext, m_stepMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
 			return false;
+
+		m_startMesh->Render(deviceContext);
+
+		translation = XMMatrixTranslation(m_RaycastingManager.m_FindObstacle.pos.x, m_RaycastingManager.m_FindObstacle.pos.y, m_RaycastingManager.m_FindObstacle.pos.z);
+		matrix.world = scale * translation;
+		if (jointShader->Render(deviceContext, m_stepMesh->GetIndexCount(), matrix, XMMatrixIdentity()) == false)
+			return false;
 	}
 
 	return true;
@@ -608,6 +617,7 @@ void Model::processBlockCase(physx::PxScene* scene)
 			m_currentStep.target = m_RaycastingManager.m_FindObstacle.target;
 			m_currentStep.target.y += 0.2f;
 			m_currentStep.start = m_currentStep.nowStep;
+			m_RaycastingManager.m_FindObstacle.pos = m_currentStep.start;
 		}
 		else
 		{
@@ -631,7 +641,15 @@ void Model::setNowStep()
 
 	float nowToTargetLen = XMVectorGetX(XMVector3Dot(nowToTarget, blockDir));
 	float startToTargetLen = XMVectorGetX(XMVector3Dot(startToTarget, blockDir));
-	float ratio = (1.0f - nowToTargetLen / startToTargetLen);
+	float ratio;
+	if (startToTargetLen < 0.1f)
+	{
+		ratio = 1.0f;
+	}
+	else if (startToTargetLen == 0.0f)
+		ratio = 0.0f;
+	else
+		ratio = (1.0f - nowToTargetLen / startToTargetLen);
 	float nextY = m_currentStep.target.y;
 	float nowY = m_currentStep.nowStep.y;
 	float startY = m_currentStep.start.y;
@@ -645,13 +663,14 @@ void Model::setNowStep()
 	{
 		float offset = (startY - nextY) * sinf((1.0f - ratio) * XM_PIDIV2);
 		nowY = nextY + offset;
+
 	}
 	m_currentStep.nowStep.y = nowY;
 }
 
 void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 {
-	const static float targetSpeed = 0.3f;
+	const static float targetSpeed = 0.6f;
 
 	// animation을 반영한 target 보정
 	if (m_animStateManager.currentState == "walk")
@@ -1210,6 +1229,12 @@ void Model::ReleaseMeshes()
 	{
 		m_stepMesh->Shutdown();
 		delete m_stepMesh;
+	}
+
+	if (m_startMesh)
+	{
+		m_startMesh->Shutdown();
+		delete m_startMesh;
 	}
 
 	if (m_rangeAxisMesh)

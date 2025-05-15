@@ -273,7 +273,6 @@ void RaycastingManager::raycastingForBlockInfo(physx::PxScene* scene, physx::PxV
 {
 	static const float yOffset = 10.0f;
 	static const float distance = 15.0f;
-
 	static physx::PxRaycastBuffer frontRayHit, backRayHit;
 
 	physx::PxVec3 dir = { 0.0f, -1.0f, 0.0f };
@@ -332,10 +331,7 @@ bool RaycastingManager::raycastingForFindBlock(physx::PxScene* scene, physx::PxV
 		// start가 물체 아래 있으면 그 위치 살짝 앞으로 target 설정 
 		if (raySuccess && start.y < hit.block.position.y - 0.1f)
 		{
-			m_FindObstacle.target.x = hit.block.position.x + xzDir.x * 0.1f;
-			m_FindObstacle.target.y = hit.block.position.y;
-			m_FindObstacle.target.z = hit.block.position.z + xzDir.z * 0.1f;
-			return true;
+			start.y = hit.block.position.y;
 		}
 	}
 
@@ -345,15 +341,16 @@ bool RaycastingManager::raycastingForFindBlock(physx::PxScene* scene, physx::PxV
 	physx::PxVec3 up = { 0.0f, 1.0f, 0.0f };
 	float lOffset = 0.0f;
 	float rOffset = 3.5f;
+	physx::PxVec3 rayStart = start;
 
 	for (int i = 0; i < 15; i++)
 	{
 		float offset = (lOffset + rOffset) * 0.5f;
-		physx::PxVec3 rayStart = start + up * offset;
-	
+		physx::PxVec3 nowDir = dir + up * offset;
+		nowDir.normalize();
 		bool raySuccess = scene->raycast(
 			rayStart,
-			dir,
+			nowDir,
 			rayDistance,
 			rayHit,
 			physx::PxHitFlag::ePOSITION
