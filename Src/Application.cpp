@@ -113,7 +113,7 @@ void Application::createRock()
 	// ±¸ ¸ðµ¨ »ý¼º
 	Model* rock = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.202f, 0.529f, 1.0f));
 	rock->createDynamicSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene, 100.0f);
-	rock->setPosition(XMFLOAT3(0.0f, 20.0f, 10.0f));
+	rock->setPosition(XMFLOAT3(0.0f, 60.0f, 60.0f));
 	rock->setScale(XMFLOAT3(7.0f, 7.0f, 7.0f));
 	rock->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
 	m_Models.push_back(rock);
@@ -287,6 +287,14 @@ void Application::Shutdown()
 	return;
 }
 
+void Application::updateDynamicRigidbody()
+{
+	for (auto* model : m_Models)
+	{
+		model->updatePhysxResult();
+	}
+}
+
 bool Application::Frame()
 {
 	float dt = m_Timer.GetDeltaTime();
@@ -295,6 +303,7 @@ bool Application::Frame()
 	if (dt > 0.0f)
 	{
 		m_PhysicsManager->stepSimulation(dt);
+		updateDynamicRigidbody();
 		m_AnimationModel->UpdateAnimation(m_PhysicsManager->m_Scene, dt);
 	}
 

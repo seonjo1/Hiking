@@ -106,6 +106,7 @@ public:
 	void createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene);
 	void createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene);
 	void createDynamicSphere(physx::PxPhysics* physics, physx::PxScene* scene, float mass);
+	void updatePhysxResult();
 
 	void Shutdown();
 	XMMATRIX getWorldMatrix();
@@ -180,6 +181,8 @@ private:
 	bool m_hasAnimation = false;
 	float m_speed{ 0.0f };
 	UINT m_size; // mesh 개수
+	XMFLOAT4 m_quat;
+	bool isQuatRotation{ false };
 
 	// 다음 Step 예측
 	StepInfo m_currentStep;

@@ -361,6 +361,7 @@ bool Model::DrawModelShader(ID3D11DeviceContext* deviceContext, ModelShader* mod
 		if (modelShader->Render(deviceContext, m_meshes[i]->GetIndexCount(), matrix, m_meshes[i]->getTexture()) == false)
 			return false;
 	}
+	isQuatRotation = false;
 
 	return true;
 }
@@ -1289,7 +1290,15 @@ XMMATRIX Model::getWorldMatrix()
 {
 	float toRadian = XM_PI / 180.0f;
 	XMMATRIX translation = XMMatrixTranslation(m_position.x, m_position.y, m_position.z);
-	XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(m_rotation.x * toRadian, m_rotation.y * toRadian, m_rotation.z * toRadian);
+	XMVECTOR quaternion;
+	if (isQuatRotation == true)
+	{
+		quaternion = XMLoadFloat4(&m_quat);
+	}
+	else
+	{
+		quaternion = XMQuaternionRotationRollPitchYaw(m_rotation.x * toRadian, m_rotation.y * toRadian, m_rotation.z * toRadian);
+	}
 	XMMATRIX rotation = XMMatrixRotationQuaternion(quaternion);
 	XMMATRIX scale = XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
 
@@ -1623,6 +1632,27 @@ void Model::createDynamicSphere(physx::PxPhysics* physics, physx::PxScene* scene
 	m_physicsObject->setMass(mass);
 	m_physicsObject->addToScene(scene);
 }
+
+void Model::updatePhysxResult()
+{
+	if (m_physicsObject->isDynamic == true)
+	{
+		isQuatRotation = true;
+		physx::PxTransform transform = m_physicsObject->m_actor->getGlobalPose();
+		physx::PxVec3 pos = transform.p;
+		physx::PxQuat rot = transform.q;
+
+		m_position.x = pos.x;
+		m_position.y = pos.y;
+		m_position.z = pos.z;
+
+		m_quat.x = rot.x;
+		m_quat.y = rot.y;
+		m_quat.z = rot.z;
+		m_quat.w = rot.w;
+	}
+}
+
 
 void Model::syncModelWithRigidbody(physx::PxPhysics* physics)
 {

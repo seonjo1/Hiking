@@ -44,6 +44,7 @@ public:
 	void createGround();
 	void createRock();
 	bool initShaders(HWND hwnd);
+	void updateDynamicRigidbody();
 
 private:
 	bool Render();
