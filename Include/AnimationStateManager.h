@@ -5,10 +5,12 @@
 class AnimationStateManager {
 public:
 	std::string currentState;
+	float prevY{ 0.0f };
 	XMFLOAT3 leftTargetToHips;
 	XMFLOAT3 rightTargetToHips;
 
 	AnimationPlayer current;
+	AnimationPlayer move;
 	AnimationPlayer previous;
 	float blendAlpha = 0.0f;
 	float blendSpeed = 3.0f;
@@ -21,9 +23,11 @@ public:
 	void UpdateAnimationClip(Pose& pose, Skeleton& skeleton);
 	void UpdateTime(float dt);
 	bool SetState(std::string newState, std::unordered_map<std::string, AnimationClip>& clips);
+	void SetMoveState(std::string newState, std::unordered_map<std::string, AnimationClip>& clips);
 	void getMinYoffset(Pose& pose, Skeleton& skeleton, XMMATRIX& worldMatrix, AnimationClip& clip, std::string leftPart, std::string rightPart);
 	void setTargetToHipsKeyFrame(Pose& pose, Skeleton& skeleton, XMMATRIX& worldMatrix, AnimationClip& clip, std::string leftPart, std::string rightPart);
 	XMFLOAT3 getLeftTargetToHips();
 	XMFLOAT3 getRightTargetToHips();
 	void getCurrentWorldBoneTransform(Pose& pose, int idx);
+	float getDistance(Skeleton& skeleton);
 };

@@ -109,6 +109,7 @@ void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		initDebugMeshes(device);
 		m_IKManager.initIKChains(m_skeleton);
 		m_animStateManager.initAnimationPlayer(m_skeleton.bones.size());
+		m_animStateManager.SetMoveState("move", m_animationClips);
 	}
 
 	// node 데이터 처리
@@ -1053,13 +1054,13 @@ void Model::moveModel(XMMATRIX& worldMatrix, float dt)
 	XMVECTOR dir = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
 	XMVECTOR quat = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), XMConvertToRadians(m_rotation.y));
 	dir = XMVector3Rotate(dir, quat);
-	dir = XMVectorScale(dir, m_speed * dt);
+	float distance = m_animStateManager.getDistance(m_skeleton);
+	dir = XMVectorScale(dir, distance);
 
 	// 현재 위치에 이동방향 더하기
 	XMVECTOR pos = XMLoadFloat3(&m_position);
 	pos = XMVectorAdd(pos, dir);
 	XMStoreFloat3(&m_position, pos);
-
 	worldMatrix = getWorldMatrix();
 }
 
@@ -1084,7 +1085,6 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 {
 	if (m_hasAnimation == true) {
 		XMMATRIX worldMatrix = getWorldMatrix();
-
 		
 		// 1. anmation update
 		m_animStateManager.UpdateTime(dt);
@@ -1104,13 +1104,13 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 
 		// 5. 몸 앞쪽 Raycasting
 		raycastingToForward(scene, worldMatrix);
-		
+
 		// 6. 이동 불가 check
 		checkCanMove();
 
 		// 7. 모델 move
 		moveModel(worldMatrix, dt);
-		
+
 		// 8. 블랜딩 결과로 Raycasting
 		footRaycasting(scene, worldMatrix);
 		if (m_stop == true)
@@ -1417,19 +1417,21 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 		clip.name = aiAnim->mName.C_Str();	// 클립 이름
 		clip.duration = aiAnim->mDuration;	// 총 Tick 수
 		clip.ticksPerSecond = aiAnim->mTicksPerSecond != 0 ? aiAnim->mTicksPerSecond : 25.0; // 1초당 tick 수
+		
+		p("\n\n\n\n\n\n\n\n clip: " + clip.name + "\n");
 
-		// 애니메이션 Bone Track 생성 (Bone 별로 애니메이션 keyframe 정보 저장)
 		for (unsigned int j = 0; j < aiAnim->mNumChannels; ++j) {
 			// Bone 선택 (channel == bone 1개의 애니메이션 트랙)
 			aiNodeAnim* channel = aiAnim->mChannels[j];
 			std::string boneName = channel->mNodeName.C_Str();
-
 			BoneTrack track;
 			track.boneName = boneName;
+			p("boneName: " + boneName + "\n");
 			{
 				for (unsigned int k = 0; k < channel->mNumPositionKeys; ++k) {
 					auto& kf = channel->mPositionKeys[k];
 					track.positionKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
+					p("position[" + std::to_string(k) +  "]: " + std::to_string(kf.mValue.x) + " " + std::to_string(kf.mValue.y) + " " + std::to_string(kf.mValue.z) + + "\n");
 				}
 				track.positionKeys[0].time = 0.0f;
 				

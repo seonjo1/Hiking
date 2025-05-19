@@ -85,9 +85,6 @@ void AnimationPlayer::SamplePose(const Skeleton& skeleton) {
 			pose.local[i].scale = InterpolateScale(track->scaleKeys, currentTime);
 		}
 	}
-
-	leftTargetToHips = InterpolatePosition(clip->leftTargetToHipsVector, currentTime);
-	rightTargetToHips = InterpolatePosition(clip->rightTargetToHipsVector, currentTime);
 }
 
 void AnimationPlayer::UpdateTimeForYoffset(float time) {

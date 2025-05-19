@@ -15,10 +15,15 @@ bool AnimationStateManager::SetState(std::string newState, std::unordered_map<st
     blendAlpha = 0.0f;
     if (newState == "walk")
     {
+        prevY = 0.0f;
 		walkPhase = 0.0f;
     }
 
     return true;
+}
+
+void AnimationStateManager::SetMoveState(std::string newState, std::unordered_map<std::string, AnimationClip>& clips) {
+	move.Play(&(clips[newState]));
 }
 
 void AnimationStateManager::UpdateTime(float dt) {
@@ -65,6 +70,7 @@ void AnimationStateManager::UpdateAnimationClip(Pose& pose, Skeleton& skeleton) 
     else {
         previous.SamplePose(skeleton);
         current.SamplePose(skeleton);
+        move.SamplePose(skeleton);
 		previous.pose.UpdateWorldPos(skeleton);
 		current.pose.UpdateWorldPos(skeleton);
     }
@@ -210,9 +216,58 @@ void AnimationStateManager::initAnimationPlayer(int boneSize)
 {
 	current.pose.Initialize(boneSize);
 	previous.pose.Initialize(boneSize);
+	move.pose.Initialize(boneSize);
 }
 
 void AnimationStateManager::getCurrentWorldBoneTransform(Pose& pose, int idx)
 {
     pose.world[idx] = current.pose.world[idx];
+}
+
+float AnimationStateManager::getDistance(Skeleton& skeleton)
+{
+    p("start!\n");
+    p("walkPhase" + std::to_string(walkPhase) + "\n");
+    float distance = 0.0f;
+    int idx = skeleton.GetBoneIndex("mixamorig:Hips");
+	if (previous.clip != nullptr && previous.clip->name == "walk")
+	{
+        p("prev walk!!\n");
+		p("prev move: " + std::to_string(move.pose.local[idx].position.y) + "\n");
+		p("prev walk: " + std::to_string(previous.pose.local[idx].position.y) + "\n");
+		distance = move.pose.local[idx].position.y - previous.pose.local[idx].position.y;
+		p("prev distance: " + std::to_string(distance) + "\n");
+		float tmp = distance;
+		prevY = distance - prevY;
+		if (prevY < 0.0f)
+		{
+			int i = move.clip->boneTracks["mixamorig:Hips"].positionKeys.size() - 1;
+			float offset = move.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y - previous.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y;
+			prevY += offset;
+		}
+		distance = prevY;
+		prevY = tmp;
+	}
+	else if (current.clip->name == "walk")
+	{
+		p("curr walk!!\n");
+		p("curr move: " + std::to_string(move.pose.local[idx].position.y) + "\n");
+		p("curr walk: " + std::to_string(current.pose.local[idx].position.y) + "\n");
+		distance = move.pose.local[idx].position.y - current.pose.local[idx].position.y;
+		p("curr distance: " + std::to_string(distance) + "\n");
+
+		float tmp = distance;
+		prevY = distance - prevY;
+		if (prevY < 0.0f)
+		{
+			int i = move.clip->boneTracks["mixamorig:Hips"].positionKeys.size() - 1;
+			float offset = move.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y - current.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y;
+			prevY += offset;
+		}
+		distance = prevY;
+		prevY = tmp;
+	}
+	p("distance:" + std::to_string(distance) + "\n");
+
+    return distance;
 }

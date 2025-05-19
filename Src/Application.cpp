@@ -189,7 +189,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_PhysicsManager->initialize();
 
 	// 애니메이션 모델 생성
-	std::string filename("./Assets/Remy2.glb");
+	std::string filename("./Assets/Remy3.glb");
 
 	m_AnimationModel = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
 	if (!m_AnimationModel)
