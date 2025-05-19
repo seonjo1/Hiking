@@ -74,11 +74,6 @@ void Model::initDebugMeshes(ID3D11Device* device)
 	initRangeAxis();
 }
 
-void Model::createRagdoll()
-{
-
-}
-
 void Model::LoadByAssimp(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::string filename)
 {
 	Assimp::Importer importer;
@@ -1089,7 +1084,14 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 {
 	if (m_hasAnimation == true) {
 		XMMATRIX worldMatrix = getWorldMatrix();
+
 		
+		// 1. anmation update
+		m_animStateManager.UpdateTime(dt);
+		m_animStateManager.UpdateAnimationClip(m_pose, m_skeleton);
+		m_animStateManager.BlendAnimation(m_pose);
+		m_pose.UpdateWorldPos(m_skeleton);
+
 		// Next Step 처리
 		{
 			// 현재, 이전 애니메이션 기반 next step 계산 (step은 두 발의 Target Y값 + 이동 불가 판정에만 영향을 끼침)
@@ -1099,13 +1101,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 			// next step Raycasting
 			raycastingNextStep(scene);
 		}
-		
-		// 1. anmation update
-		m_animStateManager.UpdateTime(dt);
-		m_animStateManager.UpdateAnimationClip(m_pose, m_skeleton);
-		m_animStateManager.BlendAnimation(m_pose);
-		m_pose.UpdateWorldPos(m_skeleton);
-		
+
 		// 5. 몸 앞쪽 Raycasting
 		raycastingToForward(scene, worldMatrix);
 		
@@ -1713,106 +1709,4 @@ void Model::setTargetToHipsKeyFrame()
 	
 	m_position = nowPosition;
 	m_rotation = nowRotation;
-}
-
-void Model::createRagdoll(physx::PxPhysics* physics, physx::PxScene* scene)
-{
-	int boneCount = m_skeleton.bones.size();
-	m_skeleton.bodies.clear();
-	m_skeleton.bodies.resize(boneCount);
-	XMMATRIX worldMatrix = getWorldMatrix();
-
-	for (int i = 0; i < boneCount; ++i)
-	{
-		const Bone& bone = m_skeleton.bones[i];
-
-		// 자식이 없는 Bone은 Ragdoll 처리 X
-		if (bone.children.empty()) continue;
-
-		int childIdx = bone.children[0]; // 첫 자식만으로 Capsule 생성
-		const Bone& childBone = m_skeleton.bones[childIdx];
-
-		// 각 Bone의 월드 변환 계산
-		XMMATRIX boneWorld = XMMatrixMultiply(XMMatrixInverse(nullptr, bone.offsetMatrix), worldMatrix);
-		XMMATRIX childWorld = XMMatrixMultiply(XMMatrixInverse(nullptr, childBone.offsetMatrix), worldMatrix);
-
-		XMVECTOR point = { 0.0f, 0.0f, 0.0f, 1.0f };
-		XMVECTOR bonePoint = XMVector3TransformCoord(point, boneWorld);
-		XMVECTOR childPoint = XMVector3TransformCoord(point, childWorld);
-	
-		// world에서 T자 기본 위치 계산ㄴ
-		XMFLOAT3 bonePos, childPos;
-		XMStoreFloat3(&bonePos, bonePoint);
-		XMStoreFloat3(&childPos, childPoint);
-
-		// Capsule 중심, 방향
-		XMVECTOR dir = XMVectorSubtract(XMLoadFloat3(&childPos), XMLoadFloat3(&bonePos));
-		float length = XMVectorGetX(XMVector3Length(dir));
-		if (length < 0.01f) continue;
-
-		// 월드 상에서 center
-		XMVECTOR center = XMVectorScale(XMVectorAdd(XMLoadFloat3(&bonePos), XMLoadFloat3(&childPos)), 0.5f);
-		XMVECTOR up = XMVector3Normalize(dir);
-		XMVECTOR defaultUp = XMVectorSet(0, 1, 0, 0);
-
-		XMFLOAT3 from, to;
-		XMStoreFloat3(&from, up);
-		XMStoreFloat3(&to, defaultUp);
-		XMVECTOR rotQuat = IKManager::getQuatFromTo(from, to);
-
-		// Capsule 파라미터
-		float radius = length * 0.15f;
-		float halfHeight = length * 0.5f - radius;
-
-		// Transform
-		physx::PxVec3 pxPos = { XMVectorGetX(center), XMVectorGetY(center), XMVectorGetZ(center) };
-		physx::PxQuat pxRot = { XMVectorGetX(rotQuat), XMVectorGetY(rotQuat), XMVectorGetZ(rotQuat),XMVectorGetW(rotQuat) };
-		physx::PxTransform transform(pxPos, pxRot);
-
-		// Capsule 생성
-		Body* bodyPtr = new Body();
-		bodyPtr->body->createDynamicObject(physics);
-		bodyPtr->body->setMaterial(physics, 0.6f, 0.6f, 0.3f);
-		bodyPtr->body->createCapsuleShape(physics, radius, halfHeight);
-		bodyPtr->body->setMass(0.0f);
-		bodyPtr->body->addToScene(scene);
-		m_skeleton.bodies.emplace_back(bodyPtr);
-
-		// jointPos 계산: Bone → Body 공간으로 변환
-		XMVECTOR offset = XMVectorSubtract(XMLoadFloat3(&bonePos), center);	// center -> BonePose 방향 Offset
-		XMVECTOR localOffset = XMVector3Rotate(offset, XMQuaternionInverse(rotQuat));
-		XMFLOAT3 jointLocal;
-		XMStoreFloat3(&jointLocal, localOffset);
-
-		// Body 등록
-		Body body;
-		body.boneIdx = i;
-		body.body = obj;
-
-		XMStoreFloat4(&body.originBodyRot, rotQuat);
-		XMStoreFloat4(&body.originJointRot, XMQuaternionRotationMatrix(boneWorld)); // Bone 회전 (월드)
-		body.jointPos = jointLocal;
-
-		bodies[i] = body;
-
-		// Joint 연결
-		if (bones[i].parentIndex >= 0 && bodies[bones[i].parentIndex].body)
-		{
-			physx::PxRigidActor* parentActor = bodies[bones[i].parentIndex].body->m_actor;
-			physx::PxRigidActor* childActor = obj->m_actor;
-
-			physx::PxVec3 jointPos = ToPxVec3(bonePos);
-			physx::PxTransform parentFrame = parentActor->getGlobalPose().getInverse() * physx::PxTransform(jointPos);
-			physx::PxTransform childFrame = childActor->getGlobalPose().getInverse() * physx::PxTransform(jointPos);
-
-			physx::PxD6Joint* joint = physx::PxD6JointCreate(*physics, parentActor, parentFrame, childActor, childFrame);
-			joint->setMotion(physx::PxD6Axis::eSWING1, physx::PxD6Motion::eLIMITED);
-			joint->setMotion(physx::PxD6Axis::eSWING2, physx::PxD6Motion::eLIMITED);
-			joint->setMotion(physx::PxD6Axis::eTWIST, physx::PxD6Motion::eLIMITED);
-			joint->setSwingLimit(physx::PxJointLimitCone(PxPi / 6, PxPi / 6, 0.01f));
-			joint->setTwistLimit(physx::PxJointAngularLimitPair(-PxPi / 6, PxPi / 6, 0.01f));
-
-			obj->m_joint = joint;
-		}
-	}
 }

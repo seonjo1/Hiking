@@ -91,7 +91,6 @@ public:
 	bool HasAnimationInfo(const aiScene* scene);
 	void setState(std::string state);
 	void initDebugMeshes(ID3D11Device* device);
-	void createRagdoll(physx::PxPhysics* physics, physx::PxScene* scene);
 
 	void UpdateAnimation(physx::PxScene* scene, float dt);
 	bool DrawTextureShader(ID3D11DeviceContext*, TextureShader*, Matrix&);

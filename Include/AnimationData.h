@@ -24,19 +24,9 @@ struct Bone {
 	float twist{ 0.0f };
 };
 
-struct Body
-{
-    int boneIdx;
-    PhysicsObject* body;
-	XMFLOAT4 originBodyRot; // 초기 Body의 월드 회전
-	XMFLOAT4 originJointRot; // 초기 Bone의 월드 회전
-    XMFLOAT3 jointPos;      // RigidBody 내부에서 Bone 위치 (offset)
-};
-
 class Skeleton {
 public:
     std::vector<Bone> bones;
-    std::vector<Body*> bodies;
     std::unordered_map<std::string, int> nameToIndex;
     bool isRagdollActive = false;
     int rootBoneIdx;

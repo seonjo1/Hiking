@@ -64,36 +64,69 @@ void PhysicsObject::initSphereMesh(std::vector<physx::PxVec3>& vertices, std::ve
 	}
 }
 
+//void PhysicsObject::createMeshCollider(physx::PxPhysics* physics, std::vector<physx::PxVec3>& vertices, std::vector<physx::PxU32>& indices, physx::PxMeshScale meshScale)
+//{
+//	// 1. ConvexMesh 설명자 준비
+//	physx::PxConvexMeshDesc convexDesc{};
+//	convexDesc.points.count = static_cast<uint32_t>(vertices.size());
+//	convexDesc.points.stride = sizeof(physx::PxVec3);
+//	convexDesc.points.data = vertices.data();
+//	convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
+//
+//	// 2. Cooking 파라미터 설정
+//	physx::PxCookingParams cookParams(physics->getTolerancesScale());
+//	cookParams.meshPreprocessParams |= physx::PxMeshPreprocessingFlag::eWELD_VERTICES;
+//	cookParams.meshWeldTolerance = 0.0001f;
+//
+//	// 3. ConvexMesh 생성
+//	physx::PxDefaultMemoryOutputStream outStream;
+//	if (!PxCookConvexMesh(cookParams, convexDesc, outStream)) {
+//		p("CookConvexMesh failed!\n");
+//		return;
+//	}
+//
+//	physx::PxDefaultMemoryInputData inputStream(outStream.getData(), outStream.getSize());
+//	physx::PxConvexMesh* convexMesh = physics->createConvexMesh(inputStream);
+//	if (!convexMesh) {
+//		p("createConvexMesh failed!\n");
+//		return;
+//	}
+//
+//	// 4. ConvexMeshGeometry로 Shape 생성 및 부착
+//	physx::PxConvexMeshGeometry geometry(convexMesh, meshScale);
+//	m_shape = physics->createShape(geometry, *m_material);
+//	m_actor->attachShape(*m_shape);
+//}
+
+
 void PhysicsObject::createMeshCollider(physx::PxPhysics* physics, std::vector<physx::PxVec3>& vertices, std::vector<physx::PxU32>& indices, physx::PxMeshScale meshScale)
 {
-	// 1. ConvexMesh 설명자 준비
-	physx::PxConvexMeshDesc convexDesc{};
-	convexDesc.points.count = static_cast<uint32_t>(vertices.size());
-	convexDesc.points.stride = sizeof(physx::PxVec3);
-	convexDesc.points.data = vertices.data();
-	convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
+	physx::PxTriangleMeshDesc meshDesc{};
+	meshDesc.points.count = static_cast<uint32_t>(vertices.size());
+	meshDesc.points.stride = sizeof(physx::PxVec3);
+	meshDesc.points.data = vertices.data();
 
-	// 2. Cooking 파라미터 설정
+	meshDesc.triangles.count = static_cast<uint32_t>(indices.size() / 3);
+	meshDesc.triangles.stride = sizeof(uint32_t) * 3;
+	meshDesc.triangles.data = indices.data();
+
 	physx::PxCookingParams cookParams(physics->getTolerancesScale());
 	cookParams.meshPreprocessParams |= physx::PxMeshPreprocessingFlag::eWELD_VERTICES;
-	cookParams.meshWeldTolerance = 0.0001f;
+	cookParams.meshWeldTolerance = 0.0001f;  // 너무 가까운 정점 병합 방지용
 
-	// 3. ConvexMesh 생성
+
 	physx::PxDefaultMemoryOutputStream outStream;
-	if (!PxCookConvexMesh(cookParams, convexDesc, outStream)) {
-		p("CookConvexMesh failed!\n");
+	bool result = PxCookTriangleMesh(cookParams, meshDesc, outStream);
+
+	if (!result) {
+		p("CookTriangleMesh failed!\n");
 		return;
 	}
 
 	physx::PxDefaultMemoryInputData inputStream(outStream.getData(), outStream.getSize());
-	physx::PxConvexMesh* convexMesh = physics->createConvexMesh(inputStream);
-	if (!convexMesh) {
-		p("createConvexMesh failed!\n");
-		return;
-	}
+	physx::PxTriangleMesh* triMesh = physics->createTriangleMesh(inputStream);
 
-	// 4. ConvexMeshGeometry로 Shape 생성 및 부착
-	physx::PxConvexMeshGeometry geometry(convexMesh, meshScale);
+	physx::PxTriangleMeshGeometry geometry(triMesh, meshScale);
 	m_shape = physics->createShape(geometry, *m_material);
 	m_actor->attachShape(*m_shape);
 }
