@@ -96,6 +96,63 @@ void Application::createRandomTerrain(int num)
 	}
 }
 
+void Application::createSlopeTerrain(int num)
+{
+	// 타일 기본 크기 (XZ 크기 고정, Y는 랜덤 높이)
+	const float tileWidth = 2.0f;
+	const float tileDepth = 10.0f;
+	const float minHeight = 0.1f;
+	const float maxHeight = 2.2f;
+	// 회전 최대 각도 (도 단위)
+	const float maxAngleDeg = 25.0f;
+
+	// 색상 배열 (계단 예제에서 가져옴)
+	XMFLOAT4 colors[3] = {
+		{ 0.229f, 0.239f, 0.461f, 1.0f },
+		{ 0.429f, 0.639f, 0.261f, 1.0f },
+		{ 0.929f, 0.639f, 0.261f, 1.0f }
+	};
+
+	// 난수 생성기 세팅
+	std::mt19937                    rng(std::random_device{}());
+	std::uniform_real_distribution<float> angleDist(-maxAngleDeg, maxAngleDeg);
+	std::uniform_real_distribution<float> heightDist(minHeight, maxHeight);
+
+	float startX = -3.0f;  // 시작 X 좌표
+	float posZ = -10.0f;  // Z 좌표 (1열만 만들 경우)
+
+	for (int i = 0; i < num; ++i)
+	{
+		// 1) 랜덤 높이와 컬러
+		float h = heightDist(rng);
+		XMFLOAT4 color = colors[i % 3];
+
+		// 2) 모델 생성 및 PhysX 콜라이더 생성
+		Model* tile = Model::createBox(m_Direct3D->GetDevice(),
+			m_Direct3D->GetDeviceContext(),
+			color);
+		tile->createStaticBox(m_PhysicsManager->m_Physics,
+			m_PhysicsManager->m_Scene);
+
+		// 3) 스케일 설정 (Y는 랜덤 높이)
+		tile->setScale(XMFLOAT3(tileWidth, h, tileDepth));
+
+		// 4) 랜덤 회전 (X축 피치, Z축 롤)
+		float pitch = 0.0f;
+		float roll = angleDist(rng);
+		tile->setRotation(XMFLOAT3(pitch, 0.0f, roll));
+
+		// 5) 포지션 설정
+		//    Y는 타일 높이의 절반(h/2)로 놓아서 바닥에 깔리도록
+		float posX = startX - tileWidth * i;
+		tile->setPosition(XMFLOAT3(posX + 0.5f, h * 0.5f, posZ));
+
+		// 6) PhysX와 동기화 후 리스트에 추가
+		tile->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
+		m_Models.push_back(tile);
+	}
+}
+
 void Application::createGround()
 {
 	// 지형 생성
@@ -209,6 +266,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	createSlope();
 	createStairs(20);
 	createRandomTerrain(30);
+	createSlopeTerrain(30);
 
 	// 모델 개수 저장
 	m_modelCount = m_Models.size();

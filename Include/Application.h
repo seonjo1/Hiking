@@ -40,6 +40,7 @@ public:
 	void SaveCameraCurrentPos(int x, int y);
 	void createStairs(int num);
 	void createRandomTerrain(int num);
+	void createSlopeTerrain(int num);
 	void createSlope();
 	void createGround();
 	void createRock();

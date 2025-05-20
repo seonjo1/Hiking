@@ -1017,7 +1017,7 @@ void Model::raycastingToForward(physx::PxScene* scene, XMMATRIX& worldMatrix)
 
 void Model::raycastingNextStep(physx::PxScene* scene)
 {
-	if (m_animStateManager.currentState == "walk" || m_animStateManager.blendAlpha < 1.0f)
+	if (m_animStateManager.currentState == "walk")
 	{
 		physx::PxVec3 nextToeBase = { m_currentStep.nextStep.x, m_currentStep.nextStep.y, m_currentStep.nextStep.z };
 		physx::PxVec3 nextToeEnd = { m_currentStep.nextStepEnd.x, m_currentStep.nextStepEnd.y, m_currentStep.nextStepEnd.z };
@@ -1030,7 +1030,6 @@ void Model::raycastingNextStep(physx::PxScene* scene)
 
 void Model::checkCanMove()
 {
-	//if (m_RaycastingManager.m_MoveCheck.part == EIKPart::NONE || m_RaycastingManager.m_NextStep.part == EIKPart::FAIL)
 	if (m_RaycastingManager.m_MoveCheck.part == EIKPart::NONE)
 	{
 		if (m_RaycastingManager.m_MoveCheck.part == EIKPart::NONE)
