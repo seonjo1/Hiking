@@ -29,6 +29,16 @@ void AnimationStateManager::SetMoveState(std::string newState, std::unordered_ma
 void AnimationStateManager::UpdateTime(float dt) {
     current.UpdateTime(dt, walkPhase);
     previous.UpdateTime(dt, walkPhase);
+
+    if (current.clip->name == "walk")
+    {
+        move.currentTime = current.currentTime;
+    }
+    else if (previous.clip != nullptr && previous.clip->name == "walk")
+    {
+		move.currentTime = previous.currentTime;
+    }
+
 	blendAlpha += dt * blendSpeed;
 	if (blendAlpha > 1.0f) blendAlpha = 1.0f;
 }
@@ -226,17 +236,11 @@ void AnimationStateManager::getCurrentWorldBoneTransform(Pose& pose, int idx)
 
 float AnimationStateManager::getDistance(Skeleton& skeleton)
 {
-    p("start!\n");
-    p("walkPhase" + std::to_string(walkPhase) + "\n");
     float distance = 0.0f;
     int idx = skeleton.GetBoneIndex("mixamorig:Hips");
 	if (previous.clip != nullptr && previous.clip->name == "walk")
 	{
-        p("prev walk!!\n");
-		p("prev move: " + std::to_string(move.pose.local[idx].position.y) + "\n");
-		p("prev walk: " + std::to_string(previous.pose.local[idx].position.y) + "\n");
 		distance = move.pose.local[idx].position.y - previous.pose.local[idx].position.y;
-		p("prev distance: " + std::to_string(distance) + "\n");
 		float tmp = distance;
 		prevY = distance - prevY;
 		if (prevY < 0.0f)
@@ -245,16 +249,12 @@ float AnimationStateManager::getDistance(Skeleton& skeleton)
 			float offset = move.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y - previous.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y;
 			prevY += offset;
 		}
-		distance = prevY;
+		distance = prevY * (1.0f - blendAlpha);
 		prevY = tmp;
 	}
 	else if (current.clip->name == "walk")
 	{
-		p("curr walk!!\n");
-		p("curr move: " + std::to_string(move.pose.local[idx].position.y) + "\n");
-		p("curr walk: " + std::to_string(current.pose.local[idx].position.y) + "\n");
 		distance = move.pose.local[idx].position.y - current.pose.local[idx].position.y;
-		p("curr distance: " + std::to_string(distance) + "\n");
 
 		float tmp = distance;
 		prevY = distance - prevY;
@@ -264,10 +264,10 @@ float AnimationStateManager::getDistance(Skeleton& skeleton)
 			float offset = move.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y - current.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y;
 			prevY += offset;
 		}
-		distance = prevY;
+		distance = prevY * blendAlpha;
 		prevY = tmp;
 	}
-	p("distance:" + std::to_string(distance) + "\n");
+    distance = distance * 0.02f;
 
     return distance;
 }

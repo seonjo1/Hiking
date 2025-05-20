@@ -155,6 +155,7 @@ void Model::processMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 
 	std::vector<VertexType> vertices;
 	vertices.resize(mesh->mNumVertices);
+
 	for (uint32_t i = 0; i < mesh->mNumVertices; i++)
 	{
 		VertexType& v = vertices[i];
@@ -182,7 +183,6 @@ void Model::processMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 			v.boneWeights.x = vertexBones[i].influences[0].second;
 		}
 	}
-
 	std::vector<uint32_t> indices;
 	indices.resize(mesh->mNumFaces * 3);
 	// face의 개수 = triangle 개수
@@ -276,8 +276,6 @@ bool Model::DrawRayLineShader(ID3D11DeviceContext* deviceContext, BoneShader* bo
 		if (boneShader->RenderRayLine(deviceContext, m_boneMesh->GetIndexCount(), matrix, m_pose.world[idx], m_RaycastingManager.m_LeftFoot, cameraFront) == false)
 			return false;
 	}
-
-
 
 	// right foot
 	idx = -1;
@@ -849,9 +847,9 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 			physx::PxVec3 leftToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"));
 			physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
 	
-			stepInfo.lastStepRay.x = m_RaycastingManager.m_LeftFoot.pos.x;
-			stepInfo.lastStepRay.y = m_RaycastingManager.m_LeftFoot.pos.y;
-			stepInfo.lastStepRay.z = m_RaycastingManager.m_LeftFoot.pos.z;
+			stepInfo.lastStepRay.x = m_leftTarget.x;
+			stepInfo.lastStepRay.y = m_leftTarget.y;
+			stepInfo.lastStepRay.z = m_leftTarget.z;
 
 			stepInfo.lastStep.x = leftToeBase.x;
 			stepInfo.lastStep.y = leftToeBase.y;
@@ -908,9 +906,9 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 			physx::PxVec3 rightToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"));
 			physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
 
-			stepInfo.lastStepRay.x = m_RaycastingManager.m_RightFoot.pos.x;
-			stepInfo.lastStepRay.y = m_RaycastingManager.m_RightFoot.pos.y;
-			stepInfo.lastStepRay.z = m_RaycastingManager.m_RightFoot.pos.z;
+			stepInfo.lastStepRay.x = m_rightTarget.x;
+			stepInfo.lastStepRay.y = m_rightTarget.y;
+			stepInfo.lastStepRay.z = m_rightTarget.z;
 
 			stepInfo.lastStep.x = rightToeBase.x;
 			stepInfo.lastStep.y = rightToeBase.y;
@@ -1418,20 +1416,16 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 		clip.duration = aiAnim->mDuration;	// 총 Tick 수
 		clip.ticksPerSecond = aiAnim->mTicksPerSecond != 0 ? aiAnim->mTicksPerSecond : 25.0; // 1초당 tick 수
 		
-		p("\n\n\n\n\n\n\n\n clip: " + clip.name + "\n");
-
 		for (unsigned int j = 0; j < aiAnim->mNumChannels; ++j) {
 			// Bone 선택 (channel == bone 1개의 애니메이션 트랙)
 			aiNodeAnim* channel = aiAnim->mChannels[j];
 			std::string boneName = channel->mNodeName.C_Str();
 			BoneTrack track;
 			track.boneName = boneName;
-			p("boneName: " + boneName + "\n");
 			{
 				for (unsigned int k = 0; k < channel->mNumPositionKeys; ++k) {
 					auto& kf = channel->mPositionKeys[k];
 					track.positionKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
-					p("position[" + std::to_string(k) +  "]: " + std::to_string(kf.mValue.x) + " " + std::to_string(kf.mValue.y) + " " + std::to_string(kf.mValue.z) + + "\n");
 				}
 				track.positionKeys[0].time = 0.0f;
 				
