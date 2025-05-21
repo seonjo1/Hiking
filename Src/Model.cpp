@@ -719,11 +719,27 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 
 			// left go normal 보간
 			float ratio = m_animStateManager.current.getLeftGoRatio();
-			XMVECTOR startNormal = XMLoadFloat3(&m_prevLeftNormal);
-			XMVECTOR endNormal = XMLoadFloat3(&m_currLeftNormal);
-			XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, ratio);
-			nowNormal = XMVector3Normalize(nowNormal);
-			XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.normal, nowNormal);
+			if (ratio < 0.1f)
+			{
+				XMVECTOR startNormal = XMLoadFloat3(&m_prevLeftNormal);
+				XMVECTOR endNormal = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+				XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, ratio * 10.0f);
+				nowNormal = XMVector3Normalize(nowNormal);
+				XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.normal, nowNormal);
+			}
+			else if (ratio > 0.9f)
+			{
+				XMVECTOR startNormal = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+				XMVECTOR endNormal = XMLoadFloat3(&m_currLeftNormal);
+				XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, 10.0f * (ratio - 0.9f));
+				nowNormal = XMVector3Normalize(nowNormal);
+				XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.normal, nowNormal);
+			}
+			else
+			{
+				m_RaycastingManager.m_LeftFoot.normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+			}
+
 			m_RaycastingManager.m_RightFoot.normal = m_prevRightNormal;
 		}
 		else
@@ -746,11 +762,27 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 		
 			// right go normal 보간
 			float ratio = m_animStateManager.current.getRightGoRatio();
-			XMVECTOR startNormal = XMLoadFloat3(&m_prevRightNormal);
-			XMVECTOR endNormal = XMLoadFloat3(&m_currRightNormal);
-			XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, ratio);
-			nowNormal = XMVector3Normalize(nowNormal);
-			XMStoreFloat3(&m_RaycastingManager.m_RightFoot.normal, nowNormal);
+
+			if (ratio < 0.1f)
+			{
+				XMVECTOR startNormal = XMLoadFloat3(&m_prevRightNormal);
+				XMVECTOR endNormal = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+				XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, ratio * 10.0f);
+				nowNormal = XMVector3Normalize(nowNormal);
+				XMStoreFloat3(&m_RaycastingManager.m_RightFoot.normal, nowNormal);
+			}
+			else if (ratio > 0.9f)
+			{
+				XMVECTOR startNormal = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+				XMVECTOR endNormal = XMLoadFloat3(&m_currRightNormal);
+				XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, 10.0f * (ratio - 0.9f));
+				nowNormal = XMVector3Normalize(nowNormal);
+				XMStoreFloat3(&m_RaycastingManager.m_RightFoot.normal, nowNormal);
+			}
+			else
+			{
+				m_RaycastingManager.m_RightFoot.normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+			}
 			m_RaycastingManager.m_LeftFoot.normal = m_prevLeftNormal;
 		}
 
