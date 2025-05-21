@@ -792,7 +792,7 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 {
 	const static float ySpeed = 0.1f;
-	const static float angleOffsetScale = 0.5f;
+	const static float angleOffsetScale = 1.0f;
 	const float prevY = 0.0f;
 
 	XMFLOAT3 dir = getRotatedVector(m_rotation.y);
@@ -805,10 +805,10 @@ void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 	XMVECTOR yRightNormal = XMLoadFloat3(&m_RaycastingManager.m_RightFoot.normal);
 	XMVECTOR yNormal = XMVectorScale(XMVectorAdd(yLeftNormal, yRightNormal), 0.5f);
 	XMVECTOR dirVec = XMLoadFloat3(&dir);
-	float dot = XMVectorGetX(XMVector3Dot(dirVec, yNormal));
-	if (dot < 0.0f)
+	float dot = fabs(XMVectorGetX(XMVector3Dot(dirVec, yNormal)));
+	if (dot < 0.5f)
 	{
-		minY -= fabs(dot) * angleOffsetScale;
+		minY -= dot * angleOffsetScale;
 	}
 
 
@@ -1032,7 +1032,6 @@ void Model::blendingNextStep()
 		currNextStepEnd = XMVectorLerp(prevNextStepEnd, currNextStepEnd, m_animStateManager.blendAlpha);
 		XMStoreFloat3(&m_currentStep.nextStep, currNextStep);
 		XMStoreFloat3(&m_currentStep.nextStepEnd, currNextStepEnd);
-
 	}
 }
 
