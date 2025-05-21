@@ -33,6 +33,7 @@ public:
 	void raycastingForMoveCheck(physx::PxScene* scene, physx::PxVec3 hips, physx::PxVec3 dir);
 	bool raycastingForFindBlock(physx::PxScene* scene, physx::PxVec3 start, physx::PxVec3 end, physx::PxVec3 xzDir);
 	void raycastingForBlockInfo(physx::PxScene* scene, physx::PxVec3 xzDir);
+	void checkFail();
 
 	RaycastingInfo m_LeftFoot;
 	RaycastingInfo m_RightFoot;

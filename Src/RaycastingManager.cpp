@@ -205,9 +205,6 @@ void RaycastingManager::raycastingForNextStep(physx::PxScene* scene, physx::PxVe
 
 	toToeEnd = toToeEnd * toToeEndScale;
 	toFoot = toFoot * toFootScale;
-	p("toeBasePose: " + std::to_string(toeBasePose.x) + " " + std::to_string(toeBasePose.y) + " " + std::to_string(toeBasePose.z) + "\n");
-	p("toToeEnd: " + std::to_string(toToeEnd.x) + " " + std::to_string(toToeEnd.y) + " " + std::to_string(toToeEnd.z) + "\n");
-	p("toFoot: " + std::to_string(toFoot.x) + " " + std::to_string(toFoot.y) + " " + std::to_string(toFoot.z) + "\n");
 	footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_NextStep, normalChanged, nowNormal);
 }
 
@@ -432,3 +429,57 @@ void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hips
     }
 }
 
+void RaycastingManager::checkFail()
+{
+	if (m_LeftFoot.part == EIKPart::FAIL)
+	{
+		p("LeftFoot Raycasting FAIL!!!\n");
+		p("LeftFoot Raycasting FAIL!!!\n");
+		p("LeftFoot Raycasting FAIL!!!\n");
+		p("LeftFoot Raycasting FAIL!!!\n");
+		p("LeftFoot Raycasting FAIL!!!\n");
+		p("LeftFoot Raycasting FAIL!!!\n");
+		p("LeftFoot Raycasting FAIL!!!\n");
+		p("LeftFoot Raycasting FAIL!!!\n");
+		p("LeftFoot Raycasting FAIL!!!\n");
+	}
+
+	if (m_RightFoot.part == EIKPart::FAIL)
+	{
+		p("RightFoot Raycasting FAIL!!!\n");
+		p("RightFoot Raycasting FAIL!!!\n");
+		p("RightFoot Raycasting FAIL!!!\n");
+		p("RightFoot Raycasting FAIL!!!\n");
+		p("RightFoot Raycasting FAIL!!!\n");
+		p("RightFoot Raycasting FAIL!!!\n");
+		p("RightFoot Raycasting FAIL!!!\n");
+		p("RightFoot Raycasting FAIL!!!\n");
+		p("RightFoot Raycasting FAIL!!!\n");
+	}
+
+	if (m_NextStep.part == EIKPart::FAIL)
+	{
+		p("NextStep Raycasting FAIL!!!\n");
+		p("NextStep Raycasting FAIL!!!\n");
+		p("NextStep Raycasting FAIL!!!\n");
+		p("NextStep Raycasting FAIL!!!\n");
+		p("NextStep Raycasting FAIL!!!\n");
+		p("NextStep Raycasting FAIL!!!\n");
+		p("NextStep Raycasting FAIL!!!\n");
+		p("NextStep Raycasting FAIL!!!\n");
+		p("NextStep Raycasting FAIL!!!\n");
+	}
+
+	if (m_FindObstacle.part == EIKPart::FAIL)
+	{
+		p("FindObstacle Raycasting FAIL!!!\n");
+		p("FindObstacle Raycasting FAIL!!!\n");
+		p("FindObstacle Raycasting FAIL!!!\n");
+		p("FindObstacle Raycasting FAIL!!!\n");
+		p("FindObstacle Raycasting FAIL!!!\n");
+		p("FindObstacle Raycasting FAIL!!!\n");
+		p("FindObstacle Raycasting FAIL!!!\n");
+		p("FindObstacle Raycasting FAIL!!!\n");
+		p("FindObstacle Raycasting FAIL!!!\n");
+	}
+}

@@ -793,6 +793,7 @@ void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 {
 	const static float ySpeed = 0.1f;
 	const static float angleOffsetScale = 0.5f;
+	const float prevY = 0.0f;
 
 	XMFLOAT3 dir = getRotatedVector(m_rotation.y);
 
@@ -812,15 +813,18 @@ void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 
 
 	// 한 번에 이동하지 않고 조금씩 이동
-	if (m_position.y > minY)
+	if (fabsf(minY - m_position.y) > 0.01f)
 	{
-		m_position.y = std::fmaxf(minY, m_position.y - ySpeed);
+		if (m_position.y > minY)
+		{
+			m_position.y = std::fmaxf(minY, m_position.y - ySpeed);
+		}
+		else
+		{
+			m_position.y = std::fminf(minY, m_position.y + ySpeed);
+		}
+		worldMatrix = getWorldMatrix();
 	}
-	else
-	{
-		m_position.y = std::fminf(minY, m_position.y + ySpeed);
-	}
-	worldMatrix = getWorldMatrix();
 }
 
 void Model::setIdleStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, bool leftGo)
@@ -1181,6 +1185,8 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_leftTarget = m_RaycastingManager.m_LeftFoot.target;
 		m_rightTarget = m_RaycastingManager.m_RightFoot.target;
 
+		m_RaycastingManager.checkFail();
+
 		/*
 		 [Foot IK 적용]
 		 0. IKangle Update
@@ -1193,7 +1199,6 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		 6. 반복 or 종료
 		*/
 		// 0. IKangle 업데이트
-		p("\n\n\nstart IK!!!\n");
 
 
 		m_IKManager.updateNowRotation(m_pose);
