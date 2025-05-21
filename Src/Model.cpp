@@ -1172,7 +1172,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		}
 
 		// 9. bone 위치 보정
-		//modifyTarget(scene, worldMatrix);
+		modifyTarget(scene, worldMatrix);
 
 		// 10. world Y값 결정
 		modifyWorldY(scene, worldMatrix);
