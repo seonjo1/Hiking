@@ -16,6 +16,7 @@ public:
 	float blendSpeed = 3.0f;
 	float walkPhase = 0.0f;
 	float startPhase = 0.0f;
+	float dampping = 1.0f;
 
 	void initAnimationPlayer(int boneSize);
 	void BlendAnimation(Pose& pose);
@@ -32,4 +33,6 @@ public:
 	float getDistance(Skeleton& skeleton);
 	float getLeftDistance(Skeleton& skeleton, bool isPrev);
 	float getRightDistance(Skeleton& skeleton, bool isPrev);
+	void setDampping(float d);
+	void resetDampping();
 };

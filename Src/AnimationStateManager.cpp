@@ -258,7 +258,7 @@ float AnimationStateManager::getLeftDistance(Skeleton& skeleton, bool isPrev)
 			distance += offset;
 		}
 	}
-	distance = distance * 0.02f;
+	distance = distance * 0.02f * dampping;
 
 	return distance;
 }
@@ -289,7 +289,7 @@ float AnimationStateManager::getRightDistance(Skeleton& skeleton, bool isPrev)
 			distance += offset;
 		}
 	}
-	distance = distance * 0.02f;
+	distance = distance * 0.02f * dampping;
 	return distance;
 }
 
@@ -326,7 +326,17 @@ float AnimationStateManager::getDistance(Skeleton& skeleton)
 		distance = prevY * blendAlpha;
 		prevY = tmp;
 	}
-	distance = distance * 0.02f;
+	distance = distance * 0.02f * dampping;
 
     return distance;
+}
+
+void AnimationStateManager::setDampping(float d)
+{
+	dampping = d;
+}
+
+void AnimationStateManager::resetDampping()
+{
+	dampping = 1.0f;
 }

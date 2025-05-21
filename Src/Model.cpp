@@ -1052,7 +1052,55 @@ void Model::raycastingNextStep(physx::PxScene* scene)
 	{
 		physx::PxVec3 nextToeBase = { m_currentStep.nextStep.x, m_currentStep.nextStep.y, m_currentStep.nextStep.z };
 		physx::PxVec3 nextToeEnd = { m_currentStep.nextStepEnd.x, m_currentStep.nextStepEnd.y, m_currentStep.nextStepEnd.z };
-		m_RaycastingManager.raycastingForNextStep(scene, nextToeBase, nextToeEnd, false, XMFLOAT3(0.0f, 0.0f, 0.0f));
+
+		if (m_animStateManager.blendAlpha > (1.0f - 1e-4f) && (m_currentStep.isChanged || m_dirChanged))
+		{
+			float moveBack = 0.0f;
+			float moveOffset = 0.2f;
+
+			XMVECTOR dirVec = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
+			XMVECTOR quat = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), XMConvertToRadians(m_rotation.y));
+			dirVec = XMVector3Normalize(XMVector3Rotate(dirVec, quat));
+			physx::PxVec3 dir = { XMVectorGetX(dirVec), XMVectorGetY(dirVec), XMVectorGetZ(dirVec) };
+
+			float dist;
+			if (m_currentStep.leftGo)
+				dist = m_animStateManager.getLeftDistance(m_skeleton, false);
+			else
+				dist = m_animStateManager.getRightDistance(m_skeleton, false);
+
+			XMVECTOR normal = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+			// 경사(normal)가 낮아질때까지 뒤로 이동
+
+			while (moveBack < dist)
+			{
+				m_RaycastingManager.raycastingForNextStep(scene, nextToeBase, nextToeEnd, false, XMFLOAT3(0.0f, 0.0f, 0.0f));
+				XMVECTOR resultNormal = XMLoadFloat3(&m_RaycastingManager.m_NextStep.normal);
+				float dot = XMVectorGetX(XMVector3Dot(normal, resultNormal));
+				if (dot > 0.5f) { break; }
+				moveBack += moveOffset;
+
+				physx::PxVec3 offset = dir * -moveOffset;
+				nextToeBase += offset;
+				nextToeEnd += offset;
+			}
+
+			if (moveBack > 1e-4f)
+			{
+				float ratio = fmaxf(0.0f, (dist - moveBack) / dist);
+				m_animStateManager.setDampping(ratio);
+
+			}
+			else
+			{
+				m_animStateManager.resetDampping();
+			}
+		}
+		else
+		{
+			m_RaycastingManager.raycastingForNextStep(scene, nextToeBase, nextToeEnd, false, XMFLOAT3(0.0f, 0.0f, 0.0f));
+		}
+
 		m_currentStep.nextStep.x = m_RaycastingManager.m_NextStep.target.x;
 		m_currentStep.nextStep.y = m_RaycastingManager.m_NextStep.target.y;
 		m_currentStep.nextStep.z = m_RaycastingManager.m_NextStep.target.z;
@@ -1120,6 +1168,7 @@ void Model::footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix)
 	{
 		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd, false, XMFLOAT3(0.0f, 0.0f, 0.0f));
 		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd, false, XMFLOAT3(0.0f, 0.0f, 0.0f));
+		
 		m_prevLeftNormal = m_RaycastingManager.m_LeftFoot.normal;
 		m_prevRightNormal = m_RaycastingManager.m_RightFoot.normal;
 		m_currentStep.isChanged = false;
