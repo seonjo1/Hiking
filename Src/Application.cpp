@@ -189,7 +189,7 @@ void Application::createSphere(XMFLOAT3 pos, XMFLOAT4 color)
 void Application::createSpheres()
 {
 	XMFLOAT3 pos1 = { 10.0f, -1.5f, -10.0f };
-	XMFLOAT3 pos2 = { 12.0f, -1.5f, -14.0f };
+	XMFLOAT3 pos2 = { 11.75f, -1.5f, -13.5f };
 
 	XMFLOAT4 colors[3] = {
 	{ 0.229f, 0.239f, 0.461f, 1.0f },
@@ -203,8 +203,8 @@ void Application::createSpheres()
 		XMFLOAT4 color2 = colors[((i + 1) % 3)];
 		createSphere(pos1, color1);
 		createSphere(pos2, color2);
-		pos1.x += 4.0f;
-		pos2.x += 4.0f;
+		pos1.x += 3.5f;
+		pos2.x += 3.5f;
 	}
 }
 
