@@ -35,10 +35,6 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
         physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
     );
 
-    if (toeBaseRaySuccess) {
-        toeBaseRaySuccess = toeBaseHit.block.normal.dot(physx::PxVec3(0.0f, 1.0f, 0.0f)) > slopeDotThreshold;
-    }
-
 	// toeEnd Raycasting
 	physx::PxVec3 toeEndRayStart = toeEndPose + s_GravityDir * s_RayStartOffset;
 	bool toeEndRaySuccess = scene->raycast(
@@ -49,10 +45,6 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
 		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
 	);
 
-	if (toeEndRaySuccess) {
-		toeEndRaySuccess = toeEndHit.block.normal.dot(physx::PxVec3(0.0f, 1.0f, 0.0f)) > slopeDotThreshold;
-	}
-
 	// foot Raycasting
 	physx::PxVec3 footRayStart = footPose + s_GravityDir * s_RayStartOffset;
 	bool footRaySuccess = scene->raycast(
@@ -62,10 +54,6 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
 		footHit,
 		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
 	);
-
-	if (footRaySuccess) {
-        footRaySuccess = toeEndHit.block.normal.dot(physx::PxVec3(0.0f, 1.0f, 0.0f)) > slopeDotThreshold;
-	}
 
     // info Ã¤¿ì±â
 	if (!toeEndRaySuccess && !toeBaseRaySuccess && !footRaySuccess)
@@ -217,7 +205,9 @@ void RaycastingManager::raycastingForNextStep(physx::PxScene* scene, physx::PxVe
 
 	toToeEnd = toToeEnd * toToeEndScale;
 	toFoot = toFoot * toFootScale;
-
+	p("toeBasePose: " + std::to_string(toeBasePose.x) + " " + std::to_string(toeBasePose.y) + " " + std::to_string(toeBasePose.z) + "\n");
+	p("toToeEnd: " + std::to_string(toToeEnd.x) + " " + std::to_string(toToeEnd.y) + " " + std::to_string(toToeEnd.z) + "\n");
+	p("toFoot: " + std::to_string(toFoot.x) + " " + std::to_string(toFoot.y) + " " + std::to_string(toFoot.z) + "\n");
 	footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_NextStep, normalChanged, nowNormal);
 }
 

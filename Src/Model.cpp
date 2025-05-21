@@ -1024,11 +1024,11 @@ void Model::blendingNextStep()
 		XMVECTOR prevNextStep = XMLoadFloat3(&m_prevStep.nextStep);
 		XMVECTOR currNextStepEnd = XMLoadFloat3(&m_currentStep.nextStepEnd);
 		XMVECTOR prevNextStepEnd = XMLoadFloat3(&m_prevStep.nextStepEnd);
-
 		currNextStep = XMVectorLerp(prevNextStep, currNextStep, m_animStateManager.blendAlpha);
 		currNextStepEnd = XMVectorLerp(prevNextStepEnd, currNextStepEnd, m_animStateManager.blendAlpha);
 		XMStoreFloat3(&m_currentStep.nextStep, currNextStep);
 		XMStoreFloat3(&m_currentStep.nextStepEnd, currNextStepEnd);
+
 	}
 }
 
@@ -1123,8 +1123,8 @@ void Model::footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix)
 	}
 	else
 	{
-		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd, false, m_prevLeftNormal);
-		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd, false, m_prevRightNormal);
+		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd, true, m_prevLeftNormal);
+		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd, true, m_prevRightNormal);
 	}
 }
 
@@ -1194,6 +1194,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		*/
 		// 0. IKangle 업데이트
 		p("\n\n\nstart IK!!!\n");
+
 
 		m_IKManager.updateNowRotation(m_pose);
 		m_IKManager.resetValuesForIK(m_RaycastingManager, m_skeleton, m_animStateManager.walkPhase, m_pose, worldMatrix);
