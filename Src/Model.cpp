@@ -1109,7 +1109,12 @@ void Model::raycastingNextStep(physx::PxScene* scene)
 				m_RaycastingManager.raycastingForNextStep(scene, nextToeBase, nextToeEnd, false, XMFLOAT3(0.0f, 0.0f, 0.0f));
 				XMVECTOR resultNormal = XMLoadFloat3(&m_RaycastingManager.m_NextStep.normal);
 				float dot = XMVectorGetX(XMVector3Dot(normal, resultNormal));
-				if (dot > 0.5f) { break; }
+				if (dot > 0.5f) { 
+					m_RaycastingManager.m_NextStep.target.x -= dir.x * 0.01f;
+					m_RaycastingManager.m_NextStep.target.z -= dir.z * 0.01f;
+					moveBack += 0.01f;
+					break; 
+				}
 				moveBack += moveOffset;
 
 				physx::PxVec3 offset = dir * -moveOffset;

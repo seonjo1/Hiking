@@ -190,7 +190,6 @@ void Application::createSpheres()
 {
 	XMFLOAT3 pos1 = { 10.0f, -1.5f, -10.0f };
 	XMFLOAT3 pos2 = { 11.75f, -1.5f, -13.5f };
-
 	XMFLOAT4 colors[3] = {
 	{ 0.229f, 0.239f, 0.461f, 1.0f },
 	{ 0.429f, 0.639f, 0.261f, 1.0f },
@@ -297,6 +296,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	//createRock();
 	createSlope();
 	createSpheres();
+	createSphere(XMFLOAT3(-10.0f, -0.5f, -25.0f), XMFLOAT4(0.725f, 0.202f, 0.529f, 1.0f));
 	createStairs(20);
 	//createRandomTerrain(30);
 	createSlopeTerrain(30);
