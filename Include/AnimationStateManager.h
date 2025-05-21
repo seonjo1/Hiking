@@ -30,4 +30,6 @@ public:
 	XMFLOAT3 getRightTargetToHips();
 	void getCurrentWorldBoneTransform(Pose& pose, int idx);
 	float getDistance(Skeleton& skeleton);
+	float getLeftDistance(Skeleton& skeleton, bool isPrev);
+	float getRightDistance(Skeleton& skeleton, bool isPrev);
 };

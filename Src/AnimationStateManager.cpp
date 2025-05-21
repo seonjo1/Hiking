@@ -183,12 +183,15 @@ void AnimationStateManager::setTargetToHipsKeyFrame(Pose& pose, Skeleton& skelet
         {
             if (prevLeftY > groundY && XMVectorGetY(left) < groundY)
             {
+                clip.leftDist = tmpPlayer.pose.local[skeleton.GetBoneIndex("mixamorig:Hips")].position.y;
                 clip.leftPhase = time / clip.duration;
 				clip.leftToeTx = pose.world[skeleton.GetBoneIndex(leftPart)];
 				clip.leftToeEndTx = pose.world[skeleton.GetBoneIndex("mixamorig:LeftToe_End")];
             }
             if (prevRightY > groundY && XMVectorGetY(right) < groundY)
             {
+				clip.rightDist = tmpPlayer.pose.local[skeleton.GetBoneIndex("mixamorig:Hips")].position.y;
+				clip.rightTime = time;
 				clip.rightPhase = time / clip.duration;
 				clip.rightToeTx = pose.world[skeleton.GetBoneIndex(rightPart)];
 				clip.rightToeEndTx = pose.world[skeleton.GetBoneIndex("mixamorig:RightToe_End")];
@@ -234,6 +237,67 @@ void AnimationStateManager::getCurrentWorldBoneTransform(Pose& pose, int idx)
     pose.world[idx] = current.pose.world[idx];
 }
 
+float AnimationStateManager::getLeftDistance(Skeleton& skeleton, bool isPrev)
+{
+	float distance = 0.0f;
+	int idx = skeleton.GetBoneIndex("mixamorig:Hips");
+	if (isPrev)
+	{
+		distance = move.clip->leftDist - previous.clip->leftDist;
+		distance = distance - prevY;
+		if (distance < 0.0f)
+		{
+			int i = move.clip->boneTracks["mixamorig:Hips"].positionKeys.size() - 1;
+			float offset = move.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y - previous.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y;
+            distance += offset;
+		}
+	}
+	else
+	{
+		distance = move.clip->leftDist - current.clip->leftDist;
+		distance = distance - prevY;
+		if (distance < 0.0f)
+		{
+			int i = move.clip->boneTracks["mixamorig:Hips"].positionKeys.size() - 1;
+			float offset = move.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y - current.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y;
+			distance += offset;
+		}
+	}
+	distance = distance * 0.02f;
+
+	return distance;
+}
+
+float AnimationStateManager::getRightDistance(Skeleton& skeleton, bool isPrev)
+{
+	float distance = 0.0f;
+	int idx = skeleton.GetBoneIndex("mixamorig:Hips");
+	if (isPrev)
+	{
+		distance = move.clip->rightDist - previous.clip->rightDist;
+		distance = distance - prevY;
+		if (distance < 0.0f)
+		{
+			int i = move.clip->boneTracks["mixamorig:Hips"].positionKeys.size() - 1;
+			float offset = move.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y - previous.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y;
+			distance += offset;
+		}
+	}
+	else
+	{
+		distance = move.clip->rightDist - current.clip->rightDist;
+		distance = distance - prevY;
+		if (distance < 0.0f)
+		{
+			int i = move.clip->boneTracks["mixamorig:Hips"].positionKeys.size() - 1;
+			float offset = move.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y - current.clip->boneTracks["mixamorig:Hips"].positionKeys[i].position.y;
+			distance += offset;
+		}
+	}
+	distance = distance * 0.02f;
+	return distance;
+}
+
 float AnimationStateManager::getDistance(Skeleton& skeleton)
 {
     float distance = 0.0f;
@@ -267,7 +331,7 @@ float AnimationStateManager::getDistance(Skeleton& skeleton)
 		distance = prevY * blendAlpha;
 		prevY = tmp;
 	}
-    distance = distance * 0.02f;
+	distance = distance * 0.02f;
 
     return distance;
 }

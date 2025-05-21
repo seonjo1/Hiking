@@ -708,6 +708,15 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 			XMFLOAT3 rightTargetTmp = m_RaycastingManager.m_RightFoot.target;
 			rightTargetTmp.y += rightToeBaseOffset;
 			rightTarget = XMLoadFloat3(&rightTargetTmp);
+
+			// left go normal 보간
+			float ratio = m_animStateManager.current.getLeftGoRatio();
+			XMVECTOR startNormal = XMLoadFloat3(&m_prevLeftNormal);
+			XMVECTOR endNormal = XMLoadFloat3(&m_currLeftNormal);
+			XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, ratio);
+			nowNormal = XMVector3Normalize(nowNormal);
+			XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.normal, nowNormal);
+			m_RaycastingManager.m_RightFoot.normal = m_prevRightNormal;
 		}
 		else
 		{
@@ -726,6 +735,15 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 			XMFLOAT3 leftTargetTmp = m_RaycastingManager.m_LeftFoot.target;
 			leftTargetTmp.y += leftToeBaseOffset;
 			leftTarget = XMLoadFloat3(&leftTargetTmp);
+		
+			// right go normal 보간
+			float ratio = m_animStateManager.current.getRightGoRatio();
+			XMVECTOR startNormal = XMLoadFloat3(&m_prevRightNormal);
+			XMVECTOR endNormal = XMLoadFloat3(&m_currRightNormal);
+			XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, ratio);
+			nowNormal = XMVector3Normalize(nowNormal);
+			XMStoreFloat3(&m_RaycastingManager.m_RightFoot.normal, nowNormal);
+			m_RaycastingManager.m_LeftFoot.normal = m_prevLeftNormal;
 		}
 
 		// Target에 점진적 접근
@@ -832,7 +850,7 @@ void Model::setIdleStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 	}
 }
 
-void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, float walkPhase)
+void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, float walkPhase, bool isPrev)
 {
 	if (player.clip->name == "idle")
 	{
@@ -848,7 +866,7 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 			stepInfo.leftGo = true;
 			physx::PxVec3 leftToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToe_End"));
 			physx::PxVec3 leftToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:LeftToeBase"));
-	
+			
 			stepInfo.lastStepRay.x = m_leftTarget.x;
 			stepInfo.lastStepRay.y = m_leftTarget.y;
 			stepInfo.lastStepRay.z = m_leftTarget.z;
@@ -867,6 +885,7 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 
 			stepInfo.blockCheck = false;
 			stepInfo.isBlocked = false;
+			stepInfo.isChanged = true;
 		}
 
 		// 진행 방향 구하기
@@ -875,9 +894,12 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 		dir = XMVector3Rotate(dir, quat);
 
 		// 다음 Step까지의 움직임 구하기
-		float dt = player.getDt(stepInfo.leftGo);
-		float delta = dt * m_speed;
-		dir = XMVectorScale(dir, delta);
+		//float dt = player.getDt(stepInfo.leftGo);
+		//float delta = dt * m_speed;
+		//dir = XMVectorScale(dir, delta);
+
+		float distance = m_animStateManager.getLeftDistance(m_skeleton, isPrev);
+		dir = XMVectorScale(dir, distance);
 
 		XMFLOAT3 posBuffer = m_position;
 		XMVECTOR nextPos = XMLoadFloat3(&m_position);
@@ -926,6 +948,7 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 
 			stepInfo.blockCheck = false;
 			stepInfo.isBlocked = false;
+			stepInfo.isChanged = true;
 		}
 		
 		// 진행 방향 구하기
@@ -934,9 +957,13 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 		dir = XMVector3Rotate(dir, quat);
 
 		// 다음 Step까지의 움직임 구하기
-		float dt = player.getDt(stepInfo.leftGo);
-		float delta = dt * m_speed;
-		dir = XMVectorScale(dir, delta);
+		//float dt = player.getDt(stepInfo.leftGo);
+		//float delta = dt * m_speed;
+		//dir = XMVectorScale(dir, delta);
+
+		float distance = m_animStateManager.getRightDistance(m_skeleton, isPrev);
+		dir = XMVectorScale(dir, distance);
+		
 		XMFLOAT3 posBuffer = m_position;
 		XMVECTOR nextPos = XMLoadFloat3(&m_position);
 		nextPos = XMVectorAdd(nextPos, dir);
@@ -961,7 +988,7 @@ void Model::UpdateNextStep(XMMATRIX& worldMatrix)
 	if (m_animStateManager.previous.clip != nullptr)
 	{
 		// 현재 애니메이션 next step 계산
-		setNextStep(m_animStateManager.current, worldMatrix, m_currentStep, m_animStateManager.walkPhase);
+		setNextStep(m_animStateManager.current, worldMatrix, m_currentStep, m_animStateManager.walkPhase, false);
 
 		if (m_animStateManager.blendAlpha < 1.0f)
 		{
@@ -973,7 +1000,7 @@ void Model::UpdateNextStep(XMMATRIX& worldMatrix)
 			else
 			{
 				// 이전 애니메이션 next step 계산
-				setNextStep(m_animStateManager.previous, worldMatrix, m_prevStep, m_animStateManager.walkPhase);
+				setNextStep(m_animStateManager.previous, worldMatrix, m_prevStep, m_animStateManager.walkPhase, true);
 			}
 
 			if (m_animStateManager.current.clip->name == "idle")
@@ -1027,6 +1054,14 @@ void Model::raycastingNextStep(physx::PxScene* scene)
 		m_currentStep.nextStep.x = m_RaycastingManager.m_NextStep.target.x;
 		m_currentStep.nextStep.y = m_RaycastingManager.m_NextStep.target.y;
 		m_currentStep.nextStep.z = m_RaycastingManager.m_NextStep.target.z;
+		if (m_currentStep.leftGo)
+		{
+			m_currLeftNormal = m_RaycastingManager.m_NextStep.normal;
+		}
+		else
+		{
+			m_currRightNormal = m_RaycastingManager.m_NextStep.normal;
+		}
 	}
 }
 
@@ -1072,12 +1107,19 @@ void Model::footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix)
 
 	m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd);
 	m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd);
-
-	// Raycasting 실패시 IK 적용 x
-	//if (m_RaycastingManager.m_LeftFoot.part == EIKPart::FAIL || m_RaycastingManager.m_RightFoot.part == EIKPart::FAIL)
-	//{
-	//	m_stop = true;
-	//}
+	if (m_animStateManager.currentState == "idle")
+	{
+		m_currLeftNormal = m_RaycastingManager.m_LeftFoot.normal;
+		m_prevLeftNormal = m_RaycastingManager.m_LeftFoot.normal;
+		m_currRightNormal = m_RaycastingManager.m_RightFoot.normal;
+		m_prevRightNormal = m_RaycastingManager.m_RightFoot.normal;
+	}
+	else if (m_currentStep.isChanged == true)
+	{
+		m_prevLeftNormal = m_RaycastingManager.m_LeftFoot.normal;
+		m_prevRightNormal = m_RaycastingManager.m_RightFoot.normal;
+		m_currentStep.isChanged = false;
+	}
 }
 
 void Model::UpdateAnimation(physx::PxScene* scene, float dt)
@@ -1180,32 +1222,6 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		m_pose.UpdateFinalPos(m_skeleton);
 		m_stop = false;
 	}
-}
-
-float Model::getLeftFootBlendingAlpha()
-{
-	float walkPhase = m_animStateManager.walkPhase;
-
-
-	// 14 ~ 26
-	if (0.4f < walkPhase && walkPhase <= 0.743f)
-	{
-		return 1.0f;
-	}
-
-	// 6 ~ 14
-	if (0.1714f < walkPhase && walkPhase <= 0.4f)
-	{
-		return std::fminf(0.5f, (walkPhase - 0.1714f) / 0.3286f);
-	}
-
-	// 26 ~ 30
-	if (0.743f < walkPhase && walkPhase <= 0.857f)
-	{
-		return std::fminf(0.5f, 1.0f - ((walkPhase - 0.743f) / 0.114f));
-	}
-
-	return 0.5f;
 }
 
 void Model::ReleaseTextures()
@@ -1417,16 +1433,23 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 		clip.duration = aiAnim->mDuration;	// 총 Tick 수
 		clip.ticksPerSecond = aiAnim->mTicksPerSecond != 0 ? aiAnim->mTicksPerSecond : 25.0; // 1초당 tick 수
 		
+		//p("clip name: " + clip.name + "\n");
+
 		for (unsigned int j = 0; j < aiAnim->mNumChannels; ++j) {
 			// Bone 선택 (channel == bone 1개의 애니메이션 트랙)
 			aiNodeAnim* channel = aiAnim->mChannels[j];
 			std::string boneName = channel->mNodeName.C_Str();
 			BoneTrack track;
 			track.boneName = boneName;
+
+
+			//p("boneName: " + boneName + "\n");
+
 			{
 				for (unsigned int k = 0; k < channel->mNumPositionKeys; ++k) {
 					auto& kf = channel->mPositionKeys[k];
 					track.positionKeys.push_back({ kf.mTime, { kf.mValue.x, kf.mValue.y, kf.mValue.z } });
+					//p("position[" + std::to_string(k) + "]: " + std::to_string(kf.mValue.x) + " " + std::to_string(kf.mValue.y) + " " + std::to_string(kf.mValue.z) + "\n");
 				}
 				track.positionKeys[0].time = 0.0f;
 				

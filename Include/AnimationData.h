@@ -70,7 +70,11 @@ struct AnimationClip {
     XMMATRIX rightToeTx;
 	XMMATRIX leftToeEndTx;
 	XMMATRIX rightToeEndTx;
-    float leftPhase;
-    float rightPhase;
+	float leftPhase;
+	float leftDist;
+	float leftTime;
+	float rightPhase;
+	float rightDist;
+	float rightTime;
     BoneTrack* GetTrack(const std::string& boneName);
 };

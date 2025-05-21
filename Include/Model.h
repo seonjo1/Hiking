@@ -29,6 +29,7 @@ struct StepInfo
 	float blockRatio;
 	bool blockCheck{ false };
 	bool isBlocked{ false };
+	bool isChanged{ false };
 	bool leftGo{ true };
 };
 
@@ -131,7 +132,7 @@ public:
 	void modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase);
 	void modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix);
 	XMVECTOR getTargetToHipsDest(XMFLOAT3 targetToHipsFloat, XMVECTOR& target);
-	void setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, float walkPhase);
+	void setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, float walkPhase, bool isPrev);
 	void setIdleStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, bool leftGo);
 	void UpdateNextStep(XMMATRIX& worldMatrix);
 	void blendingNextStep();
@@ -187,4 +188,8 @@ private:
 	// 다음 Step 예측
 	StepInfo m_currentStep;
 	StepInfo m_prevStep;
+	XMFLOAT3 m_currLeftNormal;
+	XMFLOAT3 m_prevLeftNormal;
+	XMFLOAT3 m_currRightNormal;
+	XMFLOAT3 m_prevRightNormal;
 };

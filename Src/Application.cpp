@@ -265,7 +265,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	//createRock();
 	createSlope();
 	createStairs(20);
-	createRandomTerrain(30);
+	//createRandomTerrain(30);
 	createSlopeTerrain(30);
 
 	// 모델 개수 저장
