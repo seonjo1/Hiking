@@ -43,7 +43,8 @@ public:
 	void createSlopeTerrain(int num);
 	void createSlope();
 	void createGround();
-	void createSphere();
+	void createSphere(XMFLOAT3 pos, XMFLOAT4 color);
+	void createSpheres();
 	void createRock();
 	bool initShaders(HWND hwnd);
 	void updateDynamicRigidbody();

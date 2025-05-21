@@ -176,14 +176,36 @@ void Application::createRock()
 	m_Models.push_back(rock);
 }
 
-void Application::createSphere()
+void Application::createSphere(XMFLOAT3 pos, XMFLOAT4 color)
 {
-	Model* sphere = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.202f, 0.529f, 1.0f));
+	Model* sphere = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), color);
 	sphere->createStaticSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
-	sphere->setPosition(XMFLOAT3(10.0f, -1.0f, -10.0f));
+	sphere->setPosition(pos);
 	sphere->setScale(XMFLOAT3(5.0f, 5.0f, 5.0f));
 	sphere->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
 	m_Models.push_back(sphere);
+}
+
+void Application::createSpheres()
+{
+	XMFLOAT3 pos1 = { 10.0f, -1.5f, -10.0f };
+	XMFLOAT3 pos2 = { 12.0f, -1.5f, -14.0f };
+
+	XMFLOAT4 colors[3] = {
+	{ 0.229f, 0.239f, 0.461f, 1.0f },
+	{ 0.429f, 0.639f, 0.261f, 1.0f },
+	{ 0.929f, 0.639f, 0.261f, 1.0f }
+	};
+
+	for (int i = 0; i < 10; i++)
+	{
+		XMFLOAT4 color1 = colors[(i % 3)];
+		XMFLOAT4 color2 = colors[((i + 1) % 3)];
+		createSphere(pos1, color1);
+		createSphere(pos2, color2);
+		pos1.x += 4.0f;
+		pos2.x += 4.0f;
+	}
 }
 
 void Application::createSlope()
@@ -274,7 +296,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	createGround();
 	//createRock();
 	createSlope();
-	createSphere();
+	createSpheres();
 	createStairs(20);
 	//createRandomTerrain(30);
 	createSlopeTerrain(30);
