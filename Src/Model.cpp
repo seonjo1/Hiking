@@ -580,10 +580,11 @@ void Model::processBlockCase(physx::PxScene* scene)
 		XMVECTOR q = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), XMConvertToRadians(m_rotation.y));
 		nowDir = XMVector3Rotate(nowDir, q);
 	
-		if (XMVectorGetX(XMVector3Dot(nowDir, blockDir)) < 0.9f)
+		if (m_dirChanged == true)
 		{
 			m_currentStep.blockCheck = false;
 			m_currentStep.isBlocked = false;
+			m_dirChanged = false;
 		}
 		else
 		{
@@ -628,6 +629,7 @@ void Model::processBlockCase(physx::PxScene* scene)
 			m_currentStep.target = m_currentStep.nextStep;
 			m_currentStep.start = m_currentStep.nowStep;
 		}
+
 
 		m_currentStep.blockCheck = true;
 	}
@@ -1562,7 +1564,12 @@ void Model::move(XMFLOAT3& targetDir)
 	XMStoreFloat(&cosVal, dot);
 	cosVal = std::clamp(cosVal, -1.0f, 1.0f);
 
+	if (cosVal < 1.0f - 1e-4f)
+	{
+		m_dirChanged = true;
+	}
 	float theta = acosf(cosVal);
+
 
 	if (theta < rotSpeed * XM_PI / 180.0f)
 	{

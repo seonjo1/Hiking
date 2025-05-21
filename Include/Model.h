@@ -178,6 +178,7 @@ private:
 
 	// 애니메이션 여부
 	bool m_hasAnimation = false;
+	bool m_dirChanged = false;
 	float m_speed{ 0.0f };
 	UINT m_size; // mesh 개수
 	XMFLOAT4 m_quat;
