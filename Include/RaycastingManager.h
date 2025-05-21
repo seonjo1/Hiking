@@ -26,10 +26,10 @@ struct RaycastingInfo {
 
 class RaycastingManager {
 public:
-	void raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
-	void raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
+	void raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose, bool normalChanged, XMFLOAT3 nowNormal);
+	void raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose, bool normalChanged, XMFLOAT3 nowNormal);
 	void raycastingForY(physx::PxScene* scene, physx::PxVec3 hipsPose, physx::PxVec3 hipsFrontPose);
-	void raycastingForNextStep(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose);
+	void raycastingForNextStep(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose, bool normalChanged, XMFLOAT3 nowNorma);
 	void raycastingForMoveCheck(physx::PxScene* scene, physx::PxVec3 hips, physx::PxVec3 dir);
 	bool raycastingForFindBlock(physx::PxScene* scene, physx::PxVec3 start, physx::PxVec3 end, physx::PxVec3 xzDir);
 	void raycastingForBlockInfo(physx::PxScene* scene, physx::PxVec3 xzDir);
@@ -42,7 +42,7 @@ public:
 	RaycastingInfo m_Y;
 
 private:
-	void footRaycasting(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toToeEnd, physx::PxVec3 toFoot, RaycastingInfo& info);
+	void footRaycasting(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toToeEnd, physx::PxVec3 toFoot, RaycastingInfo& info, bool normalChanged, XMFLOAT3 nowNormal);
 	float getDistance(physx::PxVec3& toTarget, physx::PxVec3& dir);
 	void fillInfo(RaycastingInfo& dest, RaycastingInfo& src);
 

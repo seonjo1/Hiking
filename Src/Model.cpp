@@ -894,10 +894,6 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 		dir = XMVector3Rotate(dir, quat);
 
 		// 다음 Step까지의 움직임 구하기
-		//float dt = player.getDt(stepInfo.leftGo);
-		//float delta = dt * m_speed;
-		//dir = XMVectorScale(dir, delta);
-
 		float distance = m_animStateManager.getLeftDistance(m_skeleton, isPrev);
 		dir = XMVectorScale(dir, distance);
 
@@ -957,10 +953,6 @@ void Model::setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo
 		dir = XMVector3Rotate(dir, quat);
 
 		// 다음 Step까지의 움직임 구하기
-		//float dt = player.getDt(stepInfo.leftGo);
-		//float delta = dt * m_speed;
-		//dir = XMVectorScale(dir, delta);
-
 		float distance = m_animStateManager.getRightDistance(m_skeleton, isPrev);
 		dir = XMVectorScale(dir, distance);
 		
@@ -1050,7 +1042,7 @@ void Model::raycastingNextStep(physx::PxScene* scene)
 	{
 		physx::PxVec3 nextToeBase = { m_currentStep.nextStep.x, m_currentStep.nextStep.y, m_currentStep.nextStep.z };
 		physx::PxVec3 nextToeEnd = { m_currentStep.nextStepEnd.x, m_currentStep.nextStepEnd.y, m_currentStep.nextStepEnd.z };
-		m_RaycastingManager.raycastingForNextStep(scene, nextToeBase, nextToeEnd);
+		m_RaycastingManager.raycastingForNextStep(scene, nextToeBase, nextToeEnd, false, XMFLOAT3(0.0f, 0.0f, 0.0f));
 		m_currentStep.nextStep.x = m_RaycastingManager.m_NextStep.target.x;
 		m_currentStep.nextStep.y = m_RaycastingManager.m_NextStep.target.y;
 		m_currentStep.nextStep.z = m_RaycastingManager.m_NextStep.target.z;
@@ -1105,10 +1097,10 @@ void Model::footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix)
 	physx::PxVec3 rightToeBase = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToeBase"));
 	physx::PxVec3 rightToeEnd = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:RightToe_End"));
 
-	m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd);
-	m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd);
 	if (m_animStateManager.currentState == "idle")
 	{
+		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd, false, XMFLOAT3(0.0f, 0.0f, 0.0f));
+		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd, false, XMFLOAT3(0.0f, 0.0f, 0.0f));
 		m_currLeftNormal = m_RaycastingManager.m_LeftFoot.normal;
 		m_prevLeftNormal = m_RaycastingManager.m_LeftFoot.normal;
 		m_currRightNormal = m_RaycastingManager.m_RightFoot.normal;
@@ -1116,9 +1108,16 @@ void Model::footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix)
 	}
 	else if (m_currentStep.isChanged == true)
 	{
+		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd, false, XMFLOAT3(0.0f, 0.0f, 0.0f));
+		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd, false, XMFLOAT3(0.0f, 0.0f, 0.0f));
 		m_prevLeftNormal = m_RaycastingManager.m_LeftFoot.normal;
 		m_prevRightNormal = m_RaycastingManager.m_RightFoot.normal;
 		m_currentStep.isChanged = false;
+	}
+	else
+	{
+		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd, true, m_prevLeftNormal);
+		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd, true, m_prevRightNormal);
 	}
 }
 

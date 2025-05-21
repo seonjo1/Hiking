@@ -17,7 +17,7 @@ float RaycastingManager::getDistance(physx::PxVec3& toTarget, physx::PxVec3& dir
     }
 }
 
-void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toToeEnd, physx::PxVec3 toFoot, RaycastingInfo& info)
+void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toToeEnd, physx::PxVec3 toFoot, RaycastingInfo& info, bool normalChanged, XMFLOAT3 nowNormal)
 {
     const float slopeDotThreshold = cosf(physx::PxDegToRad(50.0f));
     static physx::PxRaycastBuffer toeEndHit, toeBaseHit, footHit;
@@ -85,7 +85,11 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
     if (footRaySuccess)
     {
         XMFLOAT3 footNormal = XMFLOAT3(footHit.block.normal.x, footHit.block.normal.y, footHit.block.normal.z);
-        XMFLOAT3 N = XMFLOAT3(0.0f, 1.0f, 0.0f);
+		if (normalChanged)
+		{
+			footNormal = nowNormal;
+		}
+		XMFLOAT3 N = XMFLOAT3(0.0f, 1.0f, 0.0f);
         XMVECTOR quat = IKManager::getQuatFromTo(N, footNormal);
         XMVECTOR toToeBase = XMVectorSet(-toFoot.x, -toFoot.y, -toFoot.z, 0.0f);
         XMVECTOR toTarget = XMVector3Rotate(toToeBase, quat);
@@ -105,6 +109,10 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
     if (toeEndRaySuccess)
     {
 		XMFLOAT3 toeEndNormal = XMFLOAT3(toeEndHit.block.normal.x, toeEndHit.block.normal.y, toeEndHit.block.normal.z);
+		if (normalChanged)
+		{
+			toeEndNormal = nowNormal;
+		}
 		XMFLOAT3 N = XMFLOAT3(0.0f, 1.0f, 0.0f);
 		XMVECTOR quat = IKManager::getQuatFromTo(N, toeEndNormal);
 		XMVECTOR toToeBase = XMVectorSet(-toToeEnd.x, -toToeEnd.y, -toToeEnd.z, 0.0f);
@@ -124,9 +132,14 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
 	RaycastingInfo toeBaseInfo;
     if (toeBaseRaySuccess)
     {
+		XMFLOAT3 toeBaseNormal = XMFLOAT3(toeBaseHit.block.normal.x, toeBaseHit.block.normal.y, toeBaseHit.block.normal.z);
+		if (normalChanged)
+		{
+			toeBaseNormal = nowNormal;
+		}
         toeBaseInfo.pos = XMFLOAT3(toeBaseHit.block.position.x, toeBaseHit.block.position.y, toeBaseHit.block.position.z);
         toeBaseInfo.target = toeBaseInfo.pos;
-        toeBaseInfo.normal = XMFLOAT3(toeBaseHit.block.normal.x, toeBaseHit.block.normal.y, toeBaseHit.block.normal.z);
+        toeBaseInfo.normal = toeBaseNormal;
         toeBaseInfo.dir = XMFLOAT3(0.0f, -1.0f, 0.0f);
 		XMVECTOR target = XMLoadFloat3(&toeBaseInfo.target);
 		float toeBaseDistance = XMVectorGetX(XMVector3Length(XMVectorSubtract(toeBaseRayStartPose, target)));
@@ -162,7 +175,7 @@ void RaycastingManager::fillInfo(RaycastingInfo& dest, RaycastingInfo& src)
     dest.dir = src.dir;
 }
 
-void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
+void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose, bool normalChanged, XMFLOAT3 nowNormal)
 {
 	static const float toToeEndScale = 0.3f;
 	static const float toFootScale = 0.5f;
@@ -174,11 +187,11 @@ void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::Px
     toToeEnd = toToeEnd * toToeEndScale;
     toFoot = toFoot * toFootScale;
 
-    footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_LeftFoot);
+    footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_LeftFoot, normalChanged, nowNormal);
 }
 
 
-void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
+void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose, bool normalChanged, XMFLOAT3 nowNormal)
 {
 	static const float toToeEndScale = 0.3f;
 	static const float toFootScale = 0.5f;
@@ -190,10 +203,10 @@ void RaycastingManager::raycastingForRightFootIK(physx::PxScene* scene, physx::P
 	toToeEnd = toToeEnd * toToeEndScale;
 	toFoot = toFoot * toFootScale;
 
-    footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_RightFoot);
+    footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_RightFoot, normalChanged, nowNormal);
 }
 
-void RaycastingManager::raycastingForNextStep(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose)
+void RaycastingManager::raycastingForNextStep(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose, bool normalChanged, XMFLOAT3 nowNormal)
 {
 	static const float toToeEndScale = 0.3f;
 	static const float toFootScale = 0.5f;
@@ -205,7 +218,7 @@ void RaycastingManager::raycastingForNextStep(physx::PxScene* scene, physx::PxVe
 	toToeEnd = toToeEnd * toToeEndScale;
 	toFoot = toFoot * toFootScale;
 
-	footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_NextStep);
+	footRaycasting(scene, toeBasePose, toToeEnd, toFoot, m_NextStep, normalChanged, nowNormal);
 }
 
 void RaycastingManager::raycastingForMoveCheck(physx::PxScene* scene, physx::PxVec3 hips, physx::PxVec3 dir)

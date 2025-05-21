@@ -203,11 +203,6 @@ void AnimationStateManager::setTargetToHipsKeyFrame(Pose& pose, Skeleton& skelet
         XMVECTOR leftToHips = XMVectorSubtract(hips, left);
         XMVECTOR rightToHips = XMVectorSubtract(hips, right);
 
-        //p("time: " + std::to_string(time) + "\n");
-        //p("hips: " + std::to_string(XMVectorGetX(hips)) + " " + std::to_string(XMVectorGetY(hips)) + " " + std::to_string(XMVectorGetZ(hips)) + "\n");
-        //p("left: " + std::to_string(XMVectorGetX(left)) + " " + std::to_string(XMVectorGetY(left)) + " " + std::to_string(XMVectorGetZ(left)) + "\n");
-        //p("right: " + std::to_string(XMVectorGetX(right)) + " " + std::to_string(XMVectorGetY(right)) + " " + std::to_string(XMVectorGetZ(right)) + "\n");
-
         XMStoreFloat3(&clip.leftTargetToHipsVector[i].position, leftToHips);
         XMStoreFloat3(&clip.rightTargetToHipsVector[i].position, rightToHips);
         clip.leftTargetToHipsVector[i].time = time;
