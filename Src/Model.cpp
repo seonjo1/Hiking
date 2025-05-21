@@ -582,6 +582,14 @@ void Model::processBlockCase(physx::PxScene* scene)
 	
 		if (m_dirChanged == true)
 		{
+			if (m_currentStep.leftGo)
+			{
+				m_prevLeftNormal = m_RaycastingManager.m_LeftFoot.normal;
+			}
+			else
+			{
+				m_prevRightNormal = m_RaycastingManager.m_RightFoot.normal;
+			}
 			m_currentStep.blockCheck = false;
 			m_currentStep.isBlocked = false;
 			m_dirChanged = false;
@@ -762,7 +770,6 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 		{
 			XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.target, leftTarget);
 		}
-
 
 		XMVECTOR prevRightTarget = XMLoadFloat3(&m_rightTarget);
 		XMVECTOR toRightTarget = XMVectorSubtract(rightTarget, prevRightTarget);
