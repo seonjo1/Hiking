@@ -43,6 +43,7 @@ public:
 	void createSlopeTerrain(int num);
 	void createSlope();
 	void createGround();
+	void createSphere();
 	void createRock();
 	bool initShaders(HWND hwnd);
 	void updateDynamicRigidbody();

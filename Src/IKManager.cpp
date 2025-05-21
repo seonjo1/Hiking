@@ -482,7 +482,7 @@ std::vector<XMFLOAT4>& IKManager::getNowRotation()
 void IKManager::blendingIKRotation()
 {
 	static bool init = false;
-	static float alpha = 0.8f;
+	static float alpha = 0.7f;
 	
 	if (init == false)
 	{

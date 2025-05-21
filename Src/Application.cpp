@@ -176,6 +176,16 @@ void Application::createRock()
 	m_Models.push_back(rock);
 }
 
+void Application::createSphere()
+{
+	Model* sphere = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.202f, 0.529f, 1.0f));
+	sphere->createStaticSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
+	sphere->setPosition(XMFLOAT3(10.0f, -1.0f, -10.0f));
+	sphere->setScale(XMFLOAT3(5.0f, 5.0f, 5.0f));
+	sphere->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
+	m_Models.push_back(sphere);
+}
+
 void Application::createSlope()
 {
 	Model* slope = Model::createBox(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.0f, 0.5f, 0.5f, 1.0f));
@@ -264,6 +274,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	createGround();
 	//createRock();
 	createSlope();
+	createSphere();
 	createStairs(20);
 	//createRandomTerrain(30);
 	createSlopeTerrain(30);

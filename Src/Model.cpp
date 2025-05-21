@@ -684,7 +684,7 @@ void Model::setNowStep()
 
 void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 {
-	const static float targetSpeed = 0.6f;
+	const static float targetSpeed = 0.45f;
 
 	// animation을 반영한 target 보정
 	if (m_animStateManager.currentState == "walk")
@@ -1123,8 +1123,8 @@ void Model::footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix)
 	}
 	else
 	{
-		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd, true, m_prevLeftNormal);
-		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd, true, m_prevRightNormal);
+		m_RaycastingManager.raycastingForLeftFootIK(scene, leftToeBase, leftToeEnd, false, m_prevLeftNormal);
+		m_RaycastingManager.raycastingForRightFootIK(scene, rightToeBase, rightToeEnd, false, m_prevRightNormal);
 	}
 }
 
@@ -1172,7 +1172,7 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		}
 
 		// 9. bone 위치 보정
-		modifyTarget(scene, worldMatrix);
+		//modifyTarget(scene, worldMatrix);
 
 		// 10. world Y값 결정
 		modifyWorldY(scene, worldMatrix);
