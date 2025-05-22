@@ -1183,6 +1183,16 @@ void Model::moveModel(XMMATRIX& worldMatrix, float dt)
 	XMVECTOR pos = XMLoadFloat3(&m_position);
 	pos = XMVectorAdd(pos, dir);
 	XMStoreFloat3(&m_position, pos);
+
+	// Physx에 움직임 동기화
+	float toRadian = XM_PI / 180.0f;
+	physx::PxVec3 p(m_position.x, m_position.y, m_position.z);
+	physx::PxQuat q(XMVectorGetX(quat), XMVectorGetY(quat), XMVectorGetZ(quat), XMVectorGetW(quat));
+	physx::PxTransform tx;
+	tx.p = p;
+	tx.q = q;
+	m_physicsObject->m_actor->setGlobalPose(tx);
+
 	worldMatrix = getWorldMatrix();
 }
 
