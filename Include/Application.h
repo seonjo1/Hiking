@@ -33,38 +33,36 @@ public:
 	void ModelControl(Input*);
 	XMFLOAT3 getDirection(int& inputState, bool pressUp, bool pressLeft, bool pressDown, bool pressRight);
 
-	void setBoneDebugMode(bool);
-	void setRangeDebugMode(bool);
-	void setRayDebugMode(bool);
 	void CameraRotate(int x, int y);
 	void SaveCameraCurrentPos(int x, int y);
+	void setRayDebugMode(bool);
+	void setBoneDebugMode(bool);
+	void setRangeDebugMode(bool);
+	void createSlope();
+	void createGround();
+	void createSpheres();
 	void createStairs(int num);
 	void createRandomTerrain(int num);
 	void createSlopeTerrain(int num);
-	void createSlope();
-	void createGround();
 	void createSphere(XMFLOAT3 pos, XMFLOAT4 color);
-	void createSpheres();
-	void createRock();
+	bool createAnimModel();
 	bool initShaders(HWND hwnd);
-	void updateDynamicRigidbody();
 
 private:
 	bool Render();
 
+	Timer m_Timer;
 	D3D* m_Direct3D;
 	Camera* m_Camera;
-	Timer m_Timer;
 	Model* m_AnimationModel;
 	std::vector<Model*> m_Models;
 	
-	TextureShader* m_TextureShader;
-	JointShader* m_JointShader;
 	BoneShader* m_BoneShader;
+	JointShader* m_JointShader;
 	ModelShader* m_ModelShader;
+	TextureShader* m_TextureShader;
 	PhysicsManager* m_PhysicsManager;
 
-	int m_modelCount;
 	bool m_boneDebugMode{ false };
 	bool m_rayDebugMode{ false };
 	bool m_rangeDebugMode{ false };

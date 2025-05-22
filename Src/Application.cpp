@@ -5,17 +5,59 @@ Application::Application()
 	m_Direct3D = 0;
 	m_Camera = 0;
 	m_TextureShader = 0;
-	m_modelCount = 0;
 }
-
 
 Application::Application(const Application& other)
 {
 }
 
-
 Application::~Application()
 {
+}
+
+bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
+{
+	bool result;
+
+	// D3D 생성
+	m_Direct3D = new D3D();
+	result = m_Direct3D->Initialize(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize Direct3D", L"Error", MB_OK);
+		return false;
+	}
+
+	// 카메라 생성 및 위치 설정
+	m_Camera = new Camera;
+	m_Camera->SetPosition(0.0f, 5.0f, -30.0f);
+
+	// 물리 엔진 초기화
+	m_PhysicsManager = new PhysicsManager();
+	m_PhysicsManager->initialize();
+
+	// 애니메이션 모델 생성
+	result = createAnimModel();
+	if (result == false)
+	{
+		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
+		return false;
+	}
+
+	// 모델 생성
+	createGround();
+	createSlope();
+	createSpheres();
+	createSphere(XMFLOAT3(-10.0f, -0.5f, -25.0f), XMFLOAT4(0.725f, 0.202f, 0.529f, 1.0f));
+	createSphere(XMFLOAT3(-13.0f, -0.5f, -25.0f), XMFLOAT4(0.725f, 0.202f, 0.529f, 1.0f));
+	createStairs(20);
+	createRandomTerrain(30);
+	createSlopeTerrain(30);
+
+	// 셰이더 초기화
+	bool success = initShaders(hwnd);
+
+	return success;
 }
 
 void Application::createStairs(int num)
@@ -164,18 +206,6 @@ void Application::createGround()
 	m_Models.push_back(ground);
 }
 
-
-void Application::createRock()
-{
-	// 구 모델 생성
-	Model* rock = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), XMFLOAT4(0.725f, 0.202f, 0.529f, 1.0f));
-	rock->createDynamicSphere(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene, 100.0f);
-	rock->setPosition(XMFLOAT3(0.0f, 60.0f, 60.0f));
-	rock->setScale(XMFLOAT3(7.0f, 7.0f, 7.0f));
-	rock->syncModelWithRigidbody(m_PhysicsManager->m_Physics);
-	m_Models.push_back(rock);
-}
-
 void Application::createSphere(XMFLOAT3 pos, XMFLOAT4 color)
 {
 	Model* sphere = Model::createSphere(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), color);
@@ -255,34 +285,13 @@ bool Application::initShaders(HWND hwnd)
 	return true;
 }
 
-bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
+bool Application::createAnimModel()
 {
-	bool result;
-
-	// D3D 생성
-	m_Direct3D = new D3D();
-	result = m_Direct3D->Initialize(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize Direct3D", L"Error", MB_OK);
-		return false;
-	}
-
-	// 카메라 생성 및 위치 설정
-	m_Camera = new Camera;
-	m_Camera->SetPosition(0.0f, 5.0f, -30.0f);
-
-	// 물리 엔진 초기화
-	m_PhysicsManager = new PhysicsManager();
-	m_PhysicsManager->initialize();
-
-	// 애니메이션 모델 생성
 	std::string filename("./Assets/Remy3.glb");
 
 	m_AnimationModel = new Model(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), filename);
 	if (!m_AnimationModel)
 	{
-		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
 		return false;
 	}
 	m_AnimationModel->setPosition(XMFLOAT3(0.0f, -0.15f, 0.0f));
@@ -291,25 +300,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_AnimationModel->createCharacterCollider(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
 	m_AnimationModel->setYoffset();
 	m_AnimationModel->setTargetToHipsKeyFrame();
-
-	// 모델 생성
-	createGround();
-	//createRock();
-	createSlope();
-	createSpheres();
-	createSphere(XMFLOAT3(-10.0f, -0.5f, -25.0f), XMFLOAT4(0.725f, 0.202f, 0.529f, 1.0f));
-	createSphere(XMFLOAT3(-13.0f, -0.5f, -25.0f), XMFLOAT4(0.725f, 0.202f, 0.529f, 1.0f));
-	createStairs(20);
-	//createRandomTerrain(30);
-	createSlopeTerrain(30);
-
-	// 모델 개수 저장
-	m_modelCount = m_Models.size();
-
-	// 셰이더 초기화
-	bool success = initShaders(hwnd);
-
-	return success;
+	return true;
 }
 
 void Application::Shutdown()
@@ -380,14 +371,6 @@ void Application::Shutdown()
 	return;
 }
 
-void Application::updateDynamicRigidbody()
-{
-	for (auto* model : m_Models)
-	{
-		model->updatePhysxResult();
-	}
-}
-
 bool Application::Frame()
 {
 	float dt = m_Timer.GetDeltaTime();
@@ -396,7 +379,6 @@ bool Application::Frame()
 	if (dt > 0.0f)
 	{
 		m_PhysicsManager->stepSimulation(dt);
-		updateDynamicRigidbody();
 		m_AnimationModel->UpdateAnimation(m_PhysicsManager->m_Scene, dt);
 	}
 
