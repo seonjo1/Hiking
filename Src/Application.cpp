@@ -498,7 +498,6 @@ XMFLOAT3 Application::getDirection(int& inputState, bool pressUp, bool pressLeft
 
 void Application::ModelControl(Input* input)
 {
-	const float walkSpeed = 0.05f;
 	int inputState = 0;
 
 	bool pressUp = input->IsKeyDown(VK_UP);
@@ -512,9 +511,7 @@ void Application::ModelControl(Input* input)
 		m_AnimationModel->setState("walk");
 	}
 	else {
-		if (m_AnimationModel->getSpeed() < walkSpeed)
-			m_AnimationModel->setState("idle");
-		m_AnimationModel->speedDown();
+		m_AnimationModel->setState("idle");
 	}
 	
 }

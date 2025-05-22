@@ -516,61 +516,6 @@ void Model::setState(std::string state)
 	}
 }
 
-XMVECTOR Model::getTargetToHipsDest(XMFLOAT3 targetToHipsFloat, XMVECTOR& target)
-{
-	XMVECTOR targetToHips = XMLoadFloat3(&targetToHipsFloat);
-
-	XMVECTOR q = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), XMConvertToRadians(m_rotation.y));
-	targetToHips = XMVector3Rotate(targetToHips, q);
-
-	XMVECTOR hipsDest = XMVectorAdd(target, targetToHips);
-	XMVectorSetZ(hipsDest, 1.0f);
-	return hipsDest;
-}
-
-void Model::modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase)
-{
-	static const float hipsSpeed = 0.5f;
-
-	// hips 위치 변경
-	physx::PxVec3 hips = m_pose.getBonePos(worldMatrix, m_skeleton.GetBoneIndex("mixamorig:Hips"));
-
-	XMVECTOR hipsDest;
-	XMVECTOR leftTarget = XMVectorSet(leftToeBase.x, leftToeBase.y, leftToeBase.z, 1.0f);
-	XMVECTOR rightTarget = XMVectorSet(rightToeBase.x, rightToeBase.y, rightToeBase.z, 1.0f);
-
-	// idle, walk를 기준으로 왼발, 오른발 선택
-	if (m_animStateManager.currentState == "idle")
-	{
-		if (leftToeBase.y < rightToeBase.y)
-		{
-			hipsDest = getTargetToHipsDest(m_animStateManager.getLeftTargetToHips(), leftTarget);
-		}
-		else
-		{
-			hipsDest = getTargetToHipsDest(m_animStateManager.getRightTargetToHips(), rightTarget);
-		}
-	}
-	else
-	{
-		if (m_animStateManager.walkPhase < 0.5f)
-		{
-			hipsDest = getTargetToHipsDest(m_animStateManager.getLeftTargetToHips(), leftTarget);
-		}
-		else
-		{
-			hipsDest = getTargetToHipsDest(m_animStateManager.getRightTargetToHips(), rightTarget);
-		}
-	}
-
-	// 선택한 발 기준으로 hipsDest 계산
-
-	XMVECTOR det;
-	XMMATRIX inverseWorld = XMMatrixInverse(&det, worldMatrix);
-	hipsDest = XMVector3TransformCoord(hipsDest, inverseWorld);
-	XMStoreFloat3(&m_pose.local[m_skeleton.GetBoneIndex("mixamorig:Hips")].position, hipsDest);
-}
-
 void Model::processBlockCase(physx::PxScene* scene)
 {
 	if (m_currentStep.blockCheck == true)
@@ -1250,10 +1195,10 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		}
 
 		// 5. 몸 앞쪽 Raycasting
-		//raycastingToForward(scene, worldMatrix);
+		raycastingToForward(scene, worldMatrix);
 
 		// 6. 이동 불가 check
-		//checkCanMove();
+		checkCanMove();
 
 		// 7. 모델 move
 		moveModel(worldMatrix, dt);
@@ -1433,16 +1378,6 @@ XMMATRIX Model::getWorldMatrix()
 	return scale * rotation * translation;  // 순서대로 적용: 스케일 -> 회전 -> 위치
 }
 
-XMMATRIX Model::getWorldMatrixNotIncludeScale()
-{
-	float toRadian = XM_PI / 180.0f;
-	XMMATRIX translation = XMMatrixTranslation(m_position.x, m_position.y, m_position.z);
-	XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(m_rotation.x * toRadian, m_rotation.y * toRadian, m_rotation.z * toRadian);
-	XMMATRIX rotation = XMMatrixRotationQuaternion(quaternion);
-
-	return rotation * translation;  // 순서대로 적용: 스케일 -> 회전 -> 위치
-}
-
 void Model::setPosition(XMFLOAT3 position)
 {
 	m_position = position;
@@ -1541,8 +1476,6 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 		clip.duration = aiAnim->mDuration;	// 총 Tick 수
 		clip.ticksPerSecond = aiAnim->mTicksPerSecond != 0 ? aiAnim->mTicksPerSecond : 25.0; // 1초당 tick 수
 		
-		//p("clip name: " + clip.name + "\n");
-
 		for (unsigned int j = 0; j < aiAnim->mNumChannels; ++j) {
 			// Bone 선택 (channel == bone 1개의 애니메이션 트랙)
 			aiNodeAnim* channel = aiAnim->mChannels[j];
@@ -1550,8 +1483,6 @@ void Model::LoadAnimationData(const aiScene* scene, Skeleton& skeleton) {
 			BoneTrack track;
 			track.boneName = boneName;
 
-
-			//p("boneName: " + boneName + "\n");
 
 			{
 				for (unsigned int k = 0; k < channel->mNumPositionKeys; ++k) {
@@ -1669,19 +1600,9 @@ void Model::setToTarget(XMFLOAT3& targetDir)
 	}
 }
 
-void Model::speedDown()
-{
-	const static float accel = 1.0f;
-	const static float minSpeed = 0.0f;
-	
-	m_speed = max(minSpeed, m_speed - accel);
-}
-
 void Model::move(XMFLOAT3& targetDir)
 {
 	const static float rotSpeed = 10.0f;
-	const static float accel = 1.0f;
-	const static float maxSpeed = 7.135f;
 
 	// 현재 방향 벡터
 	XMFLOAT3 nowDir = getRotatedVector(m_rotation.y);
@@ -1723,8 +1644,6 @@ void Model::move(XMFLOAT3& targetDir)
 		if (m_rotation.y >= 360.0f)
 			m_rotation.y -= 360.0f;
 	}
-
-	m_speed = min(m_speed + accel, maxSpeed);
 }
 
 void Model::addMesh(Mesh* mesh)
@@ -1736,11 +1655,6 @@ void Model::addMesh(Mesh* mesh)
 void Model::addTexture(Texture* texture)
 {
 	m_textures.push_back(texture);
-}
-
-float Model::getSpeed()
-{
-	return m_speed;
 }
 
 void Model::createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene)
@@ -1758,16 +1672,6 @@ void Model::createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene)
 	m_physicsObject->createStaticObject(physics);
 	m_physicsObject->setMaterial(physics, 0.6f, 0.6f, 0.3f);
 	m_physicsObject->createSphereShape(physics, physx::PxMeshScale(1.0f));
-	m_physicsObject->addToScene(scene);
-}
-
-void Model::createDynamicSphere(physx::PxPhysics* physics, physx::PxScene* scene, float mass)
-{
-	m_physicsObject = new PhysicsObject();
-	m_physicsObject->createDynamicObject(physics);
-	m_physicsObject->setMaterial(physics, 0.6f, 0.6f, 0.3f);
-	m_physicsObject->createSphereShape(physics, physx::PxMeshScale(1.0f));
-	m_physicsObject->setMass(mass);
 	m_physicsObject->addToScene(scene);
 }
 
@@ -1803,27 +1707,6 @@ void Model::createDynamicCapsule(physx::PxPhysics* physics, physx::PxScene* scen
 	m_physicsObject->setMass(mass);
 	m_physicsObject->addToScene(scene);
 }
-
-void Model::updatePhysxResult()
-{
-	if (m_physicsObject->isDynamic == true)
-	{
-		isQuatRotation = true;
-		physx::PxTransform transform = m_physicsObject->m_actor->getGlobalPose();
-		physx::PxVec3 pos = transform.p;
-		physx::PxQuat rot = transform.q;
-
-		m_position.x = pos.x;
-		m_position.y = pos.y;
-		m_position.z = pos.z;
-
-		m_quat.x = rot.x;
-		m_quat.y = rot.y;
-		m_quat.z = rot.z;
-		m_quat.w = rot.w;
-	}
-}
-
 
 void Model::syncModelWithRigidbody(physx::PxPhysics* physics)
 {

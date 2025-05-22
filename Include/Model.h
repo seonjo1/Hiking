@@ -81,19 +81,35 @@ public:
 	Model(const Model&);
 	~Model();
 
+	void Shutdown();
+	void move(XMFLOAT3&);
+	void addMesh(Mesh* mesh);
+	void addTexture(Texture* texture); 
+	void checkCanMove();
+	void initRangeAxis();
+	void moveModel(XMMATRIX& worldMatrix, float dt);
 	void LoadByAssimp(ID3D11Device*, ID3D11DeviceContext*, std::string filename);
 	void processNode(ID3D11Device*, ID3D11DeviceContext*, aiNode*, const aiScene*);
 	void processMesh(ID3D11Device*, ID3D11DeviceContext*, aiMesh*, const aiScene*);
 	void LoadAnimationData(const aiScene* scene, Skeleton& skeleton);
 	void ParseSkeleton(aiNode* node, int parentIndex, Skeleton& skeleton, const std::unordered_set<std::string>& usedBones);
-	std::unordered_set<std::string> CollectUsedBoneNames(const aiScene* scene);
-	XMMATRIX ConvertToXM(const aiMatrix4x4& m);
 	void LoadBoneOffsets(const aiScene* scene, Skeleton& skeleton);
-	bool HasAnimationInfo(const aiScene* scene);
-	void setState(std::string state);
 	void initDebugMeshes(ID3D11Device* device);
-
 	void UpdateAnimation(physx::PxScene* scene, float dt);
+	void createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene);
+	void createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene);
+	void createDynamicCapsule(physx::PxPhysics* physics, physx::PxScene* scene, float mass, float radius, float halfHeight);
+	void createCharacterCollider(physx::PxPhysics* physics, physx::PxScene* scene);
+	void syncModelWithRigidbody(physx::PxPhysics* physics);
+	void modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix);
+	void modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix);
+	void UpdateNextStep(XMMATRIX& worldMatrix);
+	void blendingNextStep();
+	void raycastingNextStep(physx::PxScene* scene);
+	void raycastingToForward(physx::PxScene* scene, XMMATRIX& worldMatrix);
+	void footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix);
+	void processBlockCase(physx::PxScene* scene);
+
 	bool DrawTextureShader(ID3D11DeviceContext*, TextureShader*, Matrix&);
 	bool DrawJointShader(ID3D11DeviceContext*, JointShader*, Matrix&);
 	bool DrawRangeCornShader(ID3D11DeviceContext* deviceContext, JointShader* jointShader, Matrix& matrix);
@@ -102,48 +118,26 @@ public:
 	bool DrawRayLineShader(ID3D11DeviceContext*, BoneShader*, Matrix&, XMFLOAT3);
 	bool DrawRangeAxisShader(ID3D11DeviceContext* deviceContext, BoneShader* boneShader, Matrix& matrix, XMFLOAT3 cameraFront);
 	bool DrawRayPointShader(ID3D11DeviceContext* deviceContext, JointShader* jointShader, Matrix& matrix);
+	bool HasAnimationInfo(const aiScene* scene);
 
-	void createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene);
-	void createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene);
-	void createDynamicSphere(physx::PxPhysics* physics, physx::PxScene* scene, float mass);
-	void createDynamicCapsule(physx::PxPhysics* physics, physx::PxScene* scene, float mass, float radius, float halfHeight);
-	void updatePhysxResult();
-	void createCharacterCollider(physx::PxPhysics* physics, physx::PxScene* scene);
-
-	void Shutdown();
-	XMMATRIX getWorldMatrix();
-	XMMATRIX getWorldMatrixNotIncludeScale();
+	void setYoffset();
+	void setNowStep();
+	void setScale(XMFLOAT3);
 	void setPosition(XMFLOAT3);
 	void setRotation(XMFLOAT3);
-	void setScale(XMFLOAT3);
-	void speedDown();
-	void move(XMFLOAT3&);
-	bool getRotateDir(XMFLOAT3& targetDir, XMFLOAT3& nowDir);
-	XMFLOAT3 getRotatedVector(float degree);
-	void setToTarget(XMFLOAT3& targetDir);
-	void addMesh(Mesh* mesh);
-	void addTexture(Texture* texture);
-	void syncModelWithRigidbody(physx::PxPhysics* physics);
-	void initRangeAxis();
-	float getSpeed();
-	XMFLOAT3 getAxis(float xDeg, float yDeg, float zDeg);
-	void setYoffset();
-	void setTargetToHipsKeyFrame();
-	void modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix);
-	void modifyHipsPos(XMMATRIX& worldMatrix, physx::PxVec3& leftToeBase, physx::PxVec3& rightToeBase);
-	void modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix);
-	XMVECTOR getTargetToHipsDest(XMFLOAT3 targetToHipsFloat, XMVECTOR& target);
+	void setState(std::string state);
 	void setNextStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, float walkPhase, bool isPrev);
 	void setIdleStep(AnimationPlayer& player, XMMATRIX& worldMatrix, StepInfo& stepInfo, bool leftGo);
-	void UpdateNextStep(XMMATRIX& worldMatrix);
-	void blendingNextStep();
-	void raycastingNextStep(physx::PxScene* scene);
-	void raycastingToForward(physx::PxScene* scene, XMMATRIX& worldMatrix);
-	void checkCanMove();
-	void moveModel(XMMATRIX& worldMatrix, float dt);
-	void footRaycasting(physx::PxScene* scene, XMMATRIX& worldMatrix);
-	void processBlockCase(physx::PxScene* scene);
-	void setNowStep();
+	void setToTarget(XMFLOAT3& targetDir);
+	void setTargetToHipsKeyFrame();
+
+	bool getRotateDir(XMFLOAT3& targetDir, XMFLOAT3& nowDir);
+	XMFLOAT3 getRotatedVector(float degree);
+	XMFLOAT3 getAxis(float xDeg, float yDeg, float zDeg);
+	XMMATRIX getWorldMatrix();
+
+	XMMATRIX ConvertToXM(const aiMatrix4x4& m);
+	std::unordered_set<std::string> CollectUsedBoneNames(const aiScene* scene);
 
 private:
 	void ReleaseTextures();
@@ -157,34 +151,32 @@ private:
 	XMFLOAT3 m_leftTarget;
 	XMFLOAT3 m_rightTarget;
 
-	Mesh* m_rangeAxisMesh;
 	Mesh* m_jointMesh;
 	Mesh* m_boneMesh;
 	Mesh* m_stepMesh;
 	Mesh* m_blockMesh;
 	Mesh* m_cornMesh;
 	Mesh* m_startMesh;
-	Mesh* m_rayToTargetMesh;
+	Mesh* m_rangeAxisMesh;
 	Mesh* m_rayNormalMesh;
+	Mesh* m_rayToTargetMesh;
+	PhysicsObject* m_physicsObject;
 	std::vector<Mesh*> m_meshes;
 	std::vector<Texture*> m_textures;
-	PhysicsObject* m_physicsObject;
-
-	Skeleton m_skeleton;							// 본 계층 정보
-	std::unordered_map<std::string, AnimationClip> m_animationClips;
-	AnimationStateManager m_animStateManager;		// 상태별 애니메이션 관리
-	RaycastingManager m_RaycastingManager;
-	IKManager m_IKManager;
 
 	Pose m_pose;									// Pose (현재 프레임의 뼈 트랜스폼들)
+	Skeleton m_skeleton;							// 본 계층 정보
+	IKManager m_IKManager;
+	RaycastingManager m_RaycastingManager;
+	AnimationStateManager m_animStateManager;		// 상태별 애니메이션 관리
+	std::unordered_map<std::string, AnimationClip> m_animationClips;
 
 	// 애니메이션 여부
-	bool m_hasAnimation = false;
 	bool m_dirChanged = false;
-	float m_speed{ 0.0f };
+	bool isQuatRotation = false;
+	bool m_hasAnimation = false;
 	UINT m_size; // mesh 개수
 	XMFLOAT4 m_quat;
-	bool isQuatRotation{ false };
 
 	// 다음 Step 예측
 	StepInfo m_currentStep;
