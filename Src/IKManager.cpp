@@ -517,23 +517,8 @@ void IKManager::blendingIKRotation()
 	}
 }
 
-
-// X -> Y -> Z 순서
-void IKManager::quaternionToEuler(const XMFLOAT4& q, float* eulerDeg)
-{
-	float sqw = q.w * q.w;
-	float sqx = q.x * q.x;
-	float sqy = q.y * q.y;
-	float sqz = q.z * q.z;
-
-	eulerDeg[0] = XMConvertToDegrees(asinf(2.0f * (q.w * q.x - q.y * q.z)));  // Pitch
-	eulerDeg[1] = XMConvertToDegrees(atan2f(2.0f * (q.x * q.z + q.w * q.y), (-sqx - sqy + sqz + sqw)));  // Yaw
-	eulerDeg[2] = XMConvertToDegrees(atan2f(2.0f * (q.x * q.y + q.w * q.z), (-sqx + sqy - sqz + sqw)));  // Roll
-}
-
 void IKManager::clampBoneAngle(IKBone& bone, XMFLOAT4& quat, Pose& pose)
 {
-	//p("bone " + std::to_string(bone.idx) + " start clamping!!\n");
 	// IK로 계산된 최종 회전 쿼터니언
 	XMVECTOR qIK = XMLoadFloat4(&quat);
 
@@ -644,8 +629,6 @@ XMVECTOR IKManager::divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist)
 	qx = XMQuaternionRotationAxis(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), xAngle);
 	qz = XMQuaternionRotationAxis(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), zAngle);
 
-
-
 	float thetaX, thetaY;
 
 	if (fabs(XMVectorGetX(D)) < 1e-6f)
@@ -672,15 +655,8 @@ XMVECTOR IKManager::divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist)
 	XMVECTOR front = XMVector3Rotate(XMVectorSet(0, 0, -1, 0), twist);
 	XMVECTOR q2 = XMQuaternionNormalize(XMQuaternionMultiply(qx, qz));
 
-	//p("thetaX: " + std::to_string(thetaX) + "\n");
-	//p("thetaY: " + std::to_string(thetaY) + "\n");
-	//p("front: " + std::to_string(XMVectorGetX(front)) + " " + std::to_string(XMVectorGetY(front)) + " " + std::to_string(XMVectorGetZ(front)) + "\n");
-
 	XMVECTOR v1 = XMVector3Rotate(front, qx);
 	XMVECTOR v2 = XMVector3Rotate(front, q2);
-
-	//p("v1: " + std::to_string(XMVectorGetX(v1)) + " " + std::to_string(XMVectorGetY(v1)) + " " + std::to_string(XMVectorGetZ(v1)) + "\n");
-	//p("v2: " + std::to_string(XMVectorGetX(v2)) + " " + std::to_string(XMVectorGetY(v2)) + " " + std::to_string(XMVectorGetZ(v2)) + "\n");
 
 	XMVECTOR axis = XMVector3Rotate(XMVectorSet(0, 1, 0, 0), qthetaX);
 	float dotV1V2 = XMVectorGetX(XMVector3Dot(v1, v2));
@@ -690,10 +666,6 @@ XMVECTOR IKManager::divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist)
 
 
 	qy = XMQuaternionRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), yAngle);
-
-	//p("xAngle: " + std::to_string(xAngle) + "\n");
-	//p("yAngle: " + std::to_string(yAngle) + "\n");
-	//p("zAngle: " + std::to_string(zAngle) + "\n");
 
 	XMVECTOR qFinal =  XMQuaternionNormalize(XMQuaternionMultiply(XMQuaternionMultiply(XMQuaternionMultiply(twist, qy), qx), qz));
 
@@ -705,8 +677,6 @@ XMVECTOR IKManager::ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twis
 	twistAxis = XMVector3Normalize(twistAxis);
 	XMVECTOR D = XMVector3Rotate(twistAxis, swing);  // swing에 의해 이동된 방향
 	XMVECTOR D_clamped = ClampDirectionToSphericalPolygon(D, polygon);
-	//p("D: " + std::to_string(XMVectorGetX(D)) + " " + std::to_string(XMVectorGetY(D)) + " " + std::to_string(XMVectorGetZ(D)) + "\n");
-	//p("D_clamped: " + std::to_string(XMVectorGetX(D_clamped)) + " " + std::to_string(XMVectorGetY(D_clamped)) + " " + std::to_string(XMVectorGetZ(D_clamped)) + "\n");
 	return divideQuaternionToYXZ(D_clamped, twist);
 }
 
@@ -747,11 +717,6 @@ void IKManager::makePolygon(std::vector<XMVECTOR>& polygon, XMVECTOR& twistClamp
 	polygon.push_back(XMVector3Normalize(D));
 
 	polygon.push_back(polygon[0]);
-
-	//for (int i = 0; i < polygon.size(); i++)
-	//{
-	//	p("polygon " + std::to_string(i) + " : " + std::to_string(XMVectorGetX(polygon[i])) + " " + std::to_string(XMVectorGetY(polygon[i])) + " " + std::to_string(XMVectorGetZ(polygon[i])) + "\n");
-	//}
 }
 
 void IKManager::resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton, float walkPhase, Pose& pose, XMMATRIX& worldMatrix)
@@ -939,7 +904,6 @@ void IKManager::leftFootChainBufferUpdate(IKChain& chain, bool start)
 		legBone.angleBuffer.zMin = legBone.zMax;
 	}
 }
-
 
 void IKManager::rightFootChainBufferUpdate(IKChain& chain, bool start)
 {

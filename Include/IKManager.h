@@ -25,16 +25,15 @@ struct IKBone
 	int idx;
 	int parentsIdx;
 	int childIdx;
-	// x, y, z ¼ø¼­ (pitch, yaw, roll)
-	XMFLOAT3 axis;
 	float xMax;
 	float xMin;
 	float zMax;
 	float zMin;
 	XMVECTOR twist;
-	IKAngleBuffer angleBuffer;
+	XMFLOAT3 axis;
 	XMFLOAT3 worldDest;
 	XMFLOAT3 worldChildDest;
+	IKAngleBuffer angleBuffer;
 };
 
 struct IKChain
@@ -87,18 +86,6 @@ public:
 			}
 		}
 	}
-
-	void print()
-	{
-		for (int i = 0; i < rowCount; ++i)
-		{
-			for (int j = 0; j < colCount; ++j)
-			{
-				p(std::to_string(m_data[i][j]) + " ");
-			}
-			p("\n");
-		}
-	}
 };
 
 enum class EChainPart
@@ -113,32 +100,31 @@ public:
 	static XMVECTOR getQuatFromTo(XMFLOAT3 from, XMFLOAT3 to);
 	static float safeAcosf(float dotResult);
 
+	void solveDLS();
 	void initIKChains(Skeleton& skeleton);
+	void updateNowRotation(Pose& pose);
 	void resetValuesForIK(RaycastingManager& raycastingManager, Skeleton& skeleton, float walkPhase, Pose& pose, XMMATRIX& worldMatrix);
 	void calculateTarget(Pose& pose, XMMATRIX& worldMatrix, RaycastingManager& raycastingManager);
 	void calculateJacobianMatrix(Pose& pose, XMMATRIX& worldMatrix);
-	void solveDLS();
-	void updateNowRotation(Pose& pose);
 	void updateAngle(Pose& pose, XMMATRIX& worldMatrix, Skeleton& skeleton);
+	void blendingIKRotation();
 	bool isFinish(Pose& pose, XMMATRIX& worldMatrix);
 	IKChain& getChain(int idx);
-	void blendingIKRotation();
 	std::vector<XMFLOAT4>& getNowRotation();
 
 private:
+	void makePolygon(std::vector<XMVECTOR>& polygon, XMVECTOR& twistClamped, float xMax, float xMin, float zMax, float zMin);
+	void clampBoneAngle(IKBone& bone, XMFLOAT4& quat, Pose& pose);
 	void initLeftFootChains(Skeleton& skeleton);
 	void initRightFootChains(Skeleton& skeleton);
-	void quaternionToEuler(const XMFLOAT4& q, float* eulerDeg);
-	void clampBoneAngle(IKBone& bone, XMFLOAT4& quat, Pose& pose);
-	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twistClamped, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
-	XMVECTOR ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon);
-	void makePolygon(std::vector<XMVECTOR>& polygon, XMVECTOR& twistClamped, float xMax, float xMin, float zMax, float zMin);
 	void leftFootChainBufferUpdate(IKChain& chain, bool start);
 	void rightFootChainBufferUpdate(IKChain& chain, bool start);
 	void initLeftFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton, Pose& pose, XMMATRIX& worldMatrix);
-	XMVECTOR divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist);
-	XMFLOAT4 recreateD(IKBone& bone, XMVECTOR& D, Pose& pose);
 	void initRightFootChainInfo(RaycastingManager& raycastingManager, Skeleton& skeleton, Pose& pose, XMMATRIX& worldMatrix);
+	XMVECTOR divideQuaternionToYXZ(XMVECTOR& D, XMVECTOR& twist);
+	XMVECTOR ClampSwingBySphericalPolygon(XMVECTOR& swing, XMVECTOR& twistClamped, XMVECTOR twistAxis, const std::vector<XMVECTOR>& polygon);
+	XMVECTOR ClampDirectionToSphericalPolygon(XMVECTOR D, const std::vector<XMVECTOR>& polygon);
+	XMFLOAT4 recreateD(IKBone& bone, XMVECTOR& D, Pose& pose);
 
 
 	JacobianMatrix J;
