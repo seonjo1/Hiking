@@ -106,7 +106,9 @@ public:
 	void createStaticBox(physx::PxPhysics* physics, physx::PxScene* scene);
 	void createStaticSphere(physx::PxPhysics* physics, physx::PxScene* scene);
 	void createDynamicSphere(physx::PxPhysics* physics, physx::PxScene* scene, float mass);
+	void createDynamicCapsule(physx::PxPhysics* physics, physx::PxScene* scene, float mass, float radius, float halfHeight);
 	void updatePhysxResult();
+	void createCharacterCollider(physx::PxPhysics* physics, physx::PxScene* scene);
 
 	void Shutdown();
 	XMMATRIX getWorldMatrix();
@@ -125,7 +127,6 @@ public:
 	void initRangeAxis();
 	float getSpeed();
 	XMFLOAT3 getAxis(float xDeg, float yDeg, float zDeg);
-	float getLeftFootBlendingAlpha();
 	void setYoffset();
 	void setTargetToHipsKeyFrame();
 	void modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix);

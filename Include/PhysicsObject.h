@@ -15,6 +15,7 @@ enum class ECollider
 {
 	BOX,
 	SPHERE,
+	CAPSULE,
 };
 
 class PhysicsObject {

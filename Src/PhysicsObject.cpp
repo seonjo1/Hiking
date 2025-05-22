@@ -194,7 +194,9 @@ void PhysicsObject::updateMass()
 void PhysicsObject::createCapsuleShape(physx::PxPhysics* physics, float radius, float halfHeight)
 {
 	m_shape = physx::PxRigidActorExt::createExclusiveShape(*m_actor, physx::PxCapsuleGeometry(radius, halfHeight), *m_material);
-	m_shape->setLocalPose(physx::PxTransform(physx::PxQuat(physx::PxPi / 2, physx::PxVec3(0, 0, 1))));
+	physx::PxVec3 offset(0.0f, radius + halfHeight, 0.0f);
+	m_shape->setLocalPose(physx::PxTransform(offset, physx::PxQuat(physx::PxPi / 2, physx::PxVec3(0, 0, 1))));
+	m_collider = ECollider::CAPSULE;
 }
 
 
@@ -248,13 +250,16 @@ void PhysicsObject::addToScene(physx::PxScene* scene) {
 
 void PhysicsObject::shutdown()
 {
-	if (m_actor) {
-		m_actor->release();  // RigidActor 秦力
-	}
-	if (m_shape) {
-		m_shape->release();  // Shape 秦力
-	}
 	if (m_material) {
 		m_material->release();  // Material 秦力
 	}
+
+	if (m_shape) {
+		m_shape->release();  // Shape 秦力
+	}
+
+	if (m_actor) {
+		m_actor->release();  // RigidActor 秦力
+	}
+
 }

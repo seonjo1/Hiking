@@ -719,19 +719,19 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 
 			// left go normal 보간
 			float ratio = m_animStateManager.current.getLeftGoRatio();
-			if (ratio < 0.1f)
+			if (ratio < 0.2f)
 			{
 				XMVECTOR startNormal = XMLoadFloat3(&m_prevLeftNormal);
 				XMVECTOR endNormal = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-				XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, ratio * 10.0f);
+				XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, ratio * 5.0f);
 				nowNormal = XMVector3Normalize(nowNormal);
 				XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.normal, nowNormal);
 			}
-			else if (ratio > 0.9f)
+			else if (ratio > 0.8f)
 			{
 				XMVECTOR startNormal = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 				XMVECTOR endNormal = XMLoadFloat3(&m_currLeftNormal);
-				XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, 10.0f * (ratio - 0.9f));
+				XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, 5.0f * (ratio - 0.8f));
 				nowNormal = XMVector3Normalize(nowNormal);
 				XMStoreFloat3(&m_RaycastingManager.m_LeftFoot.normal, nowNormal);
 			}
@@ -763,19 +763,19 @@ void Model::modifyTarget(physx::PxScene* scene, XMMATRIX& worldMatrix)
 			// right go normal 보간
 			float ratio = m_animStateManager.current.getRightGoRatio();
 
-			if (ratio < 0.1f)
+			if (ratio < 0.2f)
 			{
 				XMVECTOR startNormal = XMLoadFloat3(&m_prevRightNormal);
 				XMVECTOR endNormal = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-				XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, ratio * 10.0f);
+				XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, ratio * 5.0f);
 				nowNormal = XMVector3Normalize(nowNormal);
 				XMStoreFloat3(&m_RaycastingManager.m_RightFoot.normal, nowNormal);
 			}
-			else if (ratio > 0.9f)
+			else if (ratio > 0.8f)
 			{
 				XMVECTOR startNormal = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 				XMVECTOR endNormal = XMLoadFloat3(&m_currRightNormal);
-				XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, 10.0f * (ratio - 0.9f));
+				XMVECTOR nowNormal = XMVectorLerp(startNormal, endNormal, 5.0f * (ratio - 0.8f));
 				nowNormal = XMVector3Normalize(nowNormal);
 				XMStoreFloat3(&m_RaycastingManager.m_RightFoot.normal, nowNormal);
 			}
@@ -845,7 +845,7 @@ void Model::modifyWorldY(physx::PxScene* scene, XMMATRIX& worldMatrix)
 
 
 	// 한 번에 이동하지 않고 조금씩 이동
-	if (fabsf(minY - m_position.y) > 0.01f)
+	if (fabsf(minY - m_position.y) > 0.02f)
 	{
 		if (m_position.y > minY)
 		{
@@ -1756,6 +1756,39 @@ void Model::createDynamicSphere(physx::PxPhysics* physics, physx::PxScene* scene
 	m_physicsObject->createDynamicObject(physics);
 	m_physicsObject->setMaterial(physics, 0.6f, 0.6f, 0.3f);
 	m_physicsObject->createSphereShape(physics, physx::PxMeshScale(1.0f));
+	m_physicsObject->setMass(mass);
+	m_physicsObject->addToScene(scene);
+}
+
+void Model::createCharacterCollider(physx::PxPhysics* physics, physx::PxScene* scene)
+{
+	m_animStateManager.UpdateAnimationClip(m_pose, m_skeleton);
+	XMVECTOR point = XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
+	XMMATRIX toHips = m_animStateManager.current.pose.world[m_skeleton.GetBoneIndex("mixamorig:Hips")];
+	XMMATRIX toLeftToeBase = m_animStateManager.current.pose.world[m_skeleton.GetBoneIndex("mixamorig:LeftToeBase")];
+	XMMATRIX toLeftToeEnd = m_animStateManager.current.pose.world[m_skeleton.GetBoneIndex("mixamorig:LeftToe_End")];
+	XMMATRIX worldTranform = getWorldMatrix();
+	toHips = XMMatrixMultiply(toHips, worldTranform);
+	toLeftToeBase = XMMatrixMultiply(toLeftToeBase, worldTranform);
+	toLeftToeEnd = XMMatrixMultiply(toLeftToeEnd, worldTranform);
+	XMVECTOR hips = XMVector3TransformCoord(point, toHips);
+	XMVECTOR leftToeBase = XMVector3TransformCoord(point, toLeftToeBase);
+	XMVECTOR leftToeEnd = XMVector3TransformCoord(point, toLeftToeEnd);
+
+	float halfHeight = XMVectorGetY(hips) - XMVectorGetY(leftToeBase);
+	hips = XMVectorSetY(hips, 0.0f);
+	leftToeEnd = XMVectorSetY(leftToeEnd, 0.0f);
+	float radius = XMVectorGetX(XMVector3Length(XMVectorSubtract(hips, leftToeEnd)));
+	halfHeight -= radius;
+	createDynamicCapsule(physics, scene, 100.0f, radius, halfHeight);
+}
+
+void Model::createDynamicCapsule(physx::PxPhysics* physics, physx::PxScene* scene, float mass, float radius, float halfHeight)
+{
+	m_physicsObject = new PhysicsObject();
+	m_physicsObject->createDynamicObject(physics);
+	m_physicsObject->setMaterial(physics, 0.6f, 0.6f, 0.3f);
+	m_physicsObject->createCapsuleShape(physics, radius, halfHeight);
 	m_physicsObject->setMass(mass);
 	m_physicsObject->addToScene(scene);
 }

@@ -188,8 +188,8 @@ void Application::createSphere(XMFLOAT3 pos, XMFLOAT4 color)
 
 void Application::createSpheres()
 {
-	XMFLOAT3 pos1 = { 10.0f, -1.5f, -10.0f };
-	XMFLOAT3 pos2 = { 11.75f, -1.5f, -13.5f };
+	XMFLOAT3 pos1 = { 10.0f, -1.1f, -10.0f };
+	XMFLOAT3 pos2 = { 11.75f, -1.1f, -14.0f };
 	XMFLOAT4 colors[3] = {
 	{ 0.229f, 0.239f, 0.461f, 1.0f },
 	{ 0.429f, 0.639f, 0.261f, 1.0f },
@@ -202,8 +202,8 @@ void Application::createSpheres()
 		XMFLOAT4 color2 = colors[((i + 1) % 3)];
 		createSphere(pos1, color1);
 		createSphere(pos2, color2);
-		pos1.x += 3.5f;
-		pos2.x += 3.5f;
+		pos1.x += 4.0f;
+		pos2.x += 4.0f;
 	}
 }
 
@@ -288,6 +288,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_AnimationModel->setPosition(XMFLOAT3(0.0f, -0.15f, 0.0f));
 	m_AnimationModel->setRotation(XMFLOAT3(-90.0f, 0.0f, 0.0f));
 	m_AnimationModel->setScale(XMFLOAT3(0.02f, 0.02f, 0.02f));
+	m_AnimationModel->createCharacterCollider(m_PhysicsManager->m_Physics, m_PhysicsManager->m_Scene);
 	m_AnimationModel->setYoffset();
 	m_AnimationModel->setTargetToHipsKeyFrame();
 
@@ -297,6 +298,7 @@ bool Application::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	createSlope();
 	createSpheres();
 	createSphere(XMFLOAT3(-10.0f, -0.5f, -25.0f), XMFLOAT4(0.725f, 0.202f, 0.529f, 1.0f));
+	createSphere(XMFLOAT3(-13.0f, -0.5f, -25.0f), XMFLOAT4(0.725f, 0.202f, 0.529f, 1.0f));
 	createStairs(20);
 	//createRandomTerrain(30);
 	createSlopeTerrain(30);
