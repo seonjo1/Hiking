@@ -49,6 +49,7 @@ Model::Model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::stri
 	m_rotation = { 0.0f, 0.0f, 0.0f };
 	m_scale = { 1.0f, 1.0f, 1.0f };
 	m_physicsObject = nullptr;
+	m_RaycastingManager.initRaycastingManager();
 	LoadByAssimp(device, deviceContext, filename);
 }
 
@@ -1239,10 +1240,10 @@ void Model::UpdateAnimation(physx::PxScene* scene, float dt)
 		}
 
 		// 5. ¸ö ¾ÕÂÊ Raycasting
-		raycastingToForward(scene, worldMatrix);
+		//raycastingToForward(scene, worldMatrix);
 
 		// 6. ÀÌµ¿ ºÒ°¡ check
-		checkCanMove();
+		//checkCanMove();
 
 		// 7. ¸ðµ¨ move
 		moveModel(worldMatrix, dt);

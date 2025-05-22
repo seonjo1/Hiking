@@ -32,7 +32,8 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
         s_GravityDir,
         s_RayDistance,
         toeBaseHit,
-        physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
+        physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL,
+		filterData
     );
 
 	// toeEnd Raycasting
@@ -42,7 +43,8 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
 		s_GravityDir,
 		s_RayDistance,
 		toeEndHit,
-		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
+		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL,
+		filterData
 	);
 
 	// foot Raycasting
@@ -52,7 +54,8 @@ void RaycastingManager::footRaycasting(physx::PxScene* scene, physx::PxVec3 toeB
 		s_GravityDir,
 		s_RayDistance,
 		footHit,
-		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
+		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL,
+		filterData
 	);
 
     // info 채우기
@@ -163,6 +166,11 @@ void RaycastingManager::fillInfo(RaycastingInfo& dest, RaycastingInfo& src)
     dest.dir = src.dir;
 }
 
+void RaycastingManager::initRaycastingManager()
+{
+	filterData.flags = physx::PxQueryFlag::eSTATIC;
+}
+
 void RaycastingManager::raycastingForLeftFootIK(physx::PxScene* scene, physx::PxVec3 toeBasePose, physx::PxVec3 toeEndPose, bool normalChanged, XMFLOAT3 nowNormal)
 {
 	static const float toToeEndScale = 0.3f;
@@ -227,7 +235,8 @@ void RaycastingManager::raycastingForMoveCheck(physx::PxScene* scene, physx::PxV
 		dir,
 		rayDistance,
 		leftRayHit,
-		physx::PxHitFlag::ePOSITION
+		physx::PxHitFlag::ePOSITION,
+		filterData
 	);
 
 	m_MoveCheck.part = EIKPart::FAIL;
@@ -244,7 +253,8 @@ void RaycastingManager::raycastingForMoveCheck(physx::PxScene* scene, physx::PxV
 		dir,
 		rayDistance,
         rightRayHit,
-		physx::PxHitFlag::ePOSITION
+		physx::PxHitFlag::ePOSITION,
+		filterData
 	);
 
 	if (rightRaySuccess == true)
@@ -259,7 +269,8 @@ void RaycastingManager::raycastingForMoveCheck(physx::PxScene* scene, physx::PxV
 		dir,
 		rayDistance,
 		centerRayHit,
-		physx::PxHitFlag::ePOSITION
+		physx::PxHitFlag::ePOSITION,
+		filterData
 	);
 
 	if (centerRaySuccess == true)
@@ -285,7 +296,8 @@ void RaycastingManager::raycastingForBlockInfo(physx::PxScene* scene, physx::PxV
 		dir,
 		distance,
 		frontRayHit,
-		physx::PxHitFlag::ePOSITION
+		physx::PxHitFlag::ePOSITION,
+		filterData
 	);
 
 	physx::PxVec3 backRayStart = start + offset * yOffset + xzDir * -0.01f;
@@ -294,7 +306,8 @@ void RaycastingManager::raycastingForBlockInfo(physx::PxScene* scene, physx::PxV
 		dir,
 		distance,
 		backRayHit,
-		physx::PxHitFlag::ePOSITION
+		physx::PxHitFlag::ePOSITION,
+		filterData
 	);
 
 	m_FindObstacle.target.x = m_FindObstacle.pos.x;
@@ -325,7 +338,8 @@ bool RaycastingManager::raycastingForFindBlock(physx::PxScene* scene, physx::PxV
 			-up,
 			30.0f,
 			hit,
-			physx::PxHitFlag::ePOSITION
+			physx::PxHitFlag::ePOSITION,
+			filterData
 		);
 
 		// start가 물체 아래 있으면 그 위치 살짝 앞으로 target 설정 
@@ -353,7 +367,8 @@ bool RaycastingManager::raycastingForFindBlock(physx::PxScene* scene, physx::PxV
 			nowDir,
 			rayDistance,
 			rayHit,
-			physx::PxHitFlag::ePOSITION
+			physx::PxHitFlag::ePOSITION,
+			filterData
 		);
 
 		if (raySuccess == true)
@@ -393,7 +408,8 @@ void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hips
         s_GravityDir,
         rayDistance,
         rayHit,
-        physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
+		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL,
+		filterData
     );
 
     // raycasting 성공시 경사면 각도 확인 (너무 크면 hit 안한처리
@@ -416,7 +432,8 @@ void RaycastingManager::raycastingForY(physx::PxScene* scene, physx::PxVec3 hips
 		s_GravityDir,
         rayDistance,
 		frontRayHit,
-		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL
+		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL,
+		filterData
 	);
 
     if (frontRaySuccess)
