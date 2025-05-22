@@ -9,17 +9,16 @@ public:
 	JointShader(const JointShader&);
 	~JointShader();
 
-	bool Initialize(ID3D11Device*, HWND);
 	void Shutdown();
+	bool Initialize(ID3D11Device*, HWND);
 	bool Render(ID3D11DeviceContext*, int, Matrix&, XMMATRIX&);
 
 private:
-	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*);
 	void ShutdownShader();
-	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
-
-	bool SetShaderParameters(ID3D11DeviceContext*, Matrix&, XMMATRIX&);
 	void RenderShader(ID3D11DeviceContext*, int);
+	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
+	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*);
+	bool SetShaderParameters(ID3D11DeviceContext*, Matrix&, XMMATRIX&);
 
 private:
 	ID3D11VertexShader* m_vertexShader;

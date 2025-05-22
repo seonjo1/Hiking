@@ -24,22 +24,22 @@ public:
 	BoneShader(const BoneShader&);
 	~BoneShader();
 
-	bool Initialize(ID3D11Device*, HWND);
 	void Shutdown();
+	bool Initialize(ID3D11Device*, HWND);
 	bool Render(ID3D11DeviceContext*, int, Matrix&, XMMATRIX&, XMMATRIX&, XMFLOAT3);
 	bool RenderRayLine(ID3D11DeviceContext*, int, Matrix&, XMMATRIX&, RaycastingInfo&, XMFLOAT3);
 	bool RenderRangeAxis(ID3D11DeviceContext* deviceContext, int indexCount, Matrix& matrix, XMMATRIX& parentMatrix, XMFLOAT3 axis, XMFLOAT3 cameraFront);
 
 private:
-	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*);
+	void RenderShader(ID3D11DeviceContext*, int);
 	void ShutdownShader();
 	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
+	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*);
 
 	bool SetShaderParameters(ID3D11DeviceContext*, Matrix&, XMMATRIX&, XMMATRIX&, XMFLOAT3);
 	bool SetShaderParametersRayLine(ID3D11DeviceContext*, Matrix&, XMMATRIX&, RaycastingInfo&, XMFLOAT3);
 	bool SetShaderParametersRangeAxis(ID3D11DeviceContext* deviceContext, Matrix& matrix, XMMATRIX& parentMatrix, XMFLOAT3 axis, XMFLOAT3 cameraFront);
 
-	void RenderShader(ID3D11DeviceContext*, int);
 
 private:
 	ID3D11VertexShader* m_vertexShader;

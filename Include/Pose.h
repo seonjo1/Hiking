@@ -21,13 +21,12 @@ struct Pose {
     int count;
     
     void Initialize(size_t boneCount);
-    XMMATRIX getLocalTranslationMatrix(int idx);
-    physx::PxVec3 getBonePos(XMMATRIX& worldMatrix, int boneIdx);
 	void UpdateWorldPos(const Skeleton& skeleton);
     void UpdateFinalPos(const Skeleton& skeleton);
     void UpdateIKWorldPos(const Skeleton& skeleton, std::vector<XMFLOAT4>& IKRotation);
     void IKChainBlending(IKChain& chain, std::vector<XMFLOAT4>& IKRotation, float blendAlpha);
     XMVECTOR getTwist(int idx);
     XMMATRIX getLocalMatrix(int idx);
-
+	XMMATRIX getLocalTranslationMatrix(int idx);
+	physx::PxVec3 getBonePos(XMMATRIX& worldMatrix, int boneIdx);
 };

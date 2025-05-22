@@ -47,19 +47,20 @@ public:
 	Mesh(ID3D11Device*, std::vector<ModelVertexType>&, std::vector<UINT32>&);
 	Mesh(const Mesh&);
 	~Mesh();
+	
 	bool Initialize(ID3D11Device*);
 	bool Initialize(ID3D11Device*, std::vector<VertexType>&, std::vector<UINT32>&);
 	bool Initialize(ID3D11Device*, std::vector<JointVertex>&, std::vector<UINT32>&);
 	bool Initialize(ID3D11Device*, std::vector<BoneVertex>&, std::vector<UINT32>&);
 	bool Initialize(ID3D11Device*, std::vector<ModelVertexType>&, std::vector<UINT32>&);
-	void Shutdown();
 	void Render(ID3D11DeviceContext*);
-	void UpdateMeshVertices(ID3D11DeviceContext*, XMVECTOR& , float, float, float, float);
+	void UpdateMeshVertices(ID3D11DeviceContext*, XMVECTOR&, float, float, float, float);
+	void Shutdown();
 
 	void setTexture(Texture *);
-	ID3D11ShaderResourceView* getTexture();
-	int GetIndexCount();
 
+	int GetIndexCount();
+	ID3D11ShaderResourceView* getTexture();
 	ID3D11ShaderResourceView* GetTexture();
 
 private:
@@ -67,8 +68,8 @@ private:
 	bool InitializeBuffers(ID3D11Device*, std::vector<JointVertex>&, std::vector<UINT32>&);
 	bool InitializeBuffers(ID3D11Device*, std::vector<BoneVertex>&, std::vector<UINT32>&);
 	bool InitializeBuffers(ID3D11Device*, std::vector<ModelVertexType>&, std::vector<UINT32>&);
-	void ShutdownBuffers();
 	void RenderBuffers(ID3D11DeviceContext*);
+	void ShutdownBuffers();
 
 	// Vertex Buffer, Index Buffer
 	ID3D11Buffer* m_vertexBuffer{ nullptr };
